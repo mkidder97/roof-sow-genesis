@@ -14,10 +14,12 @@ interface NotesSectionProps {
 
 export const NotesSection: React.FC<NotesSectionProps> = ({ data, onChange }) => {
   return (
-    <Card className="border-l-4 border-l-rose-500">
-      <CardHeader className="bg-gradient-to-r from-rose-50 to-rose-100">
-        <CardTitle className="flex items-center gap-2 text-rose-800">
-          <FileText className="h-5 w-5" />
+    <Card className="border-0 shadow-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-l-4 border-l-pink-500">
+      <CardHeader className="bg-gradient-to-r from-pink-500/20 to-rose-500/20 border-b border-pink-500/30">
+        <CardTitle className="flex items-center gap-3 text-pink-100 text-lg">
+          <div className="p-2 bg-pink-500/20 rounded-lg">
+            <FileText className="h-5 w-5 text-pink-400" />
+          </div>
           Notes & Custom Sections
         </CardTitle>
       </CardHeader>

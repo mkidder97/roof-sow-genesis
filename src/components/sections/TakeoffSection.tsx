@@ -14,10 +14,12 @@ interface TakeoffSectionProps {
 
 export const TakeoffSection: React.FC<TakeoffSectionProps> = ({ data, onChange }) => {
   return (
-    <Card className="border-l-4 border-l-teal-500">
-      <CardHeader className="bg-gradient-to-r from-teal-50 to-teal-100">
-        <CardTitle className="flex items-center gap-2 text-teal-800">
-          <Calculator className="h-5 w-5" />
+    <Card className="border-0 shadow-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-l-4 border-l-amber-500">
+      <CardHeader className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-b border-amber-500/30">
+        <CardTitle className="flex items-center gap-3 text-amber-100 text-lg">
+          <div className="p-2 bg-amber-500/20 rounded-lg">
+            <Calculator className="h-5 w-5 text-amber-400" />
+          </div>
           Takeoff Checklist
         </CardTitle>
       </CardHeader>

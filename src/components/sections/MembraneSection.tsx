@@ -14,10 +14,12 @@ interface MembraneSectionProps {
 
 export const MembraneSection: React.FC<MembraneSectionProps> = ({ data, onChange }) => {
   return (
-    <Card className="border-l-4 border-l-purple-500">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100">
-        <CardTitle className="flex items-center gap-2 text-purple-800">
-          <Shield className="h-5 w-5" />
+    <Card className="border-0 shadow-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-l-4 border-l-violet-500">
+      <CardHeader className="bg-gradient-to-r from-violet-500/20 to-purple-500/20 border-b border-violet-500/30">
+        <CardTitle className="flex items-center gap-3 text-violet-100 text-lg">
+          <div className="p-2 bg-violet-500/20 rounded-lg">
+            <Shield className="h-5 w-5 text-violet-400" />
+          </div>
           Membrane & Attachment
         </CardTitle>
       </CardHeader>

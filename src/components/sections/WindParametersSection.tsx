@@ -13,10 +13,12 @@ interface WindParametersSectionProps {
 
 export const WindParametersSection: React.FC<WindParametersSectionProps> = ({ data, onChange }) => {
   return (
-    <Card className="border-l-4 border-l-orange-500">
-      <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
-        <CardTitle className="flex items-center gap-2 text-orange-800">
-          <Wind className="h-5 w-5" />
+    <Card className="border-0 shadow-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-l-4 border-l-cyan-500">
+      <CardHeader className="bg-gradient-to-r from-cyan-500/20 to-sky-500/20 border-b border-cyan-500/30">
+        <CardTitle className="flex items-center gap-3 text-cyan-100 text-lg">
+          <div className="p-2 bg-cyan-500/20 rounded-lg">
+            <Wind className="h-5 w-5 text-cyan-400" />
+          </div>
           Wind Parameters (Optional Override)
         </CardTitle>
       </CardHeader>

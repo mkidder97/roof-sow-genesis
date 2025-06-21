@@ -14,10 +14,12 @@ interface ProjectMetadataSectionProps {
 
 export const ProjectMetadataSection: React.FC<ProjectMetadataSectionProps> = ({ data, onChange }) => {
   return (
-    <Card className="border-l-4 border-l-blue-500">
-      <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-        <CardTitle className="flex items-center gap-2 text-blue-800">
-          <Building2 className="h-5 w-5" />
+    <Card className="border-0 shadow-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-l-4 border-l-orange-500">
+      <CardHeader className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-b border-orange-500/30">
+        <CardTitle className="flex items-center gap-3 text-orange-100 text-lg">
+          <div className="p-2 bg-orange-500/20 rounded-lg">
+            <Building2 className="h-5 w-5 text-orange-400" />
+          </div>
           Project Metadata
         </CardTitle>
       </CardHeader>

@@ -15,10 +15,12 @@ interface InsulationSectionProps {
 
 export const InsulationSection: React.FC<InsulationSectionProps> = ({ data, onChange }) => {
   return (
-    <Card className="border-l-4 border-l-indigo-500">
-      <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100">
-        <CardTitle className="flex items-center gap-2 text-indigo-800">
-          <Layers className="h-5 w-5" />
+    <Card className="border-0 shadow-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-l-4 border-l-blue-500">
+      <CardHeader className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border-b border-blue-500/30">
+        <CardTitle className="flex items-center gap-3 text-blue-100 text-lg">
+          <div className="p-2 bg-blue-500/20 rounded-lg">
+            <Layers className="h-5 w-5 text-blue-400" />
+          </div>
           Insulation & Coverboard
         </CardTitle>
       </CardHeader>

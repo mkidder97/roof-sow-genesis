@@ -66,12 +66,14 @@ export const EnvironmentalSection: React.FC<EnvironmentalSectionProps> = ({ data
   }, [address]);
 
   return (
-    <Card className="border-l-4 border-l-green-500">
-      <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
-        <CardTitle className="flex items-center gap-2 text-green-800">
-          <MapPin className="h-5 w-5" />
+    <Card className="border-0 shadow-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-l-4 border-l-emerald-500">
+      <CardHeader className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-b border-emerald-500/30">
+        <CardTitle className="flex items-center gap-3 text-emerald-100 text-lg">
+          <div className="p-2 bg-emerald-500/20 rounded-lg">
+            <MapPin className="h-5 w-5 text-emerald-400" />
+          </div>
           Environmental & Code Information
-          {isGeocoding && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+          {isGeocoding && <Loader2 className="h-4 w-4 animate-spin ml-2 text-emerald-400" />}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6 space-y-4">
