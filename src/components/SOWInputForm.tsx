@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, FileText, Download, Bug, CheckCircle, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { Loader2, FileText, Download, Bug, CheckCircle, AlertCircle, Wifi, WifiOff, MapPin, Building } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
@@ -31,6 +31,16 @@ export const SOWInputForm = () => {
     projectType: 'recover',
     membraneThickness: '60',
     membraneColor: 'White',
+    // New fields
+    elevation: 0,
+    deckType: 'Steel',
+    exposureCategory: '',
+    roofSlope: 0,
+    documentAttachment: undefined as {
+      filename: string;
+      type: string;
+      data: string;
+    } | undefined,
   });
 
   const [openSections, setOpenSections] = useState({
@@ -95,6 +105,12 @@ export const SOWInputForm = () => {
       projectType: formData.projectType,
       membraneThickness: formData.membraneThickness,
       membraneColor: formData.membraneColor,
+      // Include new fields
+      deckType: formData.deckType,
+      elevation: formData.elevation || undefined,
+      exposureCategory: formData.exposureCategory || undefined,
+      roofSlope: formData.roofSlope || undefined,
+      documentAttachment: formData.documentAttachment,
     };
 
     setLastPayload(payload);
@@ -168,7 +184,7 @@ export const SOWInputForm = () => {
                 <CardTitle className="flex items-center justify-between text-slate-700">
                   <span className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-blue-500" />
-                    Project Information
+                    Project Information & Site Details
                   </span>
                   <span className="text-sm font-normal text-slate-500">
                     {openSections.project ? 'Click to collapse' : 'Click to expand'}
@@ -355,22 +371,64 @@ export const SOWInputForm = () => {
                 </div>
                 
                 {generatedFile.metadata && (
-                  <div className="bg-white p-4 rounded border border-green-200">
-                    <h4 className="font-medium text-slate-700 mb-2">Generation Details</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                      <div>
-                        <span className="text-slate-500">Template:</span>
-                        <div className="font-medium">{generatedFile.metadata.template}</div>
-                      </div>
-                      <div>
-                        <span className="text-slate-500">Wind Pressure:</span>
-                        <div className="font-medium">{generatedFile.metadata.windPressure}</div>
-                      </div>
-                      <div>
-                        <span className="text-slate-500">Generation Time:</span>
-                        <div className="font-medium">{generatedFile.generationTime}ms</div>
+                  <div className="space-y-4">
+                    <div className="bg-white p-4 rounded border border-green-200">
+                      <h4 className="font-medium text-slate-700 mb-3">Generation Details</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-slate-500">Template:</span>
+                          <div className="font-medium">{generatedFile.metadata.template}</div>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Wind Pressure:</span>
+                          <div className="font-medium">{generatedFile.metadata.windPressure}</div>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Generation Time:</span>
+                          <div className="font-medium">{generatedFile.generationTime}ms</div>
+                        </div>
+                        {generatedFile.metadata.attachmentMethod && (
+                          <div>
+                            <span className="text-slate-500">Attachment Method:</span>
+                            <div className="font-medium">{generatedFile.metadata.attachmentMethod}</div>
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    {/* Jurisdiction Information */}
+                    {generatedFile.metadata.jurisdiction && (
+                      <div className="bg-white p-4 rounded border border-green-200">
+                        <h4 className="font-medium text-slate-700 mb-3 flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Jurisdiction Information
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-slate-500">County:</span>
+                            <div className="font-medium">{generatedFile.metadata.jurisdiction.county}</div>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">State:</span>
+                            <div className="font-medium">{generatedFile.metadata.jurisdiction.state}</div>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Code Cycle:</span>
+                            <div className="font-medium">{generatedFile.metadata.jurisdiction.codeCycle}</div>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">ASCE Version:</span>
+                            <div className="font-medium">{generatedFile.metadata.jurisdiction.asceVersion}</div>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">HVHZ:</span>
+                            <div className={`font-medium ${generatedFile.metadata.jurisdiction.hvhz ? 'text-red-600' : 'text-green-600'}`}>
+                              {generatedFile.metadata.jurisdiction.hvhz ? 'Yes' : 'No'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 
