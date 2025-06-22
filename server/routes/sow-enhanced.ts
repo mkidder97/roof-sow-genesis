@@ -7,19 +7,73 @@ import {
   validateSOWInputs, 
   SOWGeneratorInputs
 } from '../core/sow-generator';
+import { parseTakeoffFile, TakeoffFile } from '../core/takeoff-engine';
 
 /**
- * PHASE 3: Debug endpoint with Section Analysis & Self-Healing
- * Returns complete engineeringSummary with section analysis
+ * PHASE 3: Debug endpoint with Section Analysis & Self-Healing + File Upload Support
+ * Returns complete engineeringSummary with section analysis and processes uploaded files
  */
 export async function debugSOWEnhanced(req: Request, res: Response) {
   try {
-    console.log('🧪 Enhanced Debug SOW - Phase 3 Section Engine & Self-Healing');
+    console.log('🧪 Enhanced Debug SOW - Phase 3 Section Engine & Self-Healing with File Support');
     
-    // Use request body or generate mock data
-    const mockOverrides = req.body || {};
+    // **FIXED: Process uploaded file if present**
+    let enhancedInputs = req.body || {};
+    
+    // Handle file upload and processing
+    if (req.file) {
+      console.log('🗂️ Processing uploaded file:', req.file.originalname);
+      
+      const takeoffFile: TakeoffFile = {
+        filename: req.file.originalname,
+        buffer: req.file.buffer,
+        mimetype: req.file.mimetype
+      };
+      
+      try {
+        console.log('📋 Extracting takeoff data from uploaded file...');
+        const extractedData = await parseTakeoffFile(takeoffFile);
+        console.log('✅ Extracted takeoff data:', extractedData);
+        
+        // **ENHANCED: Override inputs with extracted data**
+        enhancedInputs = {
+          ...enhancedInputs,
+          // Override with extracted data
+          squareFootage: extractedData.roofArea || enhancedInputs.squareFootage,
+          numberOfDrains: extractedData.drainCount || enhancedInputs.numberOfDrains,
+          numberOfPenetrations: extractedData.penetrationCount || enhancedInputs.numberOfPenetrations,
+          flashingLinearFeet: extractedData.flashingLinearFeet || enhancedInputs.flashingLinearFeet,
+          hvacUnits: extractedData.hvacUnits || enhancedInputs.hvacUnits,
+          skylights: extractedData.skylights || enhancedInputs.skylights,
+          roofHatches: extractedData.roofHatches || enhancedInputs.roofHatches,
+          scuppers: extractedData.scuppers || enhancedInputs.scuppers,
+          expansionJoints: extractedData.expansionJoints || enhancedInputs.expansionJoints,
+          
+          // Store raw takeoff data for analysis
+          takeoffItems: extractedData,
+          fileProcessed: true,
+          uploadedFileName: req.file.originalname
+        };
+        
+        console.log('🔄 Enhanced inputs with file data:', {
+          roofArea: extractedData.roofArea,
+          drains: extractedData.drainCount,
+          penetrations: extractedData.penetrationCount,
+          originalFilename: req.file.originalname
+        });
+        
+      } catch (error) {
+        console.log('⚠️ Takeoff parsing failed, using provided inputs:', error);
+        enhancedInputs.fileProcessingError = error instanceof Error ? error.message : 'Unknown parsing error';
+        enhancedInputs.fileProcessed = false;
+      }
+    } else {
+      console.log('📝 No file uploaded, using provided inputs only');
+    }
+    
+    // Generate debug SOW with enhanced inputs
     const result = await generateDebugSOW({
-      ...mockOverrides,
+      ...enhancedInputs,
       debug: true, // Force debug mode
       engineDebug: {
         template: true,
@@ -34,14 +88,17 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
       return res.status(500).json({
         success: false,
         error: result.error,
-        debugMode: true
+        debugMode: true,
+        fileProcessed: enhancedInputs.fileProcessed || false
       });
     }
     
-    // Phase 3: Enhanced Engineering Summary Response with Section Analysis
+    // Phase 3: Enhanced Engineering Summary Response with Section Analysis + File Processing
     const enhancedResponse = {
       success: true,
       debugMode: true,
+      fileProcessed: enhancedInputs.fileProcessed || false,
+      uploadedFileName: enhancedInputs.uploadedFileName || null,
       
       // Core engineering summary with explainability
       engineeringSummary: {
@@ -100,6 +157,23 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
         }
       },
       
+      // **NEW: File Processing Summary**
+      fileProcessingSummary: enhancedInputs.fileProcessed ? {
+        filename: enhancedInputs.uploadedFileName,
+        extractedData: enhancedInputs.takeoffItems,
+        dataOverrides: {
+          roofArea: enhancedInputs.takeoffItems?.roofArea,
+          drainCount: enhancedInputs.takeoffItems?.drainCount,
+          penetrationCount: enhancedInputs.takeoffItems?.penetrationCount,
+          flashingLinearFeet: enhancedInputs.takeoffItems?.flashingLinearFeet
+        },
+        processingSuccess: true
+      } : enhancedInputs.fileProcessingError ? {
+        filename: req.file?.originalname || 'unknown',
+        processingSuccess: false,
+        error: enhancedInputs.fileProcessingError
+      } : null,
+      
       // Enhanced debug information
       debugInfo: result.debugInfo,
       
@@ -110,7 +184,9 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
         engineTraces: Object.keys(result.debugInfo?.engineTraces || {}),
         sectionsIncluded: result.engineeringSummary!.sectionAnalysis.includedSections.length,
         sectionsExcluded: result.engineeringSummary!.sectionAnalysis.excludedSections.length,
-        selfHealingActions: result.engineeringSummary!.selfHealingReport.totalActions
+        selfHealingActions: result.engineeringSummary!.selfHealingReport.totalActions,
+        fileUploadSupported: true,
+        fileProcessed: enhancedInputs.fileProcessed || false
       }
     };
     
@@ -120,6 +196,7 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
     console.log(`🏭 System: ${enhancedResponse.engineeringSummary.systemSelection.selectedSystem}`);
     console.log(`📋 Sections: ${enhancedResponse.metadata.sectionsIncluded} included, ${enhancedResponse.metadata.sectionsExcluded} excluded`);
     console.log(`🔧 Self-healing: ${enhancedResponse.metadata.selfHealingActions} actions`);
+    console.log(`📁 File processed: ${enhancedResponse.metadata.fileProcessed ? 'Yes' : 'No'}`);
     
     res.json(enhancedResponse);
     
@@ -128,14 +205,14 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
     res.status(500).json({
       success: false,
       debugMode: true,
-      error: error instanceof Error ? error.message : 'Enhanced debug endpoint error'
+      error: error instanceof Error ? error.message : 'Enhanced debug endpoint error',
+      fileProcessed: false
     });
   }
 }
 
 /**
  * NEW PHASE 3: Section-specific analysis endpoint
- * Returns detailed section mapping and reasoning
  */
 export async function debugSectionAnalysis(req: Request, res: Response) {
   try {
@@ -168,7 +245,7 @@ export async function debugSectionAnalysis(req: Request, res: Response) {
           confidenceScore: sectionAnalysis.confidenceScore,
           selfHealingActions: sectionAnalysis.selfHealingActions.length
         },
-        includedSections: sectionAnalysis.includedSections.map(section => ({
+        includedSections: sectionAnalysis.includedSections.map((section: any) => ({
           id: section.id,
           title: section.title,
           rationale: section.rationale,
@@ -176,7 +253,7 @@ export async function debugSectionAnalysis(req: Request, res: Response) {
           hasContent: !!section.content,
           contentLength: section.content?.length || 0
         })),
-        excludedSections: sectionAnalysis.excludedSections.map(section => ({
+        excludedSections: sectionAnalysis.excludedSections.map((section: any) => ({
           id: section.id,
           title: section.title,
           rationale: section.rationale
@@ -203,7 +280,6 @@ export async function debugSectionAnalysis(req: Request, res: Response) {
 
 /**
  * NEW PHASE 3: Self-healing report endpoint
- * Returns detailed self-healing actions and recommendations
  */
 export async function debugSelfHealing(req: Request, res: Response) {
   try {
@@ -233,7 +309,7 @@ export async function debugSelfHealing(req: Request, res: Response) {
           overallConfidence: healingReport.overallConfidence,
           requiresUserReview: healingReport.requiresUserReview
         },
-        actions: healingReport.highImpactActions.map(action => ({
+        actions: healingReport.highImpactActions.map((action: any) => ({
           type: action.type,
           field: action.field,
           originalValue: action.originalValue,
@@ -263,8 +339,7 @@ export async function debugSelfHealing(req: Request, res: Response) {
 }
 
 /**
- * PHASE 4: Template content rendering endpoint (updated for sections)
- * Returns rendered template content with dynamic sections
+ * PHASE 4: Template content rendering endpoint
  */
 export async function renderTemplateContent(req: Request, res: Response) {
   try {
@@ -279,7 +354,6 @@ export async function renderTemplateContent(req: Request, res: Response) {
     
     console.log(`📄 Rendering template content for ${templateId} with sections...`);
     
-    // Phase 4: Template rendering with section integration
     const renderedContent = await renderTemplateWithSections(templateId, engineeringSummary);
     
     res.json({
@@ -302,7 +376,7 @@ export async function renderTemplateContent(req: Request, res: Response) {
 }
 
 /**
- * PHASE 3: Per-engine debug mode endpoint (updated)
+ * PHASE 3: Per-engine debug mode endpoint
  */
 export async function debugEngineTrace(req: Request, res: Response) {
   try {
@@ -317,7 +391,6 @@ export async function debugEngineTrace(req: Request, res: Response) {
     
     console.log(`🔍 Debug trace for ${engine} engine...`);
     
-    // Generate SOW with specific engine debug enabled
     const debugConfig = {
       debug: true,
       engineDebug: {
@@ -334,7 +407,6 @@ export async function debugEngineTrace(req: Request, res: Response) {
       });
     }
     
-    // Return specific engine trace
     const engineTrace = result.debugInfo?.engineTraces?.[`${engine}Engine`];
     
     res.json({
@@ -375,7 +447,7 @@ export async function getTemplateMap(req: Request, res: Response) {
   }
 }
 
-// Helper functions for categorizing self-healing actions
+// Helper functions
 function categorizeActionsByType(actions: any[]): Record<string, number> {
   const categories: Record<string, number> = {};
   actions.forEach(action => {
@@ -392,7 +464,6 @@ function categorizeActionsByImpact(actions: any[]): Record<string, number> {
   return impacts;
 }
 
-// Enhanced template rendering with section integration
 async function renderTemplateWithSections(templateId: string, engineeringSummary: any) {
   const template = TEMPLATE_MAP[templateId as keyof typeof TEMPLATE_MAP];
   
@@ -400,13 +471,8 @@ async function renderTemplateWithSections(templateId: string, engineeringSummary
     throw new Error(`Template ${templateId} not found`);
   }
   
-  // Get base template content
   const mockTemplateContent = getTemplateContent(templateId);
-  
-  // Get dynamic sections from section analysis
   const dynamicSections = extractDynamicSections(engineeringSummary?.sectionAnalysis);
-  
-  // Replace placeholders with actual values
   const renderedContent = replacePlaceholders(mockTemplateContent, engineeringSummary);
   
   return {
@@ -429,7 +495,7 @@ function extractDynamicSections(sectionAnalysis: any): any[] {
   })).sort((a: any, b: any) => (a.priority || 0) - (b.priority || 0));
 }
 
-// Phase 4: Template Map Implementation (updated)
+// Template Map Implementation
 const TEMPLATE_MAP = {
   T1: { name: "Recover", file: "T1-recover.txt", type: "recover" },
   T2: { name: "Tear-off", file: "T2-tearoff.txt", type: "tearoff" },
@@ -441,43 +507,33 @@ const TEMPLATE_MAP = {
   T8: { name: "Special Conditions", file: "T8-special.txt", type: "special" }
 };
 
-/**
- * Phase 4: Mock template content generator (updated for sections)
- */
 function getTemplateContent(templateId: string): Record<string, string> {
   const templates = {
     T1: {
       opening: "This project involves a **{{selectedSystem}}** roof recover system over the existing roof assembly.",
       scope: "The scope includes installation of {{zonePressures}} compliant fastening patterns with {{fasteningSpecs}} specifications.",
-      rationale: "Template selected based on: {{rationale}}",
-      sections_note: "Dynamic sections will be inserted based on project requirements and section analysis."
+      rationale: "Template selected based on: {{rationale}}"
     },
     T2: {
       opening: "This project involves complete tear-off and replacement with **{{selectedSystem}}** roof system.",
       scope: "Wind pressures calculated using {{asceVersion}} methodology with {{zonePressures}} requirements.",
-      rationale: "{{rationale}}",
-      sections_note: "Project-specific sections included based on takeoff analysis."
+      rationale: "{{rationale}}"
     },
     T4: {
       opening: "This **HVHZ compliant** project requires enhanced wind resistance per {{jurisdictionNotes}}.",
       scope: "System selection: {{selectedSystem}} with enhanced fastening: {{fasteningSpecs}}.",
-      rationale: "HVHZ template selected: {{rationale}}",
-      sections_note: "Enhanced HVHZ-specific sections included automatically."
+      rationale: "HVHZ template selected: {{rationale}}"
     },
     T6: {
       opening: "This steep slope project requires specialized installation procedures.",
       scope: "Steep slope attachment with {{selectedSystem}} and {{fasteningSpecs}}.",
-      rationale: "Steep slope template: {{rationale}}",
-      sections_note: "Steep slope specific sections and safety requirements included."
+      rationale: "Steep slope template: {{rationale}}"
     }
   };
   
   return templates[templateId as keyof typeof templates] || templates.T1;
 }
 
-/**
- * Phase 4: Placeholder replacement function
- */
 function replacePlaceholders(content: Record<string, string>, summary: any): Record<string, string> {
   const replacements = {
     '{{selectedSystem}}': summary?.systemSelection?.selectedSystem || 'TPO Membrane System',
@@ -493,7 +549,6 @@ function replacePlaceholders(content: Record<string, string>, summary: any): Rec
   for (const [section, text] of Object.entries(content)) {
     let renderedText = text;
     
-    // Replace all placeholders
     for (const [placeholder, value] of Object.entries(replacements)) {
       renderedText = renderedText.replace(new RegExp(placeholder, 'g'), value);
     }
@@ -504,9 +559,6 @@ function replacePlaceholders(content: Record<string, string>, summary: any): Rec
   return rendered;
 }
 
-/**
- * Helper functions for formatting
- */
 function formatZonePressures(pressures: any): string {
   if (!pressures) return 'standard wind pressures';
   
