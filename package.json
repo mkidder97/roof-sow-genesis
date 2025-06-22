@@ -1,15 +1,33 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "roof-sow-genesis",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Self-healing PDF generation system for SOW documents with intelligent fix application and testing",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npm run test:regression",
+    "test:regression": "tsx tests/regression/test_generatePDF_v3.ts",
+    "test:layout": "tsx tests/regression/compare_pdf_layout.ts",
+    "self-heal": "tsx self-healing-agent.ts",
+    "backup": "tsx utils/backupManager.ts",
+    "claude-test": "tsx utils/claudeClient.ts",
+    "supabase:setup": "supabase db reset",
+    "supabase:types": "supabase gen types typescript --local > types/supabase.ts"
   },
+  "keywords": [
+    "pdf-generation",
+    "self-healing",
+    "construction",
+    "sow",
+    "wind-loads",
+    "asce",
+    "roof-systems"
+  ],
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -41,6 +59,7 @@
     "@radix-ui/react-tooltip": "^1.1.4",
     "@supabase/supabase-js": "^2.50.0",
     "@tanstack/react-query": "^5.56.2",
+    "@anthropic-ai/sdk": "^0.24.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -49,6 +68,7 @@
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "puppeteer": "^22.15.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -76,9 +96,25 @@
     "globals": "^15.9.0",
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
+    "supabase": "^1.200.3",
     "tailwindcss": "^3.4.11",
+    "tsx": "^4.7.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mkidder97/roof-sow-genesis.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mkidder97/roof-sow-genesis/issues"
+  },
+  "homepage": "https://github.com/mkidder97/roof-sow-genesis#readme",
+  "author": "mkidder97",
+  "license": "MIT"
 }
