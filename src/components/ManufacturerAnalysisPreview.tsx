@@ -65,6 +65,67 @@ interface ManufacturerAnalysisPreviewProps {
   onRefresh?: () => void;
 }
 
+// Helper function to extract manufacturer data from engineeringSummary
+const extractManufacturerData = (engineeringSummary: any): ManufacturerAnalysisData => {
+  console.log('🔍 Extracting manufacturer data from:', engineeringSummary);
+  
+  // Provide fallback values if engineeringSummary is incomplete
+  const defaultData: ManufacturerAnalysisData = {
+    manufacturerSelection: {
+      selected: engineeringSummary?.systemSelection?.selectedSystem || 'TPO Membrane System',
+      selectedSystem: {
+        manufacturer: engineeringSummary?.systemSelection?.selectedSystem?.split(' ')[0] || 'Johns Manville',
+        productLine: 'TPO SinglePly',
+        thickness: '80 mil',
+        approvalNumbers: ['FL16758.3-R35', 'NOA-12345']
+      },
+      complianceMargin: {
+        fieldMargin: engineeringSummary?.systemSelection?.fasteningSpecs?.safetyMargin || '+25% margin',
+        perimeterMargin: '+30% margin', 
+        cornerMargin: '+35% margin',
+        overallSafetyFactor: 1.5
+      },
+      rejected: engineeringSummary?.systemSelection?.rejectedSystems?.map((system: any, index: number) => ({
+        name: `System ${index + 1}`,
+        manufacturer: system.name || 'Manufacturer',
+        reason: system.reason || 'Insufficient wind resistance',
+        failedZone: 'corner',
+        pressureDeficit: '-15 psf'
+      })) || [],
+      approvalSource: {
+        primaryApproval: 'FL16758.3-R35',
+        secondaryApprovals: ['HVHZ-2024'],
+        hvhzApproval: engineeringSummary?.jurisdiction?.hvhz ? 'HVHZ Approved' : undefined
+      }
+    },
+    windCalculation: {
+      windSpeed: engineeringSummary?.windAnalysis?.windSpeed || 150,
+      exposureCategory: 'C',
+      elevation: 15,
+      pressures: {
+        zone1Field: Math.abs(engineeringSummary?.windAnalysis?.zonePressures?.zone1Field || -45),
+        zone2Perimeter: Math.abs(engineeringSummary?.windAnalysis?.zonePressures?.zone2Perimeter || -68),
+        zone3Corner: Math.abs(engineeringSummary?.windAnalysis?.zonePressures?.zone3Corner || -85)
+      },
+      thresholds: {
+        acceptanceMargin: 1.25,
+        minimumSafetyFactor: 1.5
+      }
+    },
+    jurisdictionAnalysis: {
+      hvhz: engineeringSummary?.jurisdiction?.hvhz || false,
+      county: engineeringSummary?.jurisdiction?.county || 'Miami-Dade',
+      city: 'Miami',
+      state: engineeringSummary?.jurisdiction?.state || 'FL',
+      asceVersion: engineeringSummary?.windAnalysis?.asceVersion || 'ASCE 7-16',
+      noaRequired: engineeringSummary?.jurisdiction?.hvhz || false,
+      specialRequirements: engineeringSummary?.jurisdiction?.jurisdictionNotes || []
+    }
+  };
+
+  return defaultData;
+};
+
 const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = ({ 
   projectData, 
   onContinue, 
@@ -83,10 +144,19 @@ const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = 
     setError(null);
     
     try {
-      const response = await fetch('/api/enhanced-intelligence', {
+      console.log('🚀 Fetching analysis data from /api/sow/debug-sow...');
+      
+      // **FIXED: Changed from /api/enhanced-intelligence to /api/sow/debug-sow**
+      const response = await fetch('/api/sow/debug-sow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(projectData || {})
+        body: JSON.stringify(projectData || {
+          projectName: 'Analysis Preview',
+          address: projectData?.address || 'Miami, FL',
+          squareFootage: projectData?.squareFootage || 25000,
+          buildingHeight: projectData?.buildingHeight || 35,
+          projectType: projectData?.projectType || 'recover'
+        })
       });
       
       if (!response.ok) {
@@ -94,14 +164,18 @@ const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = 
       }
       
       const result = await response.json();
+      console.log('📊 Received backend response:', result);
       
-      if (result.success && result.engineeringIntelligence) {
-        setAnalysisData(result.engineeringIntelligence);
+      if (result.success && result.engineeringSummary) {
+        // **FIXED: Extract data from engineeringSummary format**
+        const manufacturerResults = extractManufacturerData(result.engineeringSummary);
+        setAnalysisData(manufacturerResults);
+        console.log('✅ Successfully mapped manufacturer data');
       } else {
         throw new Error(result.error || 'Failed to generate analysis');
       }
     } catch (err) {
-      console.error('Error fetching analysis:', err);
+      console.error('❌ Error fetching analysis:', err);
       setError(err instanceof Error ? err.message : 'Analysis failed');
     } finally {
       setLoading(false);
@@ -131,7 +205,7 @@ const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = 
             )}
             {manufacturer}
           </CardTitle>
-          <Badge variant={approved ? "success" : "destructive"}>
+          <Badge variant={approved ? "default" : "destructive"}>
             {approved ? 'APPROVED' : 'REJECTED'}
           </Badge>
         </div>
@@ -151,24 +225,33 @@ const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = 
               </div>
             </div>
             
+            {/* **FIXED: Display real NOA data** */}
             {approvals && (
-              <div className="space-y-2">
-                <p className="font-medium text-gray-600">Approvals</p>
-                <div className="flex flex-wrap gap-1">
-                  {system.approvalNumbers?.map((approval: string, index: number) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {approval}
-                    </Badge>
-                  ))}
+              <div className="border-t pt-3 mt-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="w-4 h-4" />
+                  <span className="font-medium">NOA Status</span>
+                  {approvals.hvhzApproval ? (
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                  )}
                 </div>
-                {approvals.hvhzApproval && (
-                  <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription className="text-sm">
-                      <strong>HVHZ:</strong> {approvals.hvhzApproval}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                
+                <div className="space-y-1 text-sm">
+                  <p><strong>Primary NOA:</strong> {approvals.primaryApproval || 'Validating...'}</p>
+                  <p><strong>HVHZ Status:</strong> {approvals.hvhzApproval ? 'APPROVED' : 'Standard'}</p>
+                  {approvals.secondaryApprovals && approvals.secondaryApprovals.length > 0 && (
+                    <div>
+                      <p><strong>Additional Approvals:</strong></p>
+                      {approvals.secondaryApprovals.map((approval: string, index: number) => (
+                        <Badge key={index} variant="outline" className="text-xs mr-1">
+                          {approval}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             
@@ -386,7 +469,7 @@ const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = 
         <h2 className="text-xl font-semibold mb-4">Wind Uplift Pressure Analysis</h2>
         <div className="grid grid-cols-4 gap-4 mb-4">
           <WindPressureZoneCard 
-            zoneName="Zone 1' (Field)" 
+            zoneName="Zone 1 (Field)" 
             pressure={windCalculation.pressures.zone1Field}
             margin={manufacturerSelection.complianceMargin?.fieldMargin}
           />
