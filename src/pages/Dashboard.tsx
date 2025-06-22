@@ -1,6 +1,6 @@
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,131 +9,150 @@ import { toast } from 'sonner';
 import '@/styles/tesla-ui.css';
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user, session, loading, signOut } = useAuth();
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchProjects();
+    }
+  }, [session]);
+
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', session?.user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching projects:', error);
+        toast.error('Failed to load projects');
+      } else {
+        setProjects(data || []);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to load projects');
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
       await signOut();
       toast.success('Signed out successfully');
-      navigate('/');
     } catch (error) {
-      toast.error('Error signing out');
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out');
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
   if (!user) {
-    navigate('/auth');
-    return null;
+    return <Navigate to="/auth" replace />;
   }
 
   return (
-    <div className="tesla-dark min-h-screen tesla-scrollbar">
-      {/* Tesla-Style Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-tesla-bg-primary via-tesla-bg-secondary to-tesla-bg-primary">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.05),transparent_50%)]"></div>
-      </div>
-
-      <div className="relative z-10">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <header className="tesla-glass-card mx-4 mt-4 mb-8">
-          <div className="container mx-auto px-6 py-6">
-            <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
+            <p className="text-blue-200">Welcome back, {user.email}</p>
+          </div>
+          <Button
+            onClick={handleSignOut}
+            variant="outline"
+            className="border-blue-400 text-blue-200 hover:bg-blue-800 hover:text-white"
+          >
+            Sign Out
+          </Button>
+        </div>
+
+        {/* User Info Card */}
+        <Card className="mb-8 bg-white/10 backdrop-blur-md border-blue-400/30">
+          <CardHeader>
+            <CardTitle className="text-white">Account Information</CardTitle>
+            <CardDescription className="text-blue-200">
+              Your account details and session information
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <h1 className="tesla-h2 mb-2">Dashboard</h1>
-                <p className="tesla-body text-tesla-text-secondary">
-                  Welcome back, {user.email}
-                </p>
+                <Label className="text-blue-200 text-sm font-medium">Email</Label>
+                <p className="text-white mt-1">{user.email}</p>
               </div>
-              <div className="flex gap-4">
-                <Button
-                  onClick={() => navigate('/')}
-                  variant="outline"
-                  className="border-tesla-blue text-tesla-blue hover:bg-tesla-blue hover:text-white"
-                >
-                  Home
-                </Button>
-                <Button
-                  onClick={handleSignOut}
-                  variant="outline"
-                  className="border-tesla-warning text-tesla-warning hover:bg-tesla-warning hover:text-white"
-                >
-                  Sign Out
-                </Button>
+              <div>
+                <Label className="text-blue-200 text-sm font-medium">User ID</Label>
+                <p className="text-white mt-1 font-mono text-sm">{user.id}</p>
               </div>
             </div>
-          </div>
-        </header>
+          </CardContent>
+        </Card>
 
-        {/* Main Content */}
-        <main className="container mx-auto px-4 pb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Projects Card */}
-            <Card className="tesla-glass-card border-tesla-surface">
-              <CardHeader>
-                <CardTitle className="tesla-h3">My Projects</CardTitle>
-                <CardDescription className="tesla-small text-tesla-text-muted">
-                  Manage your TPO roof projects
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="tesla-body text-tesla-text-secondary mb-4">
-                    No projects yet
-                  </p>
-                  <Button
-                    onClick={() => navigate('/')}
-                    className="bg-tesla-blue hover:bg-tesla-blue-light"
+        {/* Projects Section */}
+        <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+          <CardHeader>
+            <CardTitle className="text-white">Your Projects</CardTitle>
+            <CardDescription className="text-blue-200">
+              SOW projects associated with your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingProjects ? (
+              <div className="text-center py-8">
+                <div className="text-blue-200">Loading projects...</div>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-blue-200 mb-4">No projects found</div>
+                <p className="text-sm text-blue-300">
+                  Create your first SOW project to get started
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {projects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="p-4 bg-white/5 rounded-lg border border-blue-400/20"
                   >
-                    Create First Project
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent SOWs */}
-            <Card className="tesla-glass-card border-tesla-surface">
-              <CardHeader>
-                <CardTitle className="tesla-h3">Recent SOWs</CardTitle>
-                <CardDescription className="tesla-small text-tesla-text-muted">
-                  Your latest generated documents
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="tesla-body text-tesla-text-secondary">
-                    No SOWs generated yet
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Account Info */}
-            <Card className="tesla-glass-card border-tesla-surface">
-              <CardHeader>
-                <CardTitle className="tesla-h3">Account Info</CardTitle>
-                <CardDescription className="tesla-small text-tesla-text-muted">
-                  Your account details
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <Label className="tesla-small text-tesla-text-muted">Email</Label>
-                    <p className="tesla-body">{user.email}</p>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-white font-semibold">{project.project_name}</h3>
+                      <span className="text-xs text-blue-300">
+                        {new Date(project.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-blue-200 text-sm mb-2">{project.address}</p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-300">Square Footage:</span>
+                        <span className="text-white ml-2">{project.square_footage?.toLocaleString() || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-300">Project Type:</span>
+                        <span className="text-white ml-2 capitalize">{project.project_type || 'N/A'}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="tesla-small text-tesla-text-muted">Member Since</Label>
-                    <p className="tesla-body">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
