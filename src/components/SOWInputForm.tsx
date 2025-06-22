@@ -11,7 +11,8 @@ import { BuildingSpecsSection } from './sections/BuildingSpecsSection';
 import { MembraneOptionsSection } from './sections/MembraneOptionsSection';
 import { InsulationSection } from './sections/InsulationSection';
 import { RoofFeaturesSection } from './sections/RoofFeaturesSection';
-import { generateSOW, checkHealth, SOWPayload, SOWResponse } from '@/lib/api';
+import { EngineeringSummaryPanel } from './EngineeringSummaryPanel';
+import { generateSOW, checkHealth, SOWPayload, SOWResponse, EngineeringSummaryData } from '@/lib/api';
 
 export const SOWInputForm = () => {
   const { toast } = useToast();
@@ -21,6 +22,10 @@ export const SOWInputForm = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [lastPayload, setLastPayload] = useState<SOWPayload | null>(null);
   const [backendStatus, setBackendStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown');
+  
+  // NEW: Engineering Summary State
+  const [engineeringSummary, setEngineeringSummary] = useState<EngineeringSummaryData | null>(null);
+  const [showEngineeringSummary, setShowEngineeringSummary] = useState(false);
   
   const [formData, setFormData] = useState({
     projectName: '',
@@ -152,6 +157,8 @@ export const SOWInputForm = () => {
     setIsGenerating(true);
     setProgress(0);
     setGeneratedFile(null);
+    setEngineeringSummary(null);
+    setShowEngineeringSummary(false);
 
     const progressInterval = setInterval(() => {
       setProgress(prev => Math.min(prev + 10, 90));
@@ -165,6 +172,13 @@ export const SOWInputForm = () => {
       
       setGeneratedFile(result);
       setBackendStatus('connected');
+      
+      // NEW: Extract engineering summary from response
+      if (result.metadata?.engineeringSummary) {
+        setEngineeringSummary(result.metadata.engineeringSummary);
+        setShowEngineeringSummary(false); // Start collapsed
+      }
+      
       toast({
         title: "SOW Generated Successfully!",
         description: `PDF generated in ${result.generationTime}ms`,
@@ -510,6 +524,15 @@ export const SOWInputForm = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* NEW: Engineering Summary Panel */}
+      {engineeringSummary && (
+        <EngineeringSummaryPanel
+          data={engineeringSummary}
+          isOpen={showEngineeringSummary}
+          onToggle={() => setShowEngineeringSummary(!showEngineeringSummary)}
+        />
       )}
     </div>
   );
