@@ -12,6 +12,7 @@ import { InsulationSection } from './sections/InsulationSection';
 import { RoofFeaturesSection } from './sections/RoofFeaturesSection';
 import { EngineeringSummaryPanel } from './EngineeringSummaryPanel';
 import { DocumentUploadSection } from './DocumentUploadSection';
+import { SOWReviewPanel } from './SOWReviewPanel';
 import { DevModePanel } from './DevModePanel';
 import { generateSOW, generateSOWWithDebug, checkHealth, SOWPayload, SOWResponse } from '@/lib/api';
 import { EngineeringSummaryData, SelfHealingAction, SectionAnalysis } from '@/types/engineering';
@@ -32,6 +33,7 @@ export const SOWInputForm = () => {
   const [selfHealingActions, setSelfHealingActions] = useState<SelfHealingAction[]>([]);
   const [sectionAnalysis, setSectionAnalysis] = useState<SectionAnalysis | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [showSOWReview, setShowSOWReview] = useState(false);
   
   // Dev Mode
   const [isDevMode, setIsDevMode] = useState(() => {
@@ -232,6 +234,7 @@ export const SOWInputForm = () => {
     setSelfHealingActions([]);
     setSectionAnalysis(null);
     setGenerationError(null);
+    setShowSOWReview(false);
 
     const progressInterval = setInterval(() => {
       setProgress(prev => Math.min(prev + 10, 90));
@@ -266,6 +269,9 @@ export const SOWInputForm = () => {
         setShowEngineeringSummary(false); // Start collapsed
       }
       
+      // Show the SOW Review panel after successful generation
+      setShowSOWReview(true);
+      
       toast({
         title: "SOW Generated Successfully!",
         description: `PDF generated in ${result.generationTime}ms${debugMode ? ' with debug data' : ''}`,
@@ -281,6 +287,9 @@ export const SOWInputForm = () => {
         success: false,
         error: errorMessage
       });
+      
+      // Show the SOW Review panel even for errors (to display error handling)
+      setShowSOWReview(true);
       
       toast({
         title: "Generation Failed",
@@ -325,7 +334,7 @@ export const SOWInputForm = () => {
                   </div>
                   <div>
                     <h3 className="tesla-h3">Project Information & Site Details</h3>
-                    <p className="tesla-small text-tesla-text-muted">Basic project information and file upload</p>
+                    <p className="tesla-small text-tesla-text-muted">Basic project information and document upload for data extraction</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -342,6 +351,30 @@ export const SOWInputForm = () => {
               <ProjectInfoSection data={formData} onChange={updateFormData} />
             </div>
           </CollapsibleContent>
+        </Collapsible>
+
+        {/* Additional Input Upload Section */}
+        <Collapsible open={true}>
+          <div className="tesla-section-header">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-tesla-blue" />
+                </div>
+                <div>
+                  <h3 className="tesla-h3">Additional Document Upload</h3>
+                  <p className="tesla-small text-tesla-text-muted">Upload takeoff forms, NOAs, or plans for data extraction</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="tesla-glass-card mt-4 p-6">
+            <DocumentUploadSection
+              onFileUpload={handleDocumentUpload}
+              uploadedFile={formData.documentAttachment ? { filename: formData.documentAttachment.filename, type: formData.documentAttachment.type } : null}
+              onClearFile={() => updateFormData({ documentAttachment: undefined })}
+            />
+          </div>
         </Collapsible>
 
         {/* Building Specifications Section */}
@@ -444,35 +477,6 @@ export const SOWInputForm = () => {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Enhanced Document Upload Section */}
-        <Collapsible open={true}>
-          <div className="tesla-section-header">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-tesla-blue" />
-                </div>
-                <div>
-                  <h3 className="tesla-h3">Document Upload & Analysis</h3>
-                  <p className="tesla-small text-tesla-text-muted">Upload documents and view generation results</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="tesla-glass-card mt-4 p-6">
-            <DocumentUploadSection
-              onFileUpload={handleDocumentUpload}
-              selfHealingActions={selfHealingActions}
-              sectionAnalysis={sectionAnalysis}
-              generatedPDFUrl={generatedFile?.outputPath || generatedFile?.fileUrl}
-              engineeringSummary={engineeringSummary}
-              error={generationError}
-              onRetryGeneration={handleRetryGeneration}
-              onDownloadPDF={handleDownload}
-            />
-          </div>
-        </Collapsible>
-
         {/* Enhanced Generation Panel */}
         <div className="tesla-glass-card p-8">
           <div className="flex flex-col gap-6">
@@ -564,6 +568,21 @@ export const SOWInputForm = () => {
         </div>
       </form>
 
+      {/* SOW Review Panel - Shows AFTER generation */}
+      {showSOWReview && (
+        <SOWReviewPanel
+          generatedSOW={generatedFile}
+          selfHealingActions={selfHealingActions}
+          sectionAnalysis={sectionAnalysis}
+          engineeringSummary={engineeringSummary}
+          error={generationError}
+          onRetryGeneration={handleRetryGeneration}
+          onDownloadPDF={handleDownload}
+          isOpen={showSOWReview}
+          onToggle={() => setShowSOWReview(!showSOWReview)}
+        />
+      )}
+
       {/* Dev Mode Panel */}
       <DevModePanel
         isDevMode={isDevMode}
@@ -582,95 +601,7 @@ export const SOWInputForm = () => {
         </div>
       )}
 
-      {/* Results Section */}
-      {generatedFile && (
-        <div className={`tesla-glass-card p-8 ${generatedFile.success ? 'border-tesla-success' : 'border-tesla-error'}`}>
-          {generatedFile.success ? (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 tesla-glass-card rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-tesla-success" />
-                </div>
-                <div>
-                  <h3 className="tesla-h3 text-tesla-success">SOW Generated Successfully!</h3>
-                  <p className="tesla-body text-tesla-text-secondary">Your professional SOW is ready for download</p>
-                </div>
-              </div>
-              
-              {generatedFile.metadata && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="tesla-glass-card p-6">
-                    <h4 className="tesla-h3 mb-4">Generation Details</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="tesla-body text-tesla-text-secondary">Template:</span>
-                        <span className="tesla-body font-medium">{generatedFile.metadata.template}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="tesla-body text-tesla-text-secondary">Wind Pressure:</span>
-                        <span className="tesla-body font-medium">{generatedFile.metadata.windPressure}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="tesla-body text-tesla-text-secondary">Generation Time:</span>
-                        <span className="tesla-body font-medium">{generatedFile.generationTime}ms</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {generatedFile.metadata.jurisdiction && (
-                    <div className="tesla-glass-card p-6">
-                      <h4 className="tesla-h3 mb-4 flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        Jurisdiction Information
-                      </h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="tesla-body text-tesla-text-secondary">Location:</span>
-                          <span className="tesla-body font-medium">{generatedFile.metadata.jurisdiction.county}, {generatedFile.metadata.jurisdiction.state}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="tesla-body text-tesla-text-secondary">Code Cycle:</span>
-                          <span className="tesla-body font-medium">{generatedFile.metadata.jurisdiction.codeCycle}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="tesla-body text-tesla-text-secondary">HVHZ:</span>
-                          <span className={`tesla-body font-medium ${generatedFile.metadata.jurisdiction.hvhz ? 'text-tesla-error' : 'text-tesla-success'}`}>
-                            {generatedFile.metadata.jurisdiction.hvhz ? 'Yes' : 'No'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="tesla-body font-medium">{generatedFile.filename}</h4>
-                  <p className="tesla-small text-tesla-text-muted">{generatedFile.fileSize} KB</p>
-                </div>
-                <button 
-                  onClick={handleDownload}
-                  className="tesla-btn bg-tesla-success hover:bg-tesla-success/80"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-6 w-6 text-tesla-error" />
-                <h3 className="tesla-h3 text-tesla-error">Generation Failed</h3>
-              </div>
-              <p className="tesla-body text-tesla-text-secondary">{generatedFile.error}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* NEW: Engineering Summary Panel */}
+      {/* Legacy Engineering Summary Panel */}
       {engineeringSummary && (
         <EngineeringSummaryPanel
           data={engineeringSummary}
