@@ -1,0 +1,63 @@
+# **SOW TEMPLATE T4 - HVHZ RECOVER SYSTEM**
+
+## High Velocity Hurricane Zone Project
+This project involves a **{{selectedSystem}}** HVHZ-compliant roof recover system installed over the existing roof assembly at {{projectAddress}}. This system has been specifically engineered to meet High Velocity Hurricane Zone requirements per {{jurisdictionNotes}}.
+
+## HVHZ Compliance Requirements
+- **NOA/ESR Required**: {{noaRequired}}
+- **Enhanced Wind Resistance**: Designed for {{windSpeed}} mph basic wind speed
+- **Special Inspection**: Required throughout installation
+- **{{codeCycle}}** compliance with HVHZ provisions
+
+## Scope of Work
+The scope of work includes:
+- Installation of NOA-approved {{selectedSystem}} membrane system
+- Enhanced {{fasteningSpecs}} attachment patterns exceeding standard requirements
+- HVHZ-compliant flashing and accessory details
+- Special inspection and documentation throughout project
+- Compliance with {{asceVersion}} enhanced wind load requirements
+
+## Template Selection Rationale
+{{rationale}}
+
+## Enhanced Wind Load Requirements (HVHZ)
+**HVHZ Wind Analysis**: {{windCalculationSummary}}
+
+Enhanced zone pressure requirements:
+{{zonePressureDetails}}
+
+**Critical Design Factors**:
+- Enhanced safety factors applied
+- Special exposure considerations
+- Coastal wind characteristics included
+
+## Enhanced Fastening Specifications
+**Field Area**: {{fieldSpacing}} (Enhanced for HVHZ)
+**Perimeter Area**: {{perimeterSpacing}} (Enhanced for HVHZ)  
+**Corner Area**: {{cornerSpacing}} (Enhanced for HVHZ)
+**Fastener Type**: {{fastenerType}} (HVHZ Approved)
+**Penetration Depth**: {{penetrationDepth}}
+
+## HVHZ Special Requirements
+- All materials must have valid NOA/ESR approvals
+- Installation must follow NOA specifications exactly
+- Special inspection required at key milestones
+- Enhanced quality control documentation
+- {{specialRequirements}}
+
+## System Compliance & Approvals
+{{complianceNotes}}
+
+**NOA/ESR Documentation**: All system components covered under valid approvals for HVHZ applications.
+
+## Quality Assurance - HVHZ Enhanced
+- Special inspector required throughout installation
+- NOA compliance verification at each phase
+- Enhanced documentation and reporting
+- Final inspection with HVHZ compliance certification
+
+---
+*Template: T4 - HVHZ Recover System*  
+*Generated: {{generationTimestamp}}*  
+*HVHZ Compliance: Required*  
+*Version: {{templateVersion}}*
