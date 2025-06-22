@@ -17,12 +17,32 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
   try {
     console.log('🧪 Enhanced Debug SOW - Phase 3 Section Engine & Self-Healing with File Support');
     
-    // **FIXED: Process uploaded file if present**
-    let enhancedInputs = req.body || {};
+    // **FIXED: Handle both FormData and JSON requests**
+    let enhancedInputs: any = {};
     
+    // Parse project data from FormData or body
+    if (req.body && req.body.data) {
+      // FormData request - parse JSON data
+      try {
+        enhancedInputs = JSON.parse(req.body.data);
+        console.log('📦 Parsed FormData project data:', enhancedInputs);
+      } catch (error) {
+        console.error('❌ Error parsing FormData JSON:', error);
+        enhancedInputs = req.body || {};
+      }
+    } else {
+      // Regular JSON request
+      enhancedInputs = req.body || {};
+    }
+
     // Handle file upload and processing
     if (req.file) {
       console.log('🗂️ Processing uploaded file:', req.file.originalname);
+      console.log('📁 File details:', {
+        filename: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      });
       
       const takeoffFile: TakeoffFile = {
         filename: req.file.originalname,
@@ -66,6 +86,7 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
         console.log('⚠️ Takeoff parsing failed, using provided inputs:', error);
         enhancedInputs.fileProcessingError = error instanceof Error ? error.message : 'Unknown parsing error';
         enhancedInputs.fileProcessed = false;
+        enhancedInputs.uploadedFileName = req.file.originalname;
       }
     } else {
       console.log('📝 No file uploaded, using provided inputs only');
