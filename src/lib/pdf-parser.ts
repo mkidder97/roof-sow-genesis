@@ -1,3 +1,4 @@
+
 // Enhanced PDF parsing service for comprehensive roofing project data extraction
 // Supports takeoff quantities, roof features, and detailed specifications
 
@@ -30,7 +31,7 @@ interface ExtractedData {
   hasExistingInsulation?: boolean;
   existingInsulationCondition?: string;
   
-  // Roof features and quantities (NEW)
+  // Roof features and quantities
   numberOfDrains?: number;
   drainTypes?: string[];
   numberOfPenetrations?: number;
@@ -45,7 +46,7 @@ interface ExtractedData {
   parapetHeight?: number;
   roofConfiguration?: string;
   
-  // Takeoff quantities (NEW)
+  // Takeoff quantities
   linearFootFlashing?: number;
   linearFootEdgeMetal?: number;
   linearFootGutter?: number;
@@ -318,16 +319,17 @@ export class PDFParsingService {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const arrayBuffer = e.target?.result as ArrayBuffer;
           
-          // For now, we'll simulate PDF text extraction
-          // In a real implementation, you'd use pdf-parse or pdfjs-dist here
+          // In a real implementation, you would use pdf-parse or pdfjs-dist here
+          // For now, we'll attempt to extract text or return empty string
           
-          // This is a placeholder that would be replaced with actual PDF parsing
-          const simulatedText = this.simulatePDFTextExtraction(file.name);
-          resolve(simulatedText);
+          // Check if the file actually contains readable text
+          // This is a placeholder - real PDF parsing would happen here
+          const text = await this.attemptTextExtraction(arrayBuffer);
+          resolve(text);
           
         } catch (error) {
           reject(error);
@@ -340,61 +342,14 @@ export class PDFParsingService {
   }
 
   /**
-   * Enhanced text extraction simulation with more comprehensive data
+   * Attempt to extract text from PDF ArrayBuffer
+   * This is a placeholder for actual PDF parsing implementation
    */
-  private static simulatePDFTextExtraction(filename: string): string {
-    // Enhanced simulation with takeoff quantities and detailed specifications
-    return `
-      COMMERCIAL ROOFING TAKEOFF SHEET
-      
-      Project Name: ${filename.replace('.pdf', '').replace(/[-_]/g, ' ')}
-      Address: 1505 Wallace Rd, Carrollton, TX 75006
-      Company: ABC Roofing Contractors
-      
-      Building Specifications:
-      Square Footage: 154,400 sf
-      Building Height: 30 feet
-      Dimensions: 400 ft x 386 ft
-      Elevation: 550 feet
-      Roof Configuration: Multi-Level
-      
-      Roof System:
-      Membrane Thickness: 60 mil
-      Membrane Color: White
-      Deck Type: Steel
-      Roof Slope: 1/4" per foot (2%)
-      
-      Insulation System:
-      Insulation Type: Polyisocyanurate
-      Insulation Thickness: 3.0 inches
-      R-Value: R-18
-      Cover Board Type: Gypsum
-      Cover Board Thickness: 5/8 inch
-      Existing Insulation: Remove existing damaged insulation
-      Existing Insulation Condition: Poor
-      
-      Roof Features & Quantities:
-      Roof Drains: 8 qty
-      Drain Types: Roof Drain, Scupper, Overflow Drain
-      Penetrations: 15 qty
-      Penetration Types: HVAC, Plumbing Vent, Electrical Conduit, Gas Line
-      Skylights: 3 qty
-      Roof Hatches: 2 qty
-      HVAC Units: 5 RTUs
-      Walkway Pads: Required for equipment access
-      Gutter Type: Internal
-      Downspouts: 6 qty
-      Expansion Joints: 4 qty
-      Parapet Height: 42 inches
-      
-      Linear Takeoff:
-      Flashing: 2,450 linear feet
-      Edge Metal: 1,680 linear feet
-      Gutters: 320 linear feet
-      Walkway Pads: 850 square feet
-      
-      Project Type: Tearoff and Replace
-    `;
+  private static async attemptTextExtraction(arrayBuffer: ArrayBuffer): Promise<string> {
+    // In a real implementation, this would use pdf-parse or pdfjs-dist
+    // For now, return empty string to indicate no text extracted
+    console.log('PDF parsing not fully implemented - would use pdf-parse library here');
+    return '';
   }
 
   /**
@@ -775,7 +730,7 @@ export class PDFParsingService {
         label: 'Drain Types',
         value: extractedData.drainTypes.join(', '),
         confidence: extractedData.confidence,
-        willPopulate: extractedData.confidence >= minConfidence,
+        willPopulate: extractedData.confidence >= minConf idence,
       });
     }
 
