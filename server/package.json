@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch index.ts",
+    "dev:enhanced": "tsx watch index-enhanced.ts",
+    "start:enhanced": "tsx index-enhanced.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
