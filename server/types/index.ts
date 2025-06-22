@@ -56,6 +56,26 @@ export interface EngineeringSummaryData {
     penetrationDepth: string;
     notes: string;
   };
+  // NEW: Section Analysis for transparency
+  sectionAnalysis?: {
+    includedSections: Array<{
+      id: string;
+      title: string;
+      rationale: string;
+    }>;
+    excludedSections: Array<{
+      id: string;
+      title: string;
+      rationale: string;
+    }>;
+    reasoningMap: Record<string, string>;
+    selfHealingActions?: Array<{
+      action: string;
+      reason: string;
+      confidence: number;
+    }>;
+    confidenceScore?: number;
+  };
 }
 
 export interface SOWResponse {
@@ -134,6 +154,49 @@ export interface TemplateSelectionResult {
   template: string;
   rationale: string;
   attachmentMethod: string;
+}
+
+// NEW: Section Engine Types
+export interface SectionOutput {
+  id: string;
+  title: string;
+  included: boolean;
+  rationale: string;
+  content?: string;
+  priority?: number;
+  dependencies?: string[];
+  warnings?: string[];
+}
+
+export interface SectionAnalysis {
+  includedSections: SectionOutput[];
+  excludedSections: SectionOutput[];
+  reasoningMap: Record<string, string>;
+  selfHealingActions: Array<{
+    action: string;
+    reason: string;
+    confidence: number;
+  }>;
+  confidenceScore: number;
+}
+
+// NEW: Self-Healing Types
+export interface SelfHealingAction {
+  type: 'missing_field' | 'low_confidence' | 'fallback_selection' | 'auto_correction';
+  field: string;
+  originalValue?: any;
+  correctedValue: any;
+  reason: string;
+  confidence: number;
+  impact: 'low' | 'medium' | 'high';
+}
+
+export interface SelfHealingReport {
+  totalActions: number;
+  highImpactActions: SelfHealingAction[];
+  recommendations: string[];
+  overallConfidence: number;
+  requiresUserReview: boolean;
 }
 
 // NEW: Comprehensive Jurisdiction Analysis Types
