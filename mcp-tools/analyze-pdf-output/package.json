@@ -1,0 +1,22 @@
+{
+  "name": "analyze-pdf-output",
+  "version": "1.0.0",
+  "description": "Puppeteer-based PDF analyzer for self-healing SOW generator",
+  "main": "index.ts",
+  "scripts": {
+    "start": "tsx index.ts",
+    "build": "tsc",
+    "test": "tsx index.ts ../../../output/test.pdf ../../../input_versions/test.json"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "bin": {
+    "analyze-pdf": "./index.ts"
+  }
+}
