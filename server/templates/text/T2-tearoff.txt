@@ -1,0 +1,66 @@
+# **SOW TEMPLATE T2 - TEAR-OFF SYSTEM**
+
+## Complete Tear-Off Project
+This project involves complete tear-off and replacement with a **{{selectedSystem}}** roof system at {{projectAddress}}. The new system has been engineered to meet {{asceVersion}} wind load requirements and {{codeCycle}} compliance.
+
+## Project Scope Overview
+- **Complete Removal**: All existing roof materials to structural deck
+- **New System Installation**: {{selectedSystem}} with {{fasteningSpecs}} specifications
+- **Enhanced Performance**: Designed to exceed {{zonePressures}} wind requirements
+- **Code Compliance**: {{codeCycle}} and applicable building codes
+
+## Scope of Work
+The scope of work includes:
+- Complete removal of existing roof system to structural deck
+- Deck inspection and preparation as required
+- Installation of new {{selectedSystem}} membrane system
+- {{fasteningSpecs}} attachment patterns to meet {{zonePressures}} requirements
+- New flashing and accessory installation throughout
+- Compliance with {{asceVersion}} wind load calculations
+
+## Template Selection Rationale
+{{rationale}}
+
+## Wind Load Requirements
+Wind pressures calculated using {{asceVersion}} methodology:
+{{windCalculationSummary}}
+
+Tear-off design pressures:
+{{zonePressureDetails}}
+
+## New System Fastening Specifications
+**Field Area**: {{fieldSpacing}} (New installation)
+**Perimeter Area**: {{perimeterSpacing}} (New installation)
+**Corner Area**: {{cornerSpacing}} (New installation)
+**Fastener Type**: {{fastenerType}} (New system)
+**Penetration Depth**: {{penetrationDepth}}
+
+## Tear-Off Special Considerations
+- Weather protection during tear-off phases
+- Coordinated utility disconnections and reconnections
+- Debris removal and disposal procedures
+- Phased installation to minimize building exposure
+- {{specialRequirements}}
+
+## New System Benefits
+- Complete warranty coverage for entire roof system
+- Enhanced energy efficiency with new insulation
+- Improved drainage and water management
+- Updated compliance with current building codes
+- Long-term performance reliability
+
+## System Compliance
+{{complianceNotes}}
+
+## Quality Assurance - New Installation
+- Complete inspection of structural deck condition
+- New system installation per manufacturer specifications
+- Enhanced quality control for all new components
+- Final inspection with complete system verification
+- Full warranty coverage for new installation
+
+---
+*Template: T2 - Complete Tear-Off and Replacement*  
+*Generated: {{generationTimestamp}}*  
+*System: New Installation*  
+*Version: {{templateVersion}}*
