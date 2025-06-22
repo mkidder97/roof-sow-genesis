@@ -49,6 +49,9 @@ app.get('/health', healthCheck);
 app.post('/api/generate-sow', upload.single('file'), generateSOWWithSummary);
 app.post('/api/debug-sow', debugSOW);
 
+// **FIXED: Added file upload support to debug-sow endpoint**
+app.post('/api/sow/debug-sow', upload.single('file'), debugSOWEnhanced);
+
 // Phase 2: Enhanced explainability endpoints
 app.post('/api/debug-sow-enhanced', debugSOWEnhanced);
 app.post('/api/debug-engine-trace', debugEngineTrace);
@@ -98,6 +101,7 @@ app.get('/api/status', (req, res) => {
     
     // Phase 2: Enhanced endpoints
     phase2Endpoints: {
+      'POST /api/sow/debug-sow': '**MAIN ENDPOINT** - Enhanced debug with file upload support',
       'POST /api/debug-sow-enhanced': 'Enhanced debug without PDF generation - returns engineeringSummary',
       'POST /api/debug-engine-trace': 'Per-engine debug tracing (template, wind, fastening, takeoff)',
       'POST /api/takeoff-file-process': 'Process uploaded takeoff files (PDF/CSV/Excel)'
@@ -172,10 +176,11 @@ app.get('/api/docs', (req, res) => {
     phase2Features: {
       title: 'Phase 2: Advanced Engineering Intelligence & Traceability',
       endpoints: {
-        'POST /api/debug-sow-enhanced': {
-          description: 'Enhanced debug endpoint without PDF generation',
-          body: 'Optional project overrides for testing',
+        'POST /api/sow/debug-sow': {
+          description: '**MAIN ENDPOINT** - Enhanced debug with file upload support',
+          body: 'FormData with file upload + project data as JSON string',
           response: 'engineeringSummary block with full explainability and debug info',
+          fileSupport: 'PDF, CSV, Excel takeoff forms',
           example: {
             engineeringSummary: {
               templateSelection: { templateName: 'T4 - HVHZ Recover', rationale: 'HVHZ location detected' },
@@ -282,10 +287,12 @@ app.listen(PORT, () => {
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
   console.log(`🔧 Main API: http://localhost:${PORT}/api/generate-sow`);
   console.log(`🧪 Debug API: http://localhost:${PORT}/api/debug-sow`);
+  console.log(`🎯 **MAIN API**: http://localhost:${PORT}/api/sow/debug-sow`);
   console.log(`📊 Status: http://localhost:${PORT}/api/status`);
   console.log(`📖 Documentation: http://localhost:${PORT}/api/docs`);
   console.log('');
   console.log('🆕 PHASE 2 - ADVANCED ENGINEERING INTELLIGENCE:');
+  console.log('   🎯 POST /api/sow/debug-sow - **MAIN ENDPOINT** with file upload');
   console.log('   🧪 POST /api/debug-sow-enhanced - Enhanced debug without PDF');
   console.log('   🔍 POST /api/debug-engine-trace - Per-engine debugging');
   console.log('   📊 Enhanced takeoff file processing (PDF/CSV/Excel)');
