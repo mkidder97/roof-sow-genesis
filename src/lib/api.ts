@@ -52,14 +52,30 @@ export interface SOWResponse {
   };
   uploadedFiles?: string[]; // For future OCR use
   error?: string;
+  
+  // **NEW: File processing support**
+  fileProcessed?: boolean;
+  fileProcessingSummary?: {
+    filename: string;
+    extractedData?: any;
+    processingSuccess: boolean;
+    error?: string;
+  };
 }
 
-// NEW: Enhanced SOW generation with debug support
+// **FIXED: Enhanced SOW generation with file upload support**
 export async function generateSOWWithDebug(payload: SOWPayload): Promise<SOWResponse> {
   try {
     console.log('🚀 Sending debug SOW request to:', `${API_BASE_URL}/api/sow/debug-sow`);
     console.log('📦 Payload:', payload);
     
+    // **NEW: Check if we have a file to upload**
+    if (payload.documentAttachment) {
+      console.log('📁 File detected, using FormData upload...');
+      return await sendWithFormData(payload, '/api/sow/debug-sow');
+    }
+    
+    // **EXISTING: JSON for non-file requests**
     const response = await fetch(`${API_BASE_URL}/api/sow/debug-sow`, {
       method: 'POST',
       headers: {
@@ -98,6 +114,12 @@ export async function generateSOW(payload: SOWPayload): Promise<SOWResponse> {
     console.log('🚀 Sending SOW request to:', `${API_BASE_URL}/api/generate-sow`);
     console.log('📦 Payload:', payload);
     
+    // **NEW: Check if we have a file to upload**
+    if (payload.documentAttachment) {
+      console.log('📁 File detected, using FormData upload...');
+      return await sendWithFormData(payload, '/api/generate-sow');
+    }
+    
     const response = await fetch(`${API_BASE_URL}/api/generate-sow`, {
       method: 'POST',
       headers: {
@@ -129,6 +151,56 @@ export async function generateSOW(payload: SOWPayload): Promise<SOWResponse> {
     
     throw error;
   }
+}
+
+// **NEW: Helper function to send requests with file uploads**
+async function sendWithFormData(payload: SOWPayload, endpoint: string): Promise<SOWResponse> {
+  const formData = new FormData();
+  
+  // Convert base64 to blob and add file
+  if (payload.documentAttachment) {
+    const { filename, type, data } = payload.documentAttachment;
+    
+    // Convert base64 to blob
+    const byteCharacters = atob(data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type });
+    
+    // Add file to FormData
+    formData.append('file', blob, filename);
+    console.log(`📁 File added to FormData: ${filename} (${type})`);
+  }
+  
+  // Add project data as JSON string (excluding file attachment)
+  const projectData = { ...payload };
+  delete projectData.documentAttachment;
+  formData.append('data', JSON.stringify(projectData));
+  
+  console.log('📤 Sending FormData request...');
+  
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    body: formData, // No Content-Type header - let browser set it with boundary
+  });
+
+  const result: SOWResponse = await response.json();
+  
+  console.log('📡 FormData response status:', response.status);
+  console.log('📄 FormData response data:', result);
+
+  if (!response.ok) {
+    throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  if (!result.success) {
+    throw new Error(result.error || 'SOW generation with file failed');
+  }
+
+  return result;
 }
 
 // Health check function for debugging
