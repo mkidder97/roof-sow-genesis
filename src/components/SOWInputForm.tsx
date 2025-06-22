@@ -49,12 +49,12 @@ export const SOWInputForm = () => {
     length: 0,
     width: 0,
     projectType: 'recover',
-    membraneThickness: '60',
-    membraneColor: 'White',
+    membraneThickness: '60', // Ensure this is never empty
+    membraneColor: 'White', // Ensure this is never empty
     // Enhanced fields
     elevation: 0,
-    deckType: 'Steel',
-    exposureCategory: '',
+    deckType: 'Steel', // Ensure this is never empty
+    exposureCategory: 'C', // Provide default value instead of empty string
     roofSlope: 0,
     documentAttachment: undefined as {
       filename: string;
@@ -62,13 +62,13 @@ export const SOWInputForm = () => {
       data: string;
     } | undefined,
     // New insulation fields
-    insulationType: 'Polyisocyanurate',
+    insulationType: 'Polyisocyanurate', // Ensure this is never empty
     insulationThickness: 2.0,
     insulationRValue: 12.0,
-    coverBoardType: 'Gypsum',
+    coverBoardType: 'Gypsum', // Ensure this is never empty
     coverBoardThickness: 0.625,
     hasExistingInsulation: false,
-    existingInsulationCondition: 'good',
+    existingInsulationCondition: 'good', // Ensure this is never empty
     // New roof features fields
     numberOfDrains: 0,
     drainTypes: [] as string[],
@@ -78,11 +78,11 @@ export const SOWInputForm = () => {
     roofHatches: 0,
     hvacUnits: 0,
     walkwayPadRequested: false,
-    gutterType: 'None',
+    gutterType: 'None', // Ensure this is never empty
     downspouts: 0,
     expansionJoints: 0,
     parapetHeight: 0,
-    roofConfiguration: 'Single Level',
+    roofConfiguration: 'Single Level', // Ensure this is never empty
   });
 
   const [openSections, setOpenSections] = useState({

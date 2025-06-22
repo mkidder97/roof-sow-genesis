@@ -12,6 +12,10 @@ interface MembraneOptionsProps {
 }
 
 export const MembraneOptionsSection: React.FC<MembraneOptionsProps> = ({ data, onChange }) => {
+  // Ensure we have default values to prevent empty strings
+  const membraneThickness = data.membraneThickness || '60';
+  const membraneColor = data.membraneColor || 'White';
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -19,9 +23,16 @@ export const MembraneOptionsSection: React.FC<MembraneOptionsProps> = ({ data, o
           <Label className="text-sm font-medium text-slate-700">
             Membrane Thickness (mil)
           </Label>
-          <Select value={data.membraneThickness} onValueChange={(value) => onChange({ membraneThickness: value })}>
+          <Select 
+            value={membraneThickness} 
+            onValueChange={(value) => {
+              if (value && value.trim() !== '') {
+                onChange({ membraneThickness: value });
+              }
+            }}
+          >
             <SelectTrigger className="mt-1">
-              <SelectValue />
+              <SelectValue placeholder="Select thickness" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="45">45 mil</SelectItem>
@@ -36,9 +47,16 @@ export const MembraneOptionsSection: React.FC<MembraneOptionsProps> = ({ data, o
           <Label className="text-sm font-medium text-slate-700">
             Membrane Color
           </Label>
-          <Select value={data.membraneColor} onValueChange={(value) => onChange({ membraneColor: value })}>
+          <Select 
+            value={membraneColor} 
+            onValueChange={(value) => {
+              if (value && value.trim() !== '') {
+                onChange({ membraneColor: value });
+              }
+            }}
+          >
             <SelectTrigger className="mt-1">
-              <SelectValue />
+              <SelectValue placeholder="Select color" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="White">White</SelectItem>
