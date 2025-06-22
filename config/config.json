@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "system": {
+    "name": "roof-sow-genesis",
+    "description": "Self-healing PDF generation system for SOW documents"
+  },
+  "pdf": {
+    "default_font": "Helvetica",
+    "default_font_size": 10,
+    "margin": {
+      "top": 72,
+      "right": 72,
+      "bottom": 72,
+      "left": 72
+    },
+    "page_size": "letter",
+    "orientation": "portrait"
+  },
+  "directories": {
+    "output_dir": "output/",
+    "backup_dir": "backups/",
+    "quarantine_dir": "error-quarantine/",
+    "fix_dir": "fixes/snippets/",
+    "logs_dir": "logs/",
+    "templates_dir": "templates/",
+    "test_fixtures_dir": "tests/fixtures/"
+  },
+  "self_healing": {
+    "max_auto_fixes": 3,
+    "fix_threshold": 0.7,
+    "confidence_threshold": 0.85,
+    "max_regeneration_attempts": 5,
+    "cooldown_period_ms": 5000,
+    "enable_auto_quarantine": true,
+    "enable_auto_backup": true
+  },
+  "claude": {
+    "model": "claude-3-opus-20240229",
+    "max_tokens": 4096,
+    "temperature": 0.1,
+    "use_api": false,
+    "timeout_ms": 30000,
+    "retry_attempts": 3
+  },
+  "testing": {
+    "enable_regression_tests": true,
+    "run_tests_on_fix": true,
+    "layout_comparison_threshold": 0.85,
+    "content_validation_enabled": true,
+    "performance_tracking": true,
+    "max_test_duration_ms": 60000
+  },
+  "database": {
+    "enable_supabase_logging": true,
+    "log_pdf_generations": true,
+    "log_fix_attempts": true,
+    "log_test_results": true,
+    "log_backups": true,
+    "cleanup_old_logs_days": 90
+  },
+  "monitoring": {
+    "enable_performance_metrics": true,
+    "enable_error_tracking": true,
+    "log_level": "info",
+    "max_log_file_size_mb": 10,
+    "max_log_files": 5
+  },
+  "security": {
+    "validate_inputs": true,
+    "sanitize_file_paths": true,
+    "restrict_file_access": true,
+    "enable_rate_limiting": false,
+    "max_requests_per_minute": 60
+  },
+  "features": {
+    "wind_load_calculations": true,
+    "hvhz_support": true,
+    "manufacturer_pattern_scraping": true,
+    "dynamic_code_mapping": true,
+    "auto_jurisdiction_detection": true,
+    "fastener_pattern_validation": true
+  },
+  "development": {
+    "enable_debug_logging": false,
+    "preserve_intermediate_files": false,
+    "enable_hot_reload": false,
+    "mock_external_apis": false,
+    "verbose_error_messages": true
+  },
+  "limits": {
+    "max_file_size_mb": 50,
+    "max_input_complexity": 1000,
+    "max_concurrent_operations": 3,
+    "max_memory_usage_mb": 512,
+    "operation_timeout_ms": 300000
+  }
+}
