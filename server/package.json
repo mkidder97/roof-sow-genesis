@@ -1,7 +1,7 @@
 {
   "name": "roof-sow-backend",
   "version": "1.0.0",
-  "description": "Backend API for SOW Generator with Engineering Summary",
+  "description": "Backend API for SOW Generator with Engineering Summary and Supabase Integration",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch server/index.ts",
@@ -14,7 +14,8 @@
     "cors": "^2.8.5",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
-    "pdfkit": "^0.13.0"
+    "pdfkit": "^0.13.0",
+    "@supabase/supabase-js": "^2.39.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
