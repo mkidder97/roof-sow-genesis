@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, FileText, Download, Bug, CheckCircle, AlertCircle, Wifi, WifiOff, MapPin, Building } from 'lucide-react';
+import { Loader2, FileText, Download, Bug, CheckCircle, AlertCircle, Wifi, WifiOff, MapPin, Zap, Settings, Layers, Wind } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
 import { BuildingSpecsSection } from './sections/BuildingSpecsSection';
 import { MembraneOptionsSection } from './sections/MembraneOptionsSection';
+import { InsulationSection } from './sections/InsulationSection';
+import { RoofFeaturesSection } from './sections/RoofFeaturesSection';
 import { generateSOW, checkHealth, SOWPayload, SOWResponse } from '@/lib/api';
 
 export const SOWInputForm = () => {
@@ -31,7 +33,7 @@ export const SOWInputForm = () => {
     projectType: 'recover',
     membraneThickness: '60',
     membraneColor: 'White',
-    // New fields
+    // Enhanced fields
     elevation: 0,
     deckType: 'Steel',
     exposureCategory: '',
@@ -41,11 +43,35 @@ export const SOWInputForm = () => {
       type: string;
       data: string;
     } | undefined,
+    // New insulation fields
+    insulationType: 'Polyisocyanurate',
+    insulationThickness: 2.0,
+    insulationRValue: 12.0,
+    coverBoardType: 'Gypsum',
+    coverBoardThickness: 0.625,
+    hasExistingInsulation: false,
+    existingInsulationCondition: 'good',
+    // New roof features fields
+    numberOfDrains: 0,
+    drainTypes: [] as string[],
+    numberOfPenetrations: 0,
+    penetrationTypes: [] as string[],
+    skylights: 0,
+    roofHatches: 0,
+    hvacUnits: 0,
+    walkwayPadRequested: false,
+    gutterType: 'None',
+    downspouts: 0,
+    expansionJoints: 0,
+    parapetHeight: 0,
+    roofConfiguration: 'Single Level',
   });
 
   const [openSections, setOpenSections] = useState({
     project: true,
     building: false,
+    insulation: false,
+    features: false,
     membrane: false,
   });
 
@@ -55,6 +81,16 @@ export const SOWInputForm = () => {
 
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const calculateCompleteness = () => {
+    const requiredFields = ['projectName', 'address'];
+    const optionalFields = ['companyName', 'squareFootage', 'buildingHeight'];
+    
+    const completed = requiredFields.filter(field => formData[field as keyof typeof formData]).length +
+                     optionalFields.filter(field => formData[field as keyof typeof formData]).length;
+    
+    return Math.round((completed / (requiredFields.length + optionalFields.length)) * 100);
   };
 
   const validateForm = (): boolean => {
@@ -105,7 +141,6 @@ export const SOWInputForm = () => {
       projectType: formData.projectType,
       membraneThickness: formData.membraneThickness,
       membraneColor: formData.membraneColor,
-      // Include new fields
       deckType: formData.deckType,
       elevation: formData.elevation || undefined,
       exposureCategory: formData.exposureCategory || undefined,
@@ -118,7 +153,6 @@ export const SOWInputForm = () => {
     setProgress(0);
     setGeneratedFile(null);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress(prev => Math.min(prev + 10, 90));
     }, 200);
@@ -158,7 +192,6 @@ export const SOWInputForm = () => {
 
   const handleDownload = () => {
     if (generatedFile?.outputPath) {
-      // Create download link
       const link = document.createElement('a');
       link.href = generatedFile.outputPath;
       link.download = generatedFile.filename || 'sow.pdf';
@@ -173,304 +206,310 @@ export const SOWInputForm = () => {
     }
   };
 
+  const completeness = calculateCompleteness();
+
   return (
-    <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Project Info Section */}
+    <div className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* Project Information Section */}
         <Collapsible open={openSections.project} onOpenChange={() => toggleSection('project')}>
-          <Card className="border-l-4 border-l-blue-500">
+          <div className="tesla-section-header">
             <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-slate-50 transition-colors">
-                <CardTitle className="flex items-center justify-between text-slate-700">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-blue-500" />
-                    Project Information & Site Details
-                  </span>
-                  <span className="text-sm font-normal text-slate-500">
-                    {openSections.project ? 'Click to collapse' : 'Click to expand'}
-                  </span>
-                </CardTitle>
-              </CardHeader>
+              <div className="flex items-center justify-between w-full cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-tesla-blue" />
+                  </div>
+                  <div>
+                    <h3 className="tesla-h3">Project Information & Site Details</h3>
+                    <p className="tesla-small text-tesla-text-muted">Basic project information and file upload</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="tesla-progress-ring" style={{ background: `conic-gradient(var(--tesla-blue) ${completeness * 3.6}deg, var(--tesla-surface) 0deg)` }}>
+                    <span>{completeness}%</span>
+                  </div>
+                  <Zap className={`h-5 w-5 transition-transform duration-300 ${openSections.project ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
             </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <ProjectInfoSection data={formData} onChange={updateFormData} />
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
+          </div>
+          <CollapsibleContent>
+            <div className="tesla-glass-card mt-4 p-6">
+              <ProjectInfoSection data={formData} onChange={updateFormData} />
+            </div>
+          </CollapsibleContent>
         </Collapsible>
 
-        {/* Building Specs Section */}
+        {/* Building Specifications Section */}
         <Collapsible open={openSections.building} onOpenChange={() => toggleSection('building')}>
-          <Card className="border-l-4 border-l-emerald-500">
+          <div className="tesla-section-header">
             <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-slate-50 transition-colors">
-                <CardTitle className="flex items-center justify-between text-slate-700">
-                  <span className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                    </svg>
-                    Building Specifications
-                  </span>
-                  <span className="text-sm font-normal text-slate-500">
-                    {openSections.building ? 'Click to collapse' : 'Click to expand'}
-                  </span>
-                </CardTitle>
-              </CardHeader>
+              <div className="flex items-center justify-between w-full cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
+                    <Settings className="h-5 w-5 text-tesla-success" />
+                  </div>
+                  <div>
+                    <h3 className="tesla-h3">Building Specifications</h3>
+                    <p className="tesla-small text-tesla-text-muted">Dimensions, height, and project type</p>
+                  </div>
+                </div>
+                <Zap className={`h-5 w-5 transition-transform duration-300 ${openSections.building ? 'rotate-180' : ''}`} />
+              </div>
             </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <BuildingSpecsSection data={formData} onChange={updateFormData} />
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
+          </div>
+          <CollapsibleContent>
+            <div className="tesla-glass-card mt-4 p-6">
+              <BuildingSpecsSection data={formData} onChange={updateFormData} />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Insulation Specifications Section */}
+        <Collapsible open={openSections.insulation} onOpenChange={() => toggleSection('insulation')}>
+          <div className="tesla-section-header">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between w-full cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
+                    <Layers className="h-5 w-5 text-tesla-warning" />
+                  </div>
+                  <div>
+                    <h3 className="tesla-h3">Insulation & Cover Board</h3>
+                    <p className="tesla-small text-tesla-text-muted">Thermal specifications and substrate details</p>
+                  </div>
+                </div>
+                <Zap className={`h-5 w-5 transition-transform duration-300 ${openSections.insulation ? 'rotate-180' : ''}`} />
+              </div>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <div className="tesla-glass-card mt-4 p-6">
+              <InsulationSection data={formData} onChange={updateFormData} />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Roof Features Section */}
+        <Collapsible open={openSections.features} onOpenChange={() => toggleSection('features')}>
+          <div className="tesla-section-header">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between w-full cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
+                    <Wind className="h-5 w-5 text-tesla-blue" />
+                  </div>
+                  <div>
+                    <h3 className="tesla-h3">Roof Features & Penetrations</h3>
+                    <p className="tesla-small text-tesla-text-muted">Drains, penetrations, and equipment</p>
+                  </div>
+                </div>
+                <Zap className={`h-5 w-5 transition-transform duration-300 ${openSections.features ? 'rotate-180' : ''}`} />
+              </div>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <div className="tesla-glass-card mt-4 p-6">
+              <RoofFeaturesSection data={formData} onChange={updateFormData} />
+            </div>
+          </CollapsibleContent>
         </Collapsible>
 
         {/* Membrane Options Section */}
         <Collapsible open={openSections.membrane} onOpenChange={() => toggleSection('membrane')}>
-          <Card className="border-l-4 border-l-amber-500">
+          <div className="tesla-section-header">
             <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-slate-50 transition-colors">
-                <CardTitle className="flex items-center justify-between text-slate-700">
-                  <span className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M3 3h18v18H3V3zm2 2v14h14V5H5z"/>
-                    </svg>
-                    Membrane Options
-                  </span>
-                  <span className="text-sm font-normal text-slate-500">
-                    {openSections.membrane ? 'Click to collapse' : 'Click to expand'}
-                  </span>
-                </CardTitle>
-              </CardHeader>
+              <div className="flex items-center justify-between w-full cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-tesla-success" />
+                  </div>
+                  <div>
+                    <h3 className="tesla-h3">Membrane System</h3>
+                    <p className="tesla-small text-tesla-text-muted">Membrane thickness and color specifications</p>
+                  </div>
+                </div>
+                <Zap className={`h-5 w-5 transition-transform duration-300 ${openSections.membrane ? 'rotate-180' : ''}`} />
+              </div>
             </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <MembraneOptionsSection data={formData} onChange={updateFormData} />
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
+          </div>
+          <CollapsibleContent>
+            <div className="tesla-glass-card mt-4 p-6">
+              <MembraneOptionsSection data={formData} onChange={updateFormData} />
+            </div>
+          </CollapsibleContent>
         </Collapsible>
 
-        {/* Submit Section */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex flex-col gap-4">
-              {isGenerating && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm text-slate-600">
-                    <span>Generating SOW...</span>
-                    <span>{progress}%</span>
+        {/* Tesla-Style Generation Panel */}
+        <div className="tesla-glass-card p-8">
+          <div className="flex flex-col gap-6">
+            {isGenerating && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 tesla-glass-card rounded-full flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 text-tesla-blue animate-spin" />
+                    </div>
+                    <span className="tesla-body font-medium">Generating SOW...</span>
                   </div>
-                  <Progress value={progress} className="h-2" />
+                  <span className="tesla-small text-tesla-text-muted">{progress}%</span>
                 </div>
-              )}
-              
-              <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowDebug(!showDebug)}
-                    className="text-xs"
-                  >
-                    <Bug className="mr-1 h-3 w-3" />
-                    Debug
-                  </Button>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={testBackendConnection}
-                    className="text-xs"
-                  >
-                    {backendStatus === 'connected' ? (
-                      <Wifi className="mr-1 h-3 w-3 text-green-600" />
-                    ) : backendStatus === 'disconnected' ? (
-                      <WifiOff className="mr-1 h-3 w-3 text-red-600" />
-                    ) : (
-                      <Wifi className="mr-1 h-3 w-3" />
-                    )}
-                    Test Connection
-                  </Button>
+                <div className="w-full bg-tesla-surface rounded-full h-3">
+                  <div 
+                    className="bg-gradient-to-r from-tesla-blue to-tesla-blue-light h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  ></div>
                 </div>
-                
-                <Button
-                  type="submit"
-                  disabled={isGenerating}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating SOW...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Generate SOW
-                    </>
-                  )}
-                </Button>
               </div>
+            )}
+            
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDebug(!showDebug)}
+                  className="tesla-btn bg-tesla-surface text-tesla-text-secondary"
+                >
+                  <Bug className="mr-2 h-4 w-4" />
+                  Debug
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={testBackendConnection}
+                  className="tesla-btn bg-tesla-surface text-tesla-text-secondary"
+                >
+                  {backendStatus === 'connected' ? (
+                    <Wifi className="mr-2 h-4 w-4 text-tesla-success" />
+                  ) : backendStatus === 'disconnected' ? (
+                    <WifiOff className="mr-2 h-4 w-4 text-tesla-error" />
+                  ) : (
+                    <Wifi className="mr-2 h-4 w-4" />
+                  )}
+                  Test Connection
+                </button>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={isGenerating}
+                className="tesla-btn px-8 py-4 text-lg font-semibold"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                    Generating SOW...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="mr-3 h-5 w-5" />
+                    Generate SOW
+                  </>
+                )}
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </form>
 
       {/* Debug Panel */}
       {showDebug && lastPayload && (
-        <Card className="bg-slate-50 border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-sm text-slate-600">Debug: Request Payload</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="text-xs bg-slate-800 text-green-400 p-4 rounded overflow-x-auto">
-              {JSON.stringify(lastPayload, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Backend Status */}
-      {showDebug && (
-        <Card className="bg-slate-50 border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-sm text-slate-600">Backend Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2 text-sm">
-              Status: 
-              {backendStatus === 'connected' && (
-                <span className="text-green-600 font-medium">✅ Connected</span>
-              )}
-              {backendStatus === 'disconnected' && (
-                <span className="text-red-600 font-medium">❌ Disconnected</span>
-              )}
-              {backendStatus === 'unknown' && (
-                <span className="text-gray-600 font-medium">❓ Unknown</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="tesla-glass-card p-6">
+          <h4 className="tesla-h3 mb-4">Debug: Request Payload</h4>
+          <pre className="tesla-small bg-tesla-bg-secondary text-tesla-success p-4 rounded-lg overflow-x-auto">
+            {JSON.stringify(lastPayload, null, 2)}
+          </pre>
+        </div>
       )}
 
       {/* Results Section */}
       {generatedFile && (
-        <Card className={`${generatedFile.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-          <CardContent className="pt-6">
-            {generatedFile.success ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <h3 className="text-lg font-semibold text-green-800">
-                    SOW Generated Successfully!
-                  </h3>
+        <div className={`tesla-glass-card p-8 ${generatedFile.success ? 'border-tesla-success' : 'border-tesla-error'}`}>
+          {generatedFile.success ? (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 tesla-glass-card rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-tesla-success" />
                 </div>
-                
-                {generatedFile.metadata && (
-                  <div className="space-y-4">
-                    <div className="bg-white p-4 rounded border border-green-200">
-                      <h4 className="font-medium text-slate-700 mb-3">Generation Details</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-slate-500">Template:</span>
-                          <div className="font-medium">{generatedFile.metadata.template}</div>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Wind Pressure:</span>
-                          <div className="font-medium">{generatedFile.metadata.windPressure}</div>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Generation Time:</span>
-                          <div className="font-medium">{generatedFile.generationTime}ms</div>
-                        </div>
-                        {generatedFile.metadata.attachmentMethod && (
-                          <div>
-                            <span className="text-slate-500">Attachment Method:</span>
-                            <div className="font-medium">{generatedFile.metadata.attachmentMethod}</div>
-                          </div>
-                        )}
+                <div>
+                  <h3 className="tesla-h3 text-tesla-success">SOW Generated Successfully!</h3>
+                  <p className="tesla-body text-tesla-text-secondary">Your professional SOW is ready for download</p>
+                </div>
+              </div>
+              
+              {generatedFile.metadata && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="tesla-glass-card p-6">
+                    <h4 className="tesla-h3 mb-4">Generation Details</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="tesla-body text-tesla-text-secondary">Template:</span>
+                        <span className="tesla-body font-medium">{generatedFile.metadata.template}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="tesla-body text-tesla-text-secondary">Wind Pressure:</span>
+                        <span className="tesla-body font-medium">{generatedFile.metadata.windPressure}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="tesla-body text-tesla-text-secondary">Generation Time:</span>
+                        <span className="tesla-body font-medium">{generatedFile.generationTime}ms</span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Jurisdiction Information */}
-                    {generatedFile.metadata.jurisdiction && (
-                      <div className="bg-white p-4 rounded border border-green-200">
-                        <h4 className="font-medium text-slate-700 mb-3 flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          Jurisdiction Information
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-slate-500">County:</span>
-                            <div className="font-medium">{generatedFile.metadata.jurisdiction.county}</div>
-                          </div>
-                          <div>
-                            <span className="text-slate-500">State:</span>
-                            <div className="font-medium">{generatedFile.metadata.jurisdiction.state}</div>
-                          </div>
-                          <div>
-                            <span className="text-slate-500">Code Cycle:</span>
-                            <div className="font-medium">{generatedFile.metadata.jurisdiction.codeCycle}</div>
-                          </div>
-                          <div>
-                            <span className="text-slate-500">ASCE Version:</span>
-                            <div className="font-medium">{generatedFile.metadata.jurisdiction.asceVersion}</div>
-                          </div>
-                          <div>
-                            <span className="text-slate-500">HVHZ:</span>
-                            <div className={`font-medium ${generatedFile.metadata.jurisdiction.hvhz ? 'text-red-600' : 'text-green-600'}`}>
-                              {generatedFile.metadata.jurisdiction.hvhz ? 'Yes' : 'No'}
-                            </div>
-                          </div>
+                  {generatedFile.metadata.jurisdiction && (
+                    <div className="tesla-glass-card p-6">
+                      <h4 className="tesla-h3 mb-4 flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Jurisdiction Information
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="tesla-body text-tesla-text-secondary">Location:</span>
+                          <span className="tesla-body font-medium">{generatedFile.metadata.jurisdiction.county}, {generatedFile.metadata.jurisdiction.state}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="tesla-body text-tesla-text-secondary">Code Cycle:</span>
+                          <span className="tesla-body font-medium">{generatedFile.metadata.jurisdiction.codeCycle}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="tesla-body text-tesla-text-secondary">HVHZ:</span>
+                          <span className={`tesla-body font-medium ${generatedFile.metadata.jurisdiction.hvhz ? 'text-tesla-error' : 'text-tesla-success'}`}>
+                            {generatedFile.metadata.jurisdiction.hvhz ? 'Yes' : 'No'}
+                          </span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-green-700">
-                    <div className="font-medium">{generatedFile.filename}</div>
-                    <div>{generatedFile.fileSize} KB</div>
-                  </div>
-                  <Button 
-                    onClick={handleDownload}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </Button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                  <h3 className="text-lg font-semibold text-red-800">
-                    Generation Failed
-                  </h3>
+              )}
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="tesla-body font-medium">{generatedFile.filename}</h4>
+                  <p className="tesla-small text-tesla-text-muted">{generatedFile.fileSize} KB</p>
                 </div>
-                <p className="text-red-700">{generatedFile.error}</p>
-                {generatedFile.error?.includes('Cannot connect') && (
-                  <div className="bg-red-100 p-3 rounded border border-red-200">
-                    <p className="text-sm text-red-800">
-                      <strong>Troubleshooting:</strong>
-                    </p>
-                    <ul className="text-sm text-red-700 mt-1 list-disc pl-5">
-                      <li>Make sure your test server is running: <code>node test-server.js</code></li>
-                      <li>Check that it's running on port 3001</li>
-                      <li>Click "Test Connection" to verify backend status</li>
-                    </ul>
-                  </div>
-                )}
+                <button 
+                  onClick={handleDownload}
+                  className="tesla-btn bg-tesla-success hover:bg-tesla-success/80"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PDF
+                </button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6 text-tesla-error" />
+                <h3 className="tesla-h3 text-tesla-error">Generation Failed</h3>
+              </div>
+              <p className="tesla-body text-tesla-text-secondary">{generatedFile.error}</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
