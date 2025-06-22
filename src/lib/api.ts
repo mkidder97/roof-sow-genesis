@@ -26,6 +26,41 @@ export interface SOWPayload {
   };
 }
 
+export interface EngineeringSummaryData {
+  jurisdiction: {
+    city: string;
+    county: string;
+    state: string;
+    codeCycle: string;
+    asceVersion: string;
+    hvhz: boolean;
+  };
+  windAnalysis: {
+    windSpeed: string;
+    exposure: string;
+    elevation: string;
+    zonePressures: {
+      zone1Field: string;
+      zone1Perimeter: string;
+      zone2Perimeter: string;
+      zone3Corner: string;
+    };
+  };
+  systemSelection: {
+    selectedTemplate: string;
+    rationale: string;
+    rejectedManufacturers: string[];
+    approvalSource: string[];
+  };
+  attachmentSpec: {
+    fieldSpacing: string;
+    perimeterSpacing: string;
+    cornerSpacing: string;
+    penetrationDepth: string;
+    notes: string;
+  };
+}
+
 export interface SOWResponse {
   success: boolean;
   filename?: string;
@@ -44,7 +79,10 @@ export interface SOWResponse {
       asceVersion: string;
       hvhz: boolean;
     };
+    // NEW: Engineering Summary Data
+    engineeringSummary?: EngineeringSummaryData;
   };
+  uploadedFiles?: string[]; // For future OCR use
   error?: string;
 }
 
