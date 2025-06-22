@@ -1,73 +1,148 @@
-# Welcome to your Lovable project
+# 🏠 TPO Roof SOW Generator - Frontend
 
-## Project info
+A modern React frontend for generating TPO roofing Scope of Work (SOW) documents.
 
-**URL**: https://lovable.dev/projects/b20a32b9-1051-4657-a732-01d392977a31
+## 🚀 Quick Setup
 
-## How can I edit this code?
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-There are several ways of editing your application.
+### 2. Configure Backend URL
+```bash
+# Copy environment template
+cp .env.example .env
 
-**Use Lovable**
+# Edit .env file to set your backend URL
+# For local development: VITE_API_URL=http://localhost:3001
+# For production: VITE_API_URL=https://your-backend.fly.dev
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b20a32b9-1051-4657-a732-01d392977a31) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 3. Start Development Server
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The frontend will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🔧 Configuration
 
-**Use GitHub Codespaces**
+### Environment Variables
+- `VITE_API_URL`: Backend API base URL (defaults to `http://localhost:3001` in development)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Backend Requirements
+Your backend must provide these endpoints:
+- `POST /api/generate-sow` - Generate SOW document
+- `GET /health` - Health check
 
-## What technologies are used for this project?
+## 🧪 Testing Integration
 
-This project is built with:
+### 1. Test Backend Connection
+Click the "Test Connection" button in the UI or use browser console:
+```javascript
+fetch('http://localhost:3001/health')
+  .then(r => r.json())
+  .then(d => console.log('✅ Backend reachable:', d))
+  .catch(e => console.error('❌ Backend not reachable:', e));
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 2. Test SOW Generation
+Fill out the form with test data:
+```json
+{
+  "projectName": "Test Roof Project",
+  "address": "1505 Wallace Rd, Carrollton, TX 75006",
+  "companyName": "Test Company",
+  "squareFootage": 154400,
+  "buildingHeight": 30,
+  "buildingDimensions": { "length": 400, "width": 386 },
+  "projectType": "recover",
+  "membraneThickness": "60",
+  "membraneColor": "White"
+}
+```
 
-## How can I deploy this project?
+## 🐛 Troubleshooting
 
-Simply open [Lovable](https://lovable.dev/projects/b20a32b9-1051-4657-a732-01d392977a31) and click on Share -> Publish.
+### "Cannot connect to backend server"
+1. Ensure your backend is running on the correct port
+2. Check the `VITE_API_URL` in your `.env` file
+3. Verify CORS is properly configured on your backend
+4. Use the "Test Connection" button to debug
 
-## Can I connect a custom domain to my Lovable project?
+### "Generation Failed"
+1. Check browser console for detailed error messages
+2. Enable debug mode to see request payload
+3. Verify your backend `/api/generate-sow` endpoint is working
 
-Yes, you can!
+### CORS Issues
+Your backend needs to allow requests from `http://localhost:8080`:
+```javascript
+// Express.js example
+app.use(cors({
+  origin: ['http://localhost:8080', 'https://your-frontend.vercel.app']
+}));
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📦 Build & Deploy
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Development Build
+```bash
+npm run build:dev
+```
+
+### Production Build
+```bash
+npm run build
+```
+
+### Deploy to Vercel/Netlify
+1. Connect your repository
+2. Set environment variable: `VITE_API_URL=https://your-backend.fly.dev`
+3. Deploy
+
+## 🛠 Tech Stack
+- **React 18** with TypeScript
+- **Vite** for fast development
+- **Tailwind CSS** for styling
+- **Radix UI** components
+- **React Query** for API state management
+- **React Router** for navigation
+
+## 📝 API Payload Structure
+
+The frontend sends this payload to `POST /api/generate-sow`:
+```typescript
+interface SOWPayload {
+  projectName: string;
+  address: string;
+  companyName: string;
+  squareFootage: number;
+  buildingHeight: number;
+  buildingDimensions: {
+    length: number;
+    width: number;
+  };
+  projectType: string;
+  membraneThickness: string;
+  membraneColor: string;
+}
+```
+
+Expected response:
+```typescript
+interface SOWResponse {
+  success: boolean;
+  filename?: string;
+  outputPath?: string;
+  fileSize?: number;
+  generationTime?: number;
+  metadata?: {
+    projectName: string;
+    template: string;
+    windPressure: string;
+  };
+  error?: string;
+}
+```
