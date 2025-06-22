@@ -5,8 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Upload, X, ChevronDown, Info } from 'lucide-react';
+import { Upload, X, ChevronDown, Info, Zap, FileText } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { PDFPreviewDialog } from '@/components/PDFPreviewDialog';
+import { PDFParsingService } from '@/lib/pdf-parser';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProjectInfoProps {
   data: {
@@ -17,6 +20,12 @@ interface ProjectInfoProps {
     deckType: string;
     exposureCategory: string;
     roofSlope: number;
+    squareFootage: number;
+    buildingHeight: number;
+    length: number;
+    width: number;
+    membraneThickness: string;
+    membraneColor: string;
     documentAttachment?: {
       filename: string;
       type: string;
@@ -29,6 +38,11 @@ interface ProjectInfoProps {
 export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showAdvanced, setShowAdvanced] = React.useState(false);
+  const [isParsing, setIsParsing] = React.useState(false);
+  const [showPreview, setShowPreview] = React.useState(false);
+  const [extractedData, setExtractedData] = React.useState<any>(null);
+  const [previewItems, setPreviewItems] = React.useState<any[]>([]);
+  const { toast } = useToast();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -37,13 +51,21 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
     // Check file type
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Please upload a PDF, JPG, or PNG file.');
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a PDF, JPG, or PNG file.",
+        variant: "destructive",
+      });
       return;
     }
 
     // Check file size (10MB limit)
     if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be less than 10MB.');
+      toast({
+        title: "File Too Large",
+        description: "File size must be less than 10MB.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -59,8 +81,101 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
           data: base64Data,
         },
       });
+
+      // Auto-parse PDF if it's a PDF file
+      if (file.type === 'application/pdf') {
+        handleParsePDF(file);
+      }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleParsePDF = async (file: File) => {
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: "Not a PDF",
+        description: "PDF parsing is only available for PDF files.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsParsing(true);
+    setShowPreview(true);
+
+    try {
+      const extracted = await PDFParsingService.parsePDF(file);
+      const preview = PDFParsingService.getPreviewData(extracted);
+      
+      setExtractedData(extracted);
+      setPreviewItems(preview);
+
+      toast({
+        title: "PDF Parsed Successfully",
+        description: `Found ${preview.length} fields with data. Review and apply changes.`,
+      });
+    } catch (error) {
+      console.error('PDF parsing error:', error);
+      toast({
+        title: "PDF Parsing Failed",
+        description: error instanceof Error ? error.message : "Could not extract data from PDF",
+        variant: "destructive",
+      });
+      setShowPreview(false);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const handleApplyExtractedData = (selectedFields: string[]) => {
+    if (!extractedData) return;
+
+    const updates: any = {};
+
+    selectedFields.forEach(field => {
+      switch (field) {
+        case 'projectName':
+          if (extractedData.projectName) updates.projectName = extractedData.projectName;
+          break;
+        case 'address':
+          if (extractedData.address) updates.address = extractedData.address;
+          break;
+        case 'companyName':
+          if (extractedData.companyName) updates.companyName = extractedData.companyName;
+          break;
+        case 'squareFootage':
+          if (extractedData.squareFootage) updates.squareFootage = extractedData.squareFootage;
+          break;
+        case 'buildingHeight':
+          if (extractedData.buildingHeight) updates.buildingHeight = extractedData.buildingHeight;
+          break;
+        case 'buildingDimensions':
+          if (extractedData.buildingDimensions) {
+            updates.length = extractedData.buildingDimensions.length;
+            updates.width = extractedData.buildingDimensions.width;
+          }
+          break;
+        case 'elevation':
+          if (extractedData.elevation) updates.elevation = extractedData.elevation;
+          break;
+        case 'membraneThickness':
+          if (extractedData.membraneThickness) updates.membraneThickness = extractedData.membraneThickness;
+          break;
+        case 'membraneColor':
+          if (extractedData.membraneColor) updates.membraneColor = extractedData.membraneColor;
+          break;
+        case 'deckType':
+          if (extractedData.deckType) updates.deckType = extractedData.deckType;
+          break;
+      }
+    });
+
+    onChange(updates);
+    
+    toast({
+      title: "Fields Updated",
+      description: `Successfully applied ${selectedFields.length} fields from PDF.`,
+    });
   };
 
   const clearFile = () => {
@@ -68,6 +183,8 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    setExtractedData(null);
+    setPreviewItems([]);
   };
 
   return (
@@ -167,8 +284,8 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
           </div>
         </div>
 
-        {/* File Upload */}
-        <div className="space-y-2">
+        {/* Enhanced File Upload with PDF Parsing */}
+        <div className="space-y-3">
           <Label className="text-sm font-medium text-slate-700">
             Upload Site Document or NOA
           </Label>
@@ -186,6 +303,9 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
               <p className="text-sm text-slate-600 mb-2">
                 Upload PDF, JPG, or PNG file
               </p>
+              <p className="text-xs text-slate-500 mb-3">
+                PDF files will be automatically parsed for project data
+              </p>
               <Button
                 type="button"
                 variant="outline"
@@ -196,31 +316,68 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
               </Button>
             </div>
           ) : (
-            <div className="border border-slate-300 rounded-lg p-4 bg-slate-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                    <Upload className="h-4 w-4 text-blue-600" />
+            <div className="space-y-3">
+              <div className="border border-slate-300 rounded-lg p-4 bg-slate-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                      <FileText className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">
+                        {data.documentAttachment.filename}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {data.documentAttachment.type}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">
-                      {data.documentAttachment.filename}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {data.documentAttachment.type}
-                    </p>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFile}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFile}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
+
+              {/* PDF Parsing Actions */}
+              {data.documentAttachment.type === 'application/pdf' && (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const fileInput = fileInputRef.current;
+                      if (fileInput?.files?.[0]) {
+                        handleParsePDF(fileInput.files[0]);
+                      }
+                    }}
+                    disabled={isParsing}
+                    className="flex items-center gap-2"
+                  >
+                    <Zap className="h-3 w-3" />
+                    {isParsing ? 'Parsing PDF...' : 'Parse PDF Data'}
+                  </Button>
+                  
+                  {extractedData && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPreview(true)}
+                      className="flex items-center gap-2 text-green-700 border-green-200 hover:bg-green-50"
+                    >
+                      <FileText className="h-3 w-3" />
+                      Review Extracted Data
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -274,6 +431,16 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
             </div>
           </CollapsibleContent>
         </Collapsible>
+
+        {/* PDF Preview Dialog */}
+        <PDFPreviewDialog
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          extractedData={extractedData}
+          previewItems={previewItems}
+          onApply={handleApplyExtractedData}
+          isLoading={isParsing}
+        />
       </div>
     </TooltipProvider>
   );
