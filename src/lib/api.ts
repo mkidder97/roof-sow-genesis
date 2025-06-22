@@ -15,6 +15,15 @@ export interface SOWPayload {
   projectType: string;
   membraneThickness: string;
   membraneColor: string;
+  deckType?: string;
+  elevation?: number;
+  exposureCategory?: string;
+  roofSlope?: number;
+  documentAttachment?: {
+    filename: string;
+    type: string;
+    data: string; // base64
+  };
 }
 
 export interface SOWResponse {
@@ -27,6 +36,14 @@ export interface SOWResponse {
     projectName: string;
     template: string;
     windPressure: string;
+    attachmentMethod?: string;
+    jurisdiction?: {
+      county: string;
+      state: string;
+      codeCycle: string;
+      asceVersion: string;
+      hvhz: boolean;
+    };
   };
   error?: string;
 }
