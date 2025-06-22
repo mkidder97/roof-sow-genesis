@@ -1,0 +1,66 @@
+# **SOW TEMPLATE T6 - STEEP SLOPE SYSTEM**
+
+## Steep Slope Project Overview
+This project involves a **{{selectedSystem}}** steep slope roof system ({{roofSlope}} slope) at {{projectAddress}}. The system has been engineered specifically for steep slope applications to meet {{asceVersion}} wind load and drainage requirements.
+
+## Steep Slope Requirements
+- **Slope**: {{roofSlope}} (≥ 2:12 threshold)
+- **Enhanced Drainage**: Designed for rapid water shedding
+- **Specialized Attachment**: Steep slope fastening patterns
+- **Wind Uplift**: {{zonePressures}} with slope-adjusted coefficients
+
+## Scope of Work
+The scope of work includes:
+- Installation of steep slope {{selectedSystem}} membrane system
+- Specialized {{fasteningSpecs}} attachment for steep applications
+- Enhanced drainage and water management details
+- Steep slope-specific flashing and termination details
+- Compliance with steep slope provisions of {{codeCycle}}
+
+## Template Selection Rationale
+{{rationale}}
+
+## Steep Slope Wind Analysis
+**Slope-Adjusted Pressures**: {{windCalculationSummary}}
+
+Special considerations for steep slope:
+{{zonePressureDetails}}
+
+**Steep Slope Factors**:
+- Increased wind loading on steep surfaces
+- Enhanced drainage requirements
+- Specialized installation procedures
+
+## Specialized Fastening for Steep Slope
+**Field Area**: {{fieldSpacing}} (Slope-adjusted pattern)
+**Perimeter Area**: {{perimeterSpacing}} (Enhanced for steep slope)
+**Corner Area**: {{cornerSpacing}} (Critical steep slope areas)
+**Fastener Type**: {{fastenerType}} (Steep slope rated)
+**Penetration Depth**: {{penetrationDepth}}
+
+## Steep Slope Special Considerations
+- Installation procedures modified for slope
+- Enhanced safety measures during installation  
+- Specialized equipment required for steep slope work
+- {{specialRequirements}}
+
+## Drainage Design
+- Rapid water shedding capability
+- Enhanced drainage paths
+- Overflow protection systems
+- Steep slope scupper and drain details
+
+## System Compliance
+{{complianceNotes}}
+
+## Quality Assurance - Steep Slope
+- Specialized inspection procedures for steep slope
+- Enhanced safety protocols during installation
+- Slope-specific quality control checkpoints
+- Final inspection with steep slope compliance verification
+
+---
+*Template: T6 - Steep Slope System*  
+*Generated: {{generationTimestamp}}*  
+*Slope: {{roofSlope}}*  
+*Version: {{templateVersion}}*
