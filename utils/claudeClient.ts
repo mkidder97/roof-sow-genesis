@@ -405,7 +405,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const stats = claudeClient.getUsageStats();
         console.log(`📊 Usage Stats:`, stats);
       } else {
-        console.log('⚠️  Claude API not configured. Set CLAUDE_API_KEY environment variable.');
+        console.log('❌ Claude API not configured. Set CLAUDE_API_KEY environment variable.');
       }
     } catch (error) {
       console.error('❌ Connection test failed:', error);
