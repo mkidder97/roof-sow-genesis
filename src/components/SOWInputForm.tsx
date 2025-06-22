@@ -11,7 +11,6 @@ import { MembraneOptionsSection } from './sections/MembraneOptionsSection';
 import { InsulationSection } from './sections/InsulationSection';
 import { RoofFeaturesSection } from './sections/RoofFeaturesSection';
 import { EngineeringSummaryPanel } from './EngineeringSummaryPanel';
-import { DocumentUploadSection } from './DocumentUploadSection';
 import { SOWReviewPanel } from './SOWReviewPanel';
 import { DevModePanel } from './DevModePanel';
 import { generateSOW, generateSOWWithDebug, checkHealth, SOWPayload, SOWResponse } from '@/lib/api';
@@ -334,7 +333,7 @@ export const SOWInputForm = () => {
                   </div>
                   <div>
                     <h3 className="tesla-h3">Project Information & Site Details</h3>
-                    <p className="tesla-small text-tesla-text-muted">Basic project information and document upload for data extraction</p>
+                    <p className="tesla-small text-tesla-text-muted">Basic project information and document upload for comprehensive data extraction</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -351,30 +350,6 @@ export const SOWInputForm = () => {
               <ProjectInfoSection data={formData} onChange={updateFormData} />
             </div>
           </CollapsibleContent>
-        </Collapsible>
-
-        {/* Additional Input Upload Section */}
-        <Collapsible open={true}>
-          <div className="tesla-section-header">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-tesla-blue" />
-                </div>
-                <div>
-                  <h3 className="tesla-h3">Additional Document Upload</h3>
-                  <p className="tesla-small text-tesla-text-muted">Upload takeoff forms, NOAs, or plans for data extraction</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="tesla-glass-card mt-4 p-6">
-            <DocumentUploadSection
-              onFileUpload={handleDocumentUpload}
-              uploadedFile={formData.documentAttachment ? { filename: formData.documentAttachment.filename, type: formData.documentAttachment.type } : null}
-              onClearFile={() => updateFormData({ documentAttachment: undefined })}
-            />
-          </div>
         </Collapsible>
 
         {/* Building Specifications Section */}

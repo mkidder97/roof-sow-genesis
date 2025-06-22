@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +25,27 @@ interface ProjectInfoProps {
     width: number;
     membraneThickness: string;
     membraneColor: string;
+    // Enhanced fields for comprehensive parsing
+    insulationType: string;
+    insulationThickness: number;
+    insulationRValue: number;
+    coverBoardType: string;
+    coverBoardThickness: number;
+    hasExistingInsulation: boolean;
+    existingInsulationCondition: string;
+    numberOfDrains: number;
+    drainTypes: string[];
+    numberOfPenetrations: number;
+    penetrationTypes: string[];
+    skylights: number;
+    roofHatches: number;
+    hvacUnits: number;
+    walkwayPadRequested: boolean;
+    gutterType: string;
+    downspouts: number;
+    expansionJoints: number;
+    parapetHeight: number;
+    roofConfiguration: string;
     documentAttachment?: {
       filename: string;
       type: string;
@@ -134,6 +154,7 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
 
     selectedFields.forEach(field => {
       switch (field) {
+        // Basic project info
         case 'projectName':
           if (extractedData.projectName) updates.projectName = extractedData.projectName;
           break;
@@ -158,6 +179,8 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
         case 'elevation':
           if (extractedData.elevation) updates.elevation = extractedData.elevation;
           break;
+          
+        // Roof system
         case 'membraneThickness':
           if (extractedData.membraneThickness) updates.membraneThickness = extractedData.membraneThickness;
           break;
@@ -167,14 +190,84 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
         case 'deckType':
           if (extractedData.deckType) updates.deckType = extractedData.deckType;
           break;
+        case 'roofSlope':
+          if (extractedData.roofSlope) updates.roofSlope = extractedData.roofSlope;
+          break;
+        case 'exposureCategory':
+          if (extractedData.exposureCategory) updates.exposureCategory = extractedData.exposureCategory;
+          break;
+          
+        // Insulation
+        case 'insulationType':
+          if (extractedData.insulationType) updates.insulationType = extractedData.insulationType;
+          break;
+        case 'insulationThickness':
+          if (extractedData.insulationThickness) updates.insulationThickness = extractedData.insulationThickness;
+          break;
+        case 'insulationRValue':
+          if (extractedData.insulationRValue) updates.insulationRValue = extractedData.insulationRValue;
+          break;
+        case 'coverBoardType':
+          if (extractedData.coverBoardType) updates.coverBoardType = extractedData.coverBoardType;
+          break;
+        case 'coverBoardThickness':
+          if (extractedData.coverBoardThickness) updates.coverBoardThickness = extractedData.coverBoardThickness;
+          break;
+        case 'hasExistingInsulation':
+          if (extractedData.hasExistingInsulation !== undefined) updates.hasExistingInsulation = extractedData.hasExistingInsulation;
+          break;
+        case 'existingInsulationCondition':
+          if (extractedData.existingInsulationCondition) updates.existingInsulationCondition = extractedData.existingInsulationCondition;
+          break;
+          
+        // Roof features
+        case 'numberOfDrains':
+          if (extractedData.numberOfDrains) updates.numberOfDrains = extractedData.numberOfDrains;
+          break;
+        case 'drainTypes':
+          if (extractedData.drainTypes) updates.drainTypes = extractedData.drainTypes;
+          break;
+        case 'numberOfPenetrations':
+          if (extractedData.numberOfPenetrations) updates.numberOfPenetrations = extractedData.numberOfPenetrations;
+          break;
+        case 'penetrationTypes':
+          if (extractedData.penetrationTypes) updates.penetrationTypes = extractedData.penetrationTypes;
+          break;
+        case 'skylights':
+          if (extractedData.skylights) updates.skylights = extractedData.skylights;
+          break;
+        case 'roofHatches':
+          if (extractedData.roofHatches) updates.roofHatches = extractedData.roofHatches;
+          break;
+        case 'hvacUnits':
+          if (extractedData.hvacUnits) updates.hvacUnits = extractedData.hvacUnits;
+          break;
+        case 'walkwayPadRequested':
+          if (extractedData.walkwayPadRequested !== undefined) updates.walkwayPadRequested = extractedData.walkwayPadRequested;
+          break;
+        case 'gutterType':
+          if (extractedData.gutterType) updates.gutterType = extractedData.gutterType;
+          break;
+        case 'downspouts':
+          if (extractedData.downspouts) updates.downspouts = extractedData.downspouts;
+          break;
+        case 'expansionJoints':
+          if (extractedData.expansionJoints) updates.expansionJoints = extractedData.expansionJoints;
+          break;
+        case 'parapetHeight':
+          if (extractedData.parapetHeight) updates.parapetHeight = extractedData.parapetHeight;
+          break;
+        case 'roofConfiguration':
+          if (extractedData.roofConfiguration) updates.roofConfiguration = extractedData.roofConfiguration;
+          break;
       }
     });
 
     onChange(updates);
     
     toast({
-      title: "Fields Updated",
-      description: `Successfully applied ${selectedFields.length} fields from PDF.`,
+      title: "Comprehensive Data Applied",
+      description: `Successfully populated ${selectedFields.length} fields from takeoff document.`,
     });
   };
 
@@ -284,10 +377,10 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
           </div>
         </div>
 
-        {/* Enhanced File Upload with PDF Parsing */}
+        {/* Enhanced File Upload with Comprehensive PDF Parsing */}
         <div className="space-y-3">
           <Label className="text-sm font-medium text-slate-700">
-            Upload Site Document or NOA
+            Upload Takeoff, Plans, or Project Documents
           </Label>
           
           {!data.documentAttachment ? (
@@ -304,7 +397,7 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
                 Upload PDF, JPG, or PNG file
               </p>
               <p className="text-xs text-slate-500 mb-3">
-                PDF files will be automatically parsed for project data
+                PDF takeoff files will be comprehensively parsed to auto-populate project data, quantities, and specifications
               </p>
               <Button
                 type="button"
@@ -312,7 +405,7 @@ export const ProjectInfoSection: React.FC<ProjectInfoProps> = ({ data, onChange 
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
               >
-                Choose File
+                Choose Takeoff File
               </Button>
             </div>
           ) : (
