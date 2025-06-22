@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, FileText, Download, Bug, CheckCircle, AlertCircle, Wifi, WifiOff, MapPin, Zap, Settings, Layers, Wind } from 'lucide-react';
+import { Loader2, FileText, Download, Bug, CheckCircle, AlertCircle, Wifi, WifiOff, MapPin, Zap, Settings, Layers, Wind, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
@@ -12,7 +11,8 @@ import { MembraneOptionsSection } from './sections/MembraneOptionsSection';
 import { InsulationSection } from './sections/InsulationSection';
 import { RoofFeaturesSection } from './sections/RoofFeaturesSection';
 import { EngineeringSummaryPanel } from './EngineeringSummaryPanel';
-import { generateSOW, checkHealth, SOWPayload, SOWResponse, EngineeringSummaryData } from '@/lib/api';
+import { DocumentUploadSection } from './DocumentUploadSection';
+import { generateSOW, generateSOWWithDebug, checkHealth, SOWPayload, SOWResponse, EngineeringSummaryData } from '@/lib/api';
 
 export const SOWInputForm = () => {
   const { toast } = useToast();
@@ -128,6 +128,15 @@ export const SOWInputForm = () => {
     }
   };
 
+  // NEW: Enhanced state for debug features
+  const [debugMode, setDebugMode] = useState(false);
+  const [selfHealingActions, setSelfHealingActions] = useState<any[]>([]);
+  const [sectionAnalysis, setSectionAnalysis] = useState<any>(null);
+
+  const handleDocumentUpload = (fileData: { filename: string; type: string; data: string }) => {
+    updateFormData({ documentAttachment: fileData });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -159,13 +168,18 @@ export const SOWInputForm = () => {
     setGeneratedFile(null);
     setEngineeringSummary(null);
     setShowEngineeringSummary(false);
+    setSelfHealingActions([]);
+    setSectionAnalysis(null);
 
     const progressInterval = setInterval(() => {
       setProgress(prev => Math.min(prev + 10, 90));
     }, 200);
 
     try {
-      const result = await generateSOW(payload);
+      // Use debug endpoint if debug mode is enabled
+      const result = debugMode 
+        ? await generateSOWWithDebug(payload)
+        : await generateSOW(payload);
       
       clearInterval(progressInterval);
       setProgress(100);
@@ -173,15 +187,26 @@ export const SOWInputForm = () => {
       setGeneratedFile(result);
       setBackendStatus('connected');
       
-      // NEW: Extract engineering summary from response
+      // Extract engineering summary and debug data
       if (result.metadata?.engineeringSummary) {
         setEngineeringSummary(result.metadata.engineeringSummary);
+        
+        // Extract self-healing actions if available
+        if (result.metadata.engineeringSummary.sectionAnalysis?.selfHealingActions) {
+          setSelfHealingActions(result.metadata.engineeringSummary.sectionAnalysis.selfHealingActions);
+        }
+        
+        // Extract section analysis if available
+        if (result.metadata.engineeringSummary.sectionAnalysis) {
+          setSectionAnalysis(result.metadata.engineeringSummary.sectionAnalysis);
+        }
+        
         setShowEngineeringSummary(false); // Start collapsed
       }
       
       toast({
         title: "SOW Generated Successfully!",
-        description: `PDF generated in ${result.generationTime}ms`,
+        description: `PDF generated in ${result.generationTime}ms${debugMode ? ' with debug data' : ''}`,
       });
     } catch (error) {
       clearInterval(progressInterval);
@@ -356,7 +381,33 @@ export const SOWInputForm = () => {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Tesla-Style Generation Panel */}
+        {/* NEW: Document Upload Section */}
+        <Collapsible open={true}>
+          <div className="tesla-section-header">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 tesla-glass-card rounded-lg flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-tesla-blue" />
+                </div>
+                <div>
+                  <h3 className="tesla-h3">Document Upload & Analysis</h3>
+                  <p className="tesla-small text-tesla-text-muted">Upload documents for automatic data extraction</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="tesla-glass-card mt-4 p-6">
+            <DocumentUploadSection
+              onFileUpload={handleDocumentUpload}
+              selfHealingActions={selfHealingActions}
+              sectionAnalysis={sectionAnalysis}
+              generatedPDFUrl={generatedFile?.outputPath}
+              engineeringSummary={engineeringSummary}
+            />
+          </div>
+        </Collapsible>
+
+        {/* Enhanced Generation Panel */}
         <div className="tesla-glass-card p-8">
           <div className="flex flex-col gap-6">
             {isGenerating && (
@@ -392,6 +443,15 @@ export const SOWInputForm = () => {
                 
                 <button
                   type="button"
+                  onClick={() => setDebugMode(!debugMode)}
+                  className={`tesla-btn ${debugMode ? 'bg-tesla-warning text-black' : 'bg-tesla-surface text-tesla-text-secondary'}`}
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  {debugMode ? 'Debug Mode ON' : 'Debug Mode OFF'}
+                </button>
+                
+                <button
+                  type="button"
                   onClick={testBackendConnection}
                   className="tesla-btn bg-tesla-surface text-tesla-text-secondary"
                 >
@@ -419,7 +479,7 @@ export const SOWInputForm = () => {
                 ) : (
                   <>
                     <Zap className="mr-3 h-5 w-5" />
-                    Generate SOW
+                    {debugMode ? 'Generate SOW (Debug)' : 'Generate SOW'}
                   </>
                 )}
               </button>
