@@ -9,7 +9,218 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      projects: {
+        Row: {
+          address: string
+          building_height: number | null
+          company_name: string | null
+          cover_board_thickness: number | null
+          cover_board_type: string | null
+          created_at: string
+          deck_type: string | null
+          document_attachment: Json | null
+          downspouts: number | null
+          drain_types: string[] | null
+          elevation: number | null
+          existing_insulation_condition: string | null
+          expansion_joints: number | null
+          exposure_category: string | null
+          gutter_type: string | null
+          has_existing_insulation: boolean | null
+          hvac_units: number | null
+          id: string
+          insulation_r_value: number | null
+          insulation_thickness: number | null
+          insulation_type: string | null
+          length: number | null
+          membrane_color: string | null
+          membrane_thickness: string | null
+          number_of_drains: number | null
+          number_of_penetrations: number | null
+          parapet_height: number | null
+          penetration_types: string[] | null
+          project_name: string
+          project_type: string | null
+          roof_configuration: string | null
+          roof_hatches: number | null
+          roof_slope: number | null
+          skylights: number | null
+          square_footage: number | null
+          updated_at: string
+          user_id: string
+          walkway_pad_requested: boolean | null
+          width: number | null
+        }
+        Insert: {
+          address: string
+          building_height?: number | null
+          company_name?: string | null
+          cover_board_thickness?: number | null
+          cover_board_type?: string | null
+          created_at?: string
+          deck_type?: string | null
+          document_attachment?: Json | null
+          downspouts?: number | null
+          drain_types?: string[] | null
+          elevation?: number | null
+          existing_insulation_condition?: string | null
+          expansion_joints?: number | null
+          exposure_category?: string | null
+          gutter_type?: string | null
+          has_existing_insulation?: boolean | null
+          hvac_units?: number | null
+          id?: string
+          insulation_r_value?: number | null
+          insulation_thickness?: number | null
+          insulation_type?: string | null
+          length?: number | null
+          membrane_color?: string | null
+          membrane_thickness?: string | null
+          number_of_drains?: number | null
+          number_of_penetrations?: number | null
+          parapet_height?: number | null
+          penetration_types?: string[] | null
+          project_name: string
+          project_type?: string | null
+          roof_configuration?: string | null
+          roof_hatches?: number | null
+          roof_slope?: number | null
+          skylights?: number | null
+          square_footage?: number | null
+          updated_at?: string
+          user_id: string
+          walkway_pad_requested?: boolean | null
+          width?: number | null
+        }
+        Update: {
+          address?: string
+          building_height?: number | null
+          company_name?: string | null
+          cover_board_thickness?: number | null
+          cover_board_type?: string | null
+          created_at?: string
+          deck_type?: string | null
+          document_attachment?: Json | null
+          downspouts?: number | null
+          drain_types?: string[] | null
+          elevation?: number | null
+          existing_insulation_condition?: string | null
+          expansion_joints?: number | null
+          exposure_category?: string | null
+          gutter_type?: string | null
+          has_existing_insulation?: boolean | null
+          hvac_units?: number | null
+          id?: string
+          insulation_r_value?: number | null
+          insulation_thickness?: number | null
+          insulation_type?: string | null
+          length?: number | null
+          membrane_color?: string | null
+          membrane_thickness?: string | null
+          number_of_drains?: number | null
+          number_of_penetrations?: number | null
+          parapet_height?: number | null
+          penetration_types?: string[] | null
+          project_name?: string
+          project_type?: string | null
+          roof_configuration?: string | null
+          roof_hatches?: number | null
+          roof_slope?: number | null
+          skylights?: number | null
+          square_footage?: number | null
+          updated_at?: string
+          user_id?: string
+          walkway_pad_requested?: boolean | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      sow_outputs: {
+        Row: {
+          asce_version: string | null
+          created_at: string
+          engineering_summary: Json | null
+          file_size: number | null
+          file_url: string | null
+          filename: string | null
+          generation_time_ms: number | null
+          hvhz: boolean | null
+          id: string
+          key_issues: string[] | null
+          manufacturer: string | null
+          metadata: Json | null
+          penetration_depth: string | null
+          project_id: string
+          rationale: string | null
+          spacing_corner: string | null
+          spacing_field: string | null
+          takeoff_risk: string | null
+          template_name: string | null
+          wind_speed: number | null
+          zone1_field: number | null
+          zone2_perimeter: number | null
+          zone3_corner: number | null
+        }
+        Insert: {
+          asce_version?: string | null
+          created_at?: string
+          engineering_summary?: Json | null
+          file_size?: number | null
+          file_url?: string | null
+          filename?: string | null
+          generation_time_ms?: number | null
+          hvhz?: boolean | null
+          id?: string
+          key_issues?: string[] | null
+          manufacturer?: string | null
+          metadata?: Json | null
+          penetration_depth?: string | null
+          project_id: string
+          rationale?: string | null
+          spacing_corner?: string | null
+          spacing_field?: string | null
+          takeoff_risk?: string | null
+          template_name?: string | null
+          wind_speed?: number | null
+          zone1_field?: number | null
+          zone2_perimeter?: number | null
+          zone3_corner?: number | null
+        }
+        Update: {
+          asce_version?: string | null
+          created_at?: string
+          engineering_summary?: Json | null
+          file_size?: number | null
+          file_url?: string | null
+          filename?: string | null
+          generation_time_ms?: number | null
+          hvhz?: boolean | null
+          id?: string
+          key_issues?: string[] | null
+          manufacturer?: string | null
+          metadata?: Json | null
+          penetration_depth?: string | null
+          project_id?: string
+          rationale?: string | null
+          spacing_corner?: string | null
+          spacing_field?: string | null
+          takeoff_risk?: string | null
+          template_name?: string | null
+          wind_speed?: number | null
+          zone1_field?: number | null
+          zone2_perimeter?: number | null
+          zone3_corner?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sow_outputs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
