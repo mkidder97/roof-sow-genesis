@@ -1,0 +1,57 @@
+{
+  "mcpVersion": "2024-11-05",
+  "name": "roof-sow-pdf-healing-agent",
+  "version": "1.0.0",
+  "description": "Self-healing PDF agent for SOW generation with automatic issue detection and code fixes",
+  "tools": [
+    {
+      "name": "analyze-pdf-output",
+      "description": "Puppeteer-based tool that analyzes PDF layout and compares against input JSON",
+      "path": "./mcp-tools/analyze-pdf-output",
+      "entrypoint": "index.ts"
+    },
+    {
+      "name": "propose-fix-snippet",
+      "description": "Claude-driven logic analyzer that proposes targeted code fixes",
+      "path": "./mcp-tools/propose-fix-snippet",
+      "entrypoint": "index.ts"
+    },
+    {
+      "name": "write-fix-module",
+      "description": "Saves proposed fixes to versioned TypeScript files",
+      "path": "./mcp-tools/write-fix-module",
+      "entrypoint": "index.ts"
+    },
+    {
+      "name": "log-fix-history",
+      "description": "Logs all fixes to change_log.json with metadata",
+      "path": "./mcp-tools/log-fix-history",
+      "entrypoint": "index.ts"
+    },
+    {
+      "name": "trigger-regeneration",
+      "description": "Regenerates PDF using the latest fixes",
+      "path": "./mcp-tools/trigger-regeneration",
+      "entrypoint": "index.ts"
+    }
+  ],
+  "workflows": [
+    {
+      "name": "self-healing-pdf-cycle",
+      "description": "Complete self-healing cycle from analysis to regeneration",
+      "steps": [
+        "analyze-pdf-output",
+        "propose-fix-snippet",
+        "write-fix-module",
+        "log-fix-history",
+        "trigger-regeneration"
+      ]
+    }
+  ],
+  "dependencies": {
+    "puppeteer": "^21.0.0",
+    "pdf-parse": "^1.1.1",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
