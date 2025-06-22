@@ -1,77 +1,149 @@
-// Building Code and Jurisdiction Mapping
-import { JurisdictionData } from '../types';
+// Enhanced Building Code and Jurisdiction Mapping
+import fs from 'fs/promises';
+import path from 'path';
+import { JurisdictionData, GeocodeResult } from '../types';
 
-const JURISDICTION_MAP: Record<string, Record<string, JurisdictionData>> = {
-  'FL': {
-    'default': { codeCycle: '2023 FBC', asceVersion: '7-16', hvhz: true },
-    'Miami-Dade County': { codeCycle: '2023 FBC', asceVersion: '7-16', hvhz: true },
-    'Broward County': { codeCycle: '2023 FBC', asceVersion: '7-16', hvhz: true },
-    'Monroe County': { codeCycle: '2023 FBC', asceVersion: '7-16', hvhz: true },
-    'Palm Beach County': { codeCycle: '2023 FBC', asceVersion: '7-16', hvhz: true },
-    'Collier County': { codeCycle: '2023 FBC', asceVersion: '7-16', hvhz: false },
-    'Lee County': { codeCycle: '2023 FBC', asceVersion: '7-16', hvhz: false }
-  },
-  'TX': {
-    'default': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false },
-    'Dallas County': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false },
-    'Harris County': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false },
-    'Travis County': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false },
-    'Tarrant County': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false },
-    'Bexar County': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false }
-  },
-  'CA': {
-    'default': { codeCycle: '2022 CBC', asceVersion: '7-16', hvhz: false },
-    'Los Angeles County': { codeCycle: '2022 CBC', asceVersion: '7-16', hvhz: false },
-    'Orange County': { codeCycle: '2022 CBC', asceVersion: '7-16', hvhz: false },
-    'San Diego County': { codeCycle: '2022 CBC', asceVersion: '7-16', hvhz: false }
-  },
-  'NY': {
-    'default': { codeCycle: '2020 IBC', asceVersion: '7-16', hvhz: false },
-    'New York County': { codeCycle: '2020 NYC BC', asceVersion: '7-16', hvhz: false },
-    'Kings County': { codeCycle: '2020 NYC BC', asceVersion: '7-16', hvhz: false },
-    'Queens County': { codeCycle: '2020 NYC BC', asceVersion: '7-16', hvhz: false }
-  },
-  'IL': {
-    'default': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false },
-    'Cook County': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false }
-  },
-  'GA': {
-    'default': { codeCycle: '2020 IBC', asceVersion: '7-16', hvhz: false },
-    'Fulton County': { codeCycle: '2020 IBC', asceVersion: '7-16', hvhz: false }
-  },
-  'NC': {
-    'default': { codeCycle: '2018 IBC', asceVersion: '7-16', hvhz: false },
-    'Mecklenburg County': { codeCycle: '2018 IBC', asceVersion: '7-16', hvhz: false }
-  },
-  'LA': {
-    'default': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false },
-    'Orleans Parish': { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false }
-  },
-  'SC': {
-    'default': { codeCycle: '2018 IBC', asceVersion: '7-16', hvhz: false },
-    'Charleston County': { codeCycle: '2018 IBC', asceVersion: '7-16', hvhz: false }
+interface ASCEMappingData {
+  states: Record<string, {
+    defaultCode: string;
+    defaultASCE: string;
+    counties: Record<string, {
+      codeCycle: string;
+      asceVersion: string;
+      hvhz: boolean;
+      windSpeed: number;
+      specialRequirements?: string[];
+    }>;
+  }>;
+  windSpeedDefaults: Record<string, number>;
+  asceVersions: Record<string, {
+    pressureCoefficients: Record<string, number>;
+  }>;
+  exposureCategories: Record<string, any>;
+}
+
+let cachedASCEData: ASCEMappingData | null = null;
+
+async function loadASCEMappingData(): Promise<ASCEMappingData> {
+  if (cachedASCEData) {
+    return cachedASCEData;
   }
-};
 
-export async function getJurisdictionData(county: string, state: string): Promise<JurisdictionData> {
-  const stateData = JURISDICTION_MAP[state];
+  try {
+    const dataPath = path.join(__dirname, '../data/asce-mapping.json');
+    const rawData = await fs.readFile(dataPath, 'utf-8');
+    // Remove comments from JSON
+    const cleanedData = rawData.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+    cachedASCEData = JSON.parse(cleanedData);
+    return cachedASCEData!;
+  } catch (error) {
+    console.error('Error loading ASCE mapping data:', error);
+    throw new Error('Failed to load jurisdiction mapping data');
+  }
+}
+
+/**
+ * Get jurisdiction data from address
+ * This function converts an address to city/county/state using geocoding
+ */
+export async function getJurisdictionFromAddress(address: string): Promise<{ city: string; county: string; state: string }> {
+  const { geocodeAddress } = await import('./geocoding');
+  
+  try {
+    const geocodeResult = await geocodeAddress(address);
+    
+    return {
+      city: geocodeResult.city,
+      county: geocodeResult.county,
+      state: geocodeResult.state
+    };
+  } catch (error) {
+    console.error('Failed to geocode address:', error);
+    throw new Error(`Failed to determine jurisdiction for address: ${address}`);
+  }
+}
+
+/**
+ * Get code data for a specific jurisdiction
+ * Returns ASCE version, code cycle, and HVHZ status
+ */
+export async function getCodeData(jurisdiction: { city: string; county: string; state: string }): Promise<{
+  asce: string;
+  codeCycle: string;
+  hvhz: boolean;
+  windSpeed?: number;
+  specialRequirements?: string[];
+}> {
+  const asceData = await loadASCEMappingData();
+  const { county, state } = jurisdiction;
+  
+  console.log(`🔍 Looking up jurisdiction: ${county}, ${state}`);
+  
+  const stateData = asceData.states[state];
   
   if (!stateData) {
-    console.log(`⚠️ No jurisdiction mapping found for state: ${state}, using default`);
-    // Default for unmapped states
-    return { codeCycle: '2021 IBC', asceVersion: '7-16', hvhz: false };
+    console.warn(`⚠️ No jurisdiction mapping found for state: ${state}, using defaults`);
+    return {
+      asce: 'ASCE 7-16',
+      codeCycle: '2021 IBC',
+      hvhz: false,
+      windSpeed: 115
+    };
   }
   
   // Check for specific county mapping
-  const countyData = stateData[county] || stateData['default'];
+  const countyData = stateData.counties[county];
   
-  console.log(`📋 Jurisdiction: ${county}, ${state} → ${countyData.codeCycle}, ${countyData.asceVersion}, HVHZ: ${countyData.hvhz}`);
-  
-  return countyData;
+  if (countyData) {
+    console.log(`✅ Found specific county mapping: ${county}, ${state}`);
+    return {
+      asce: `ASCE ${countyData.asceVersion}`,
+      codeCycle: countyData.codeCycle,
+      hvhz: countyData.hvhz,
+      windSpeed: countyData.windSpeed,
+      specialRequirements: countyData.specialRequirements
+    };
+  } else {
+    console.log(`📋 Using state default for: ${county}, ${state}`);
+    return {
+      asce: `ASCE ${stateData.defaultASCE}`,
+      codeCycle: stateData.defaultCode,
+      hvhz: false, // Default to false unless specifically mapped
+      windSpeed: asceData.windSpeedDefaults.default
+    };
+  }
 }
 
-// Helper function to check if a location requires HVHZ compliance
+/**
+ * Enhanced jurisdiction data lookup with full metadata
+ */
+export async function getJurisdictionData(county: string, state: string): Promise<JurisdictionData & {
+  windSpeed?: number;
+  specialRequirements?: string[];
+}> {
+  const codeData = await getCodeData({ city: '', county, state });
+  
+  // Extract version number from ASCE string (e.g., "ASCE 7-16" -> "7-16")
+  const asceVersion = codeData.asce.replace('ASCE ', '') as '7-10' | '7-16' | '7-22';
+  
+  const result = {
+    codeCycle: codeData.codeCycle,
+    asceVersion,
+    hvhz: codeData.hvhz,
+    windSpeed: codeData.windSpeed,
+    specialRequirements: codeData.specialRequirements
+  };
+  
+  console.log(`📋 Jurisdiction Data: ${county}, ${state} → ${result.codeCycle}, ${result.asceVersion}, HVHZ: ${result.hvhz}`);
+  
+  return result;
+}
+
+/**
+ * Helper function to check if a location requires HVHZ compliance
+ */
 export function isHVHZLocation(county: string, state: string): boolean {
+  // Quick check for Florida HVHZ counties
   if (state !== 'FL') return false;
   
   const hvhzCounties = [
@@ -84,7 +156,9 @@ export function isHVHZLocation(county: string, state: string): boolean {
   return hvhzCounties.includes(county);
 }
 
-// Helper function to get ASCE version based on code cycle
+/**
+ * Helper function to get ASCE version based on code cycle
+ */
 export function getASCEVersion(codeCycle: string): '7-10' | '7-16' | '7-22' {
   if (codeCycle.includes('2023') || codeCycle.includes('2022')) {
     return '7-22';
@@ -92,5 +166,54 @@ export function getASCEVersion(codeCycle: string): '7-10' | '7-16' | '7-22' {
     return '7-16';
   } else {
     return '7-10';
+  }
+}
+
+/**
+ * Get wind pressure coefficients for specific ASCE version
+ */
+export async function getWindPressureCoefficients(asceVersion: '7-10' | '7-16' | '7-22'): Promise<Record<string, number>> {
+  const asceData = await loadASCEMappingData();
+  return asceData.asceVersions[asceVersion]?.pressureCoefficients || asceData.asceVersions['7-16'].pressureCoefficients;
+}
+
+/**
+ * Create jurisdiction summary for metadata
+ */
+export async function createJurisdictionSummary(address: string): Promise<{
+  address: string;
+  jurisdiction: {
+    city: string;
+    county: string;
+    state: string;
+    codeCycle: string;
+    asceVersion: string;
+    hvhz: boolean;
+  };
+  reasoning: string;
+  appliedMethod: string;
+}> {
+  try {
+    const jurisdiction = await getJurisdictionFromAddress(address);
+    const codeData = await getCodeData(jurisdiction);
+    
+    const summary = {
+      address,
+      jurisdiction: {
+        ...jurisdiction,
+        codeCycle: codeData.codeCycle,
+        asceVersion: codeData.asce,
+        hvhz: codeData.hvhz
+      },
+      reasoning: `Based on address geocoding to ${jurisdiction.county}, ${jurisdiction.state}, applied local jurisdiction mapping`,
+      appliedMethod: `Used ${codeData.asce} wind pressure calculations with ${codeData.codeCycle} building code requirements`
+    };
+    
+    console.log(`📊 Jurisdiction Summary Created:`, summary);
+    return summary;
+    
+  } catch (error) {
+    console.error('Error creating jurisdiction summary:', error);
+    throw error;
   }
 }
