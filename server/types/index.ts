@@ -1,4 +1,4 @@
-// Type Definitions
+// Enhanced Type Definitions with Comprehensive Jurisdiction Analysis
 export interface SOWPayload {
   projectName: string;
   address: string;
@@ -95,6 +95,8 @@ export interface JurisdictionData {
   codeCycle: string;
   asceVersion: '7-10' | '7-16' | '7-22';
   hvhz: boolean;
+  windSpeed?: number;
+  specialRequirements?: string[];
 }
 
 export interface WindAnalysisParams {
@@ -133,3 +135,175 @@ export interface TemplateSelectionResult {
   rationale: string;
   attachmentMethod: string;
 }
+
+// NEW: Comprehensive Jurisdiction Analysis Types
+export interface ComprehensiveJurisdictionAnalysis {
+  // Basic location data
+  address: string;
+  geocoding: GeocodeResult;
+  
+  // Jurisdiction determination
+  jurisdiction: {
+    city: string;
+    county: string;
+    state: string;
+    codeCycle: string;
+    asceVersion: string;
+    hvhz: boolean;
+    windSpeed?: number;
+    specialRequirements?: string[];
+  };
+  
+  // Wind analysis
+  windAnalysis: {
+    designWindSpeed: number;
+    exposureCategory: string;
+    elevation: number;
+    asceVersion: '7-10' | '7-16' | '7-22';
+    zonePressures: {
+      zone1Field: number;
+      zone1Perimeter: number;
+      zone2Perimeter: number;
+      zone3Corner: number;
+    };
+    calculationFactors: {
+      Kh: number;
+      Kzt: number;
+      Kd: number;
+      qh: number;
+    };
+  };
+  
+  // Summary metadata
+  summary: {
+    appliedMethod: string;
+    reasoning: string;
+    compliance: {
+      hvhzRequired: boolean;
+      specialRequirements: string[];
+      codeReferences: string[];
+    };
+  };
+}
+
+// NEW: ASCE Mapping Data Structure
+export interface ASCEMappingData {
+  states: Record<string, {
+    defaultCode: string;
+    defaultASCE: string;
+    counties: Record<string, {
+      codeCycle: string;
+      asceVersion: string;
+      hvhz: boolean;
+      windSpeed: number;
+      specialRequirements?: string[];
+    }>;
+  }>;
+  windSpeedDefaults: Record<string, number>;
+  asceVersions: Record<string, {
+    pressureCoefficients: Record<string, number>;
+  }>;
+  exposureCategories: Record<string, any>;
+}
+
+// NEW: SOW Metadata with Jurisdiction Context
+export interface SOWMetadata {
+  projectLocation: string;
+  appliedCodes: string[];
+  windCriteria: string;
+  complianceNotes: string[];
+  engineeringBasis: string;
+  generatedAt: string;
+  jurisdictionAnalysis: ComprehensiveJurisdictionAnalysis;
+}
+
+// NEW: Pressure Table for SOW Documents
+export interface PressureTable {
+  title: string;
+  method: string;
+  zones: Array<{
+    zone: string;
+    description: string;
+    pressure: string;
+    units: string;
+  }>;
+}
+
+// NEW: Jurisdiction Compliance Validation
+export interface JurisdictionCompliance {
+  isValid: boolean;
+  warnings: string[];
+  recommendations: string[];
+  requiredActions: string[];
+}
+
+// NEW: Enhanced Wind Summary
+export interface WindAnalysisSummary {
+  method: string;
+  asceVersion: string;
+  windSpeed: number;
+  zonePressures: {
+    zone1Field: number;
+    zone1Perimeter: number;
+    zone2Perimeter: number;
+    zone3Corner: number;
+  };
+  reasoning: string;
+  calculationFactors: {
+    Kh: number;
+    Kzt: number;
+    Kd: number;
+    qh: number;
+  };
+}
+
+// NEW: API Request/Response Types for Jurisdiction Analysis
+export interface JurisdictionAnalysisRequest {
+  address: string;
+  buildingHeight?: number;
+  exposureCategory?: 'B' | 'C' | 'D';
+}
+
+export interface JurisdictionAnalysisResponse {
+  success: boolean;
+  analysis?: ComprehensiveJurisdictionAnalysis;
+  metadata?: SOWMetadata;
+  pressureTable?: PressureTable;
+  compliance?: JurisdictionCompliance;
+  error?: string;
+}
+
+// NEW: Quick Lookup Types
+export interface QuickJurisdictionLookup {
+  county: string;
+  state: string;
+}
+
+export interface QuickJurisdictionResponse {
+  codeCycle: string;
+  asceVersion: string;
+  hvhz: boolean;
+  windSpeed?: number;
+  specialRequirements?: string[];
+}
+
+// Enhanced existing interfaces for better integration
+export interface EnhancedGeocodeResult extends GeocodeResult {
+  jurisdictionData?: JurisdictionData;
+  windAnalysis?: WindAnalysisResult;
+}
+
+export interface EnhancedWindAnalysisParams extends WindAnalysisParams {
+  jurisdictionContext?: {
+    county: string;
+    state: string;
+    codeCycle: string;
+  };
+}
+
+// Export utility types
+export type ASCEVersion = '7-10' | '7-16' | '7-22';
+export type ExposureCategory = 'B' | 'C' | 'D';
+export type ProjectType = 'recover' | 'tearoff' | 'new';
+export type DeckType = 'steel' | 'concrete' | 'wood' | 'gypsum' | 'lightweight-concrete';
+export type MembraneType = 'TPO' | 'EPDM' | 'PVC' | 'Modified Bitumen' | 'Built-Up';
