@@ -2,44 +2,23 @@
 import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Upload, FileText, X, AlertTriangle, CheckCircle, Eye, ChevronDown, RefreshCw, Flag } from 'lucide-react';
+import { Upload, FileText, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface SelfHealingAction {
-  type: 'missing_field' | 'low_confidence' | 'fallback_selection' | 'auto_correction';
-  field: string;
-  originalValue?: any;
-  correctedValue: any;
-  reason: string;
-  confidence: number;
-  impact: 'low' | 'medium' | 'high';
-}
-
-interface SectionOutput {
-  id: string;
-  title: string;
-  included: boolean;
-  rationale: string;
-  content?: string;
-  priority?: number;
-}
-
-interface SectionAnalysis {
-  includedSections: SectionOutput[];
-  excludedSections: SectionOutput[];
-  reasoningMap: Record<string, string>;
-  selfHealingActions: SelfHealingAction[];
-  confidenceScore: number;
-}
+import { SelfHealingInspector } from './SelfHealingInspector';
+import { SectionAnalysisVisualizer } from './SectionAnalysisVisualizer';
+import { PDFPreviewPanel } from './PDFPreviewPanel';
+import { ErrorDisplay } from './ErrorDisplay';
+import { SelfHealingAction, SectionAnalysis, EngineeringSummaryData } from '@/types/engineering';
 
 interface DocumentUploadProps {
   onFileUpload: (file: { filename: string; type: string; data: string }) => void;
   selfHealingActions?: SelfHealingAction[];
   sectionAnalysis?: SectionAnalysis;
   generatedPDFUrl?: string;
-  engineeringSummary?: any;
+  engineeringSummary?: EngineeringSummaryData;
+  error?: string;
+  onRetryGeneration?: () => void;
+  onDownloadPDF?: () => void;
 }
 
 export const DocumentUploadSection: React.FC<DocumentUploadProps> = ({
@@ -47,12 +26,13 @@ export const DocumentUploadSection: React.FC<DocumentUploadProps> = ({
   selfHealingActions = [],
   sectionAnalysis,
   generatedPDFUrl,
-  engineeringSummary
+  engineeringSummary,
+  error,
+  onRetryGeneration,
+  onDownloadPDF
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<{ filename: string; type: string } | null>(null);
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [showSectionAnalysis, setShowSectionAnalysis] = useState(false);
   const { toast } = useToast();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,23 +89,30 @@ export const DocumentUploadSection: React.FC<DocumentUploadProps> = ({
     }
   };
 
-  const getBadgeVariant = (impact: string) => {
-    switch (impact) {
-      case 'high': return 'destructive';
-      case 'medium': return 'secondary';
-      case 'low': return 'outline';
-      default: return 'outline';
+  const getErrorSuggestions = (errorMessage: string): string[] => {
+    const suggestions = [];
+    
+    if (errorMessage.toLowerCase().includes('address')) {
+      suggestions.push('Check that the address is complete and properly formatted');
+      suggestions.push('Ensure the address includes city, state, and zip code');
     }
-  };
-
-  const getActionIcon = (type: string) => {
-    switch (type) {
-      case 'missing_field': return <AlertTriangle className="h-3 w-3" />;
-      case 'auto_correction': return <RefreshCw className="h-3 w-3" />;
-      case 'fallback_selection': return <CheckCircle className="h-3 w-3" />;
-      case 'low_confidence': return <Flag className="h-3 w-3" />;
-      default: return <CheckCircle className="h-3 w-3" />;
+    
+    if (errorMessage.toLowerCase().includes('connection') || errorMessage.toLowerCase().includes('network')) {
+      suggestions.push('Check your internet connection');
+      suggestions.push('Verify the backend server is running on http://localhost:3001');
     }
+    
+    if (errorMessage.toLowerCase().includes('validation')) {
+      suggestions.push('Ensure all required fields are filled out');
+      suggestions.push('Check that numeric values are within valid ranges');
+    }
+    
+    if (suggestions.length === 0) {
+      suggestions.push('Try refreshing the page and submitting again');
+      suggestions.push('Check the browser console for additional error details');
+    }
+    
+    return suggestions;
   };
 
   return (
@@ -190,189 +177,33 @@ export const DocumentUploadSection: React.FC<DocumentUploadProps> = ({
         </CardContent>
       </Card>
 
+      {/* Error Display */}
+      {error && (
+        <ErrorDisplay
+          error={error}
+          suggestions={getErrorSuggestions(error)}
+          onRetry={onRetryGeneration}
+        />
+      )}
+
       {/* Self-Healing Actions Display */}
       {selfHealingActions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <RefreshCw className="h-5 w-5 text-blue-600" />
-                Auto-Corrections Applied
-              </div>
-              <Badge variant="outline">
-                {selfHealingActions.length} corrections
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {selfHealingActions.map((action, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 border border-slate-200 rounded-lg">
-                  <div className="mt-0.5">
-                    {getActionIcon(action.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium text-slate-700 text-sm">
-                        {action.field}
-                      </p>
-                      <Badge variant={getBadgeVariant(action.impact)} className="text-xs">
-                        {action.impact} impact
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {Math.round(action.confidence * 100)}% confidence
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-slate-600 mb-2">{action.reason}</p>
-                    {action.originalValue !== undefined && (
-                      <div className="text-xs text-slate-500">
-                        <span className="line-through">Original: {String(action.originalValue)}</span>
-                        {' → '}
-                        <span className="font-medium">Corrected: {String(action.correctedValue)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <SelfHealingInspector actions={selfHealingActions} />
       )}
 
       {/* Section Analysis Display */}
       {sectionAnalysis && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-green-600" />
-                SOW Section Analysis
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-green-700">
-                  {sectionAnalysis.includedSections.length} included
-                </Badge>
-                <Badge variant="secondary">
-                  {sectionAnalysis.excludedSections.length} excluded
-                </Badge>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Collapsible open={showSectionAnalysis} onOpenChange={setShowSectionAnalysis}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between p-0 mb-4">
-                  <span className="font-medium">View Section Breakdown</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showSectionAnalysis ? 'rotate-180' : ''}`} />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="space-y-4">
-                  {/* Included Sections */}
-                  <div>
-                    <h4 className="font-medium text-green-700 mb-2 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Included Sections
-                    </h4>
-                    <div className="space-y-2">
-                      {sectionAnalysis.includedSections.map((section, index) => (
-                        <div key={index} className="p-2 border-l-4 border-green-500 bg-green-50 rounded-r">
-                          <p className="font-medium text-sm text-green-800">{section.title}</p>
-                          <p className="text-xs text-green-600">{section.rationale}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Excluded Sections */}
-                  <div>
-                    <h4 className="font-medium text-slate-700 mb-2 flex items-center gap-2">
-                      <X className="h-4 w-4" />
-                      Excluded Sections
-                    </h4>
-                    <div className="space-y-2">
-                      {sectionAnalysis.excludedSections.map((section, index) => (
-                        <div key={index} className="p-2 border-l-4 border-slate-400 bg-slate-50 rounded-r">
-                          <p className="font-medium text-sm text-slate-700">{section.title}</p>
-                          <p className="text-xs text-slate-500">{section.rationale}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </CardContent>
-        </Card>
+        <SectionAnalysisVisualizer analysis={sectionAnalysis} />
       )}
 
-      {/* Generated PDF Preview */}
-      {generatedPDFUrl && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-blue-600" />
-              Generated SOW Preview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
-              <div>
-                <p className="font-medium text-slate-700">SOW Document Ready</p>
-                <p className="text-sm text-slate-600">Your scope of work has been generated successfully</p>
-              </div>
-              <Button asChild>
-                <a href={generatedPDFUrl} target="_blank" rel="noopener noreferrer">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View PDF
-                </a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Debug Panel */}
-      {engineeringSummary && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-                Engineering Debug Panel
-              </div>
-              <div className="flex items-center gap-2">
-                {selfHealingActions.some(a => a.type === 'auto_correction') && (
-                  <Badge variant="outline" className="text-blue-700">auto-corrected</Badge>
-                )}
-                {selfHealingActions.some(a => a.type === 'missing_field') && (
-                  <Badge variant="outline" className="text-orange-700">missing</Badge>
-                )}
-                {selfHealingActions.some(a => a.impact === 'high') && (
-                  <Badge variant="destructive">flagged for review</Badge>
-                )}
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Collapsible open={showDebugPanel} onOpenChange={setShowDebugPanel}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between p-0 mb-4">
-                  <span className="font-medium">View Engineering Summary</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showDebugPanel ? 'rotate-180' : ''}`} />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="space-y-4 p-4 bg-slate-50 rounded-lg">
-                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-slate-700">
-                    {JSON.stringify(engineeringSummary, null, 2)}
-                  </pre>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </CardContent>
-        </Card>
-      )}
+      {/* PDF Preview Panel */}
+      <PDFPreviewPanel
+        filename={engineeringSummary?.filename}
+        fileUrl={engineeringSummary?.fileUrl || generatedPDFUrl}
+        fileSize={engineeringSummary?.fileSize}
+        generationTime={engineeringSummary?.generationTime}
+        onDownload={onDownloadPDF}
+      />
     </div>
   );
 };

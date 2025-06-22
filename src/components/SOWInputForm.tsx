@@ -12,7 +12,9 @@ import { InsulationSection } from './sections/InsulationSection';
 import { RoofFeaturesSection } from './sections/RoofFeaturesSection';
 import { EngineeringSummaryPanel } from './EngineeringSummaryPanel';
 import { DocumentUploadSection } from './DocumentUploadSection';
-import { generateSOW, generateSOWWithDebug, checkHealth, SOWPayload, SOWResponse, EngineeringSummaryData } from '@/lib/api';
+import { DevModePanel } from './DevModePanel';
+import { generateSOW, generateSOWWithDebug, checkHealth, SOWPayload, SOWResponse } from '@/lib/api';
+import { EngineeringSummaryData, SelfHealingAction, SectionAnalysis } from '@/types/engineering';
 
 export const SOWInputForm = () => {
   const { toast } = useToast();
@@ -23,9 +25,18 @@ export const SOWInputForm = () => {
   const [lastPayload, setLastPayload] = useState<SOWPayload | null>(null);
   const [backendStatus, setBackendStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown');
   
-  // NEW: Engineering Summary State
+  // Enhanced state management
   const [engineeringSummary, setEngineeringSummary] = useState<EngineeringSummaryData | null>(null);
   const [showEngineeringSummary, setShowEngineeringSummary] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
+  const [selfHealingActions, setSelfHealingActions] = useState<SelfHealingAction[]>([]);
+  const [sectionAnalysis, setSectionAnalysis] = useState<SectionAnalysis | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  
+  // Dev Mode
+  const [isDevMode, setIsDevMode] = useState(() => {
+    return new URLSearchParams(window.location.search).get('dev') === 'true';
+  });
   
   const [formData, setFormData] = useState({
     projectName: '',
@@ -128,10 +139,56 @@ export const SOWInputForm = () => {
     }
   };
 
-  // NEW: Enhanced state for debug features
-  const [debugMode, setDebugMode] = useState(false);
-  const [selfHealingActions, setSelfHealingActions] = useState<any[]>([]);
-  const [sectionAnalysis, setSectionAnalysis] = useState<any>(null);
+  const autoFillTestData = () => {
+    setFormData({
+      projectName: 'Test Hospital Roof Project',
+      address: '123 Medical Center Dr, Miami, FL 33101',
+      companyName: 'Test Roofing Solutions Inc.',
+      squareFootage: 25000,
+      buildingHeight: 45,
+      length: 200,
+      width: 125,
+      projectType: 'tearoff',
+      membraneThickness: '80',
+      membraneColor: 'White',
+      elevation: 10,
+      deckType: 'Concrete',
+      exposureCategory: 'C',
+      roofSlope: 0.125,
+      documentAttachment: undefined,
+      insulationType: 'Polyisocyanurate',
+      insulationThickness: 3.0,
+      insulationRValue: 18.0,
+      coverBoardType: 'Gypsum',
+      coverBoardThickness: 0.625,
+      hasExistingInsulation: true,
+      existingInsulationCondition: 'poor',
+      numberOfDrains: 8,
+      drainTypes: ['Roof Drain', 'Scupper'],
+      numberOfPenetrations: 12,
+      penetrationTypes: ['HVAC', 'Plumbing Vent', 'Electrical'],
+      skylights: 2,
+      roofHatches: 1,
+      hvacUnits: 4,
+      walkwayPadRequested: true,
+      gutterType: 'Internal',
+      downspouts: 6,
+      expansionJoints: 3,
+      parapetHeight: 42,
+      roofConfiguration: 'Multi-Level',
+    });
+    
+    toast({
+      title: "Test Data Loaded",
+      description: "Form has been populated with comprehensive test data",
+    });
+  };
+
+  const handleRetryGeneration = () => {
+    if (lastPayload) {
+      handleSubmitWithPayload(lastPayload);
+    }
+  };
 
   const handleDocumentUpload = (fileData: { filename: string; type: string; data: string }) => {
     updateFormData({ documentAttachment: fileData });
@@ -163,6 +220,10 @@ export const SOWInputForm = () => {
     };
 
     setLastPayload(payload);
+    handleSubmitWithPayload(payload);
+  };
+
+  const handleSubmitWithPayload = async (payload: SOWPayload) => {
     setIsGenerating(true);
     setProgress(0);
     setGeneratedFile(null);
@@ -170,6 +231,7 @@ export const SOWInputForm = () => {
     setShowEngineeringSummary(false);
     setSelfHealingActions([]);
     setSectionAnalysis(null);
+    setGenerationError(null);
 
     const progressInterval = setInterval(() => {
       setProgress(prev => Math.min(prev + 10, 90));
@@ -192,8 +254,8 @@ export const SOWInputForm = () => {
         setEngineeringSummary(result.metadata.engineeringSummary);
         
         // Extract self-healing actions if available
-        if (result.metadata.engineeringSummary.sectionAnalysis?.selfHealingActions) {
-          setSelfHealingActions(result.metadata.engineeringSummary.sectionAnalysis.selfHealingActions);
+        if (result.metadata.engineeringSummary.selfHealingActions) {
+          setSelfHealingActions(result.metadata.engineeringSummary.selfHealingActions);
         }
         
         // Extract section analysis if available
@@ -214,6 +276,7 @@ export const SOWInputForm = () => {
       setBackendStatus('disconnected');
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setGenerationError(errorMessage);
       setGeneratedFile({
         success: false,
         error: errorMessage
@@ -381,7 +444,7 @@ export const SOWInputForm = () => {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* NEW: Document Upload Section */}
+        {/* Enhanced Document Upload Section */}
         <Collapsible open={true}>
           <div className="tesla-section-header">
             <div className="flex items-center justify-between w-full">
@@ -391,7 +454,7 @@ export const SOWInputForm = () => {
                 </div>
                 <div>
                   <h3 className="tesla-h3">Document Upload & Analysis</h3>
-                  <p className="tesla-small text-tesla-text-muted">Upload documents for automatic data extraction</p>
+                  <p className="tesla-small text-tesla-text-muted">Upload documents and view generation results</p>
                 </div>
               </div>
             </div>
@@ -401,8 +464,11 @@ export const SOWInputForm = () => {
               onFileUpload={handleDocumentUpload}
               selfHealingActions={selfHealingActions}
               sectionAnalysis={sectionAnalysis}
-              generatedPDFUrl={generatedFile?.outputPath}
+              generatedPDFUrl={generatedFile?.outputPath || generatedFile?.fileUrl}
               engineeringSummary={engineeringSummary}
+              error={generationError}
+              onRetryGeneration={handleRetryGeneration}
+              onDownloadPDF={handleDownload}
             />
           </div>
         </Collapsible>
@@ -464,6 +530,16 @@ export const SOWInputForm = () => {
                   )}
                   Test Connection
                 </button>
+
+                {isDevMode && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDevMode(!isDevMode)}
+                    className="tesla-btn bg-purple-600 text-white"
+                  >
+                    Dev Mode
+                  </button>
+                )}
               </div>
               
               <button
@@ -487,6 +563,14 @@ export const SOWInputForm = () => {
           </div>
         </div>
       </form>
+
+      {/* Dev Mode Panel */}
+      <DevModePanel
+        isDevMode={isDevMode}
+        onToggleDevMode={() => setIsDevMode(!isDevMode)}
+        onAutoFill={autoFillTestData}
+        rawData={isDevMode ? { engineeringSummary, selfHealingActions, sectionAnalysis, generatedFile } : undefined}
+      />
 
       {/* Debug Panel */}
       {showDebug && lastPayload && (

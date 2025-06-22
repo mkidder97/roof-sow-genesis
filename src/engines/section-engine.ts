@@ -1,12 +1,12 @@
 // Section Engine - Dynamic SOW Section Selection
 // Logic-based inclusion/exclusion of paragraph sections
 
-import { SOWPayload } from '../server/types/index';
+import { SOWPayload } from '../lib/api';
 import { 
   SectionOutput, 
   SelfHealingAction, 
   SectionAnalysis 
-} from '../server/types/index';
+} from '../types/engineering';
 
 interface SectionRule {
   id: string;
@@ -189,8 +189,3 @@ export function selectSOWSections(payload: SOWPayload): SectionAnalysis {
     confidenceScore
   };
 }
-
-// Example Usage
-// const payload: SOWPayload = { ... };
-// const sectionAnalysis = selectSOWSections(payload);
-// console.log(sectionAnalysis);

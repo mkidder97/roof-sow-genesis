@@ -29,6 +29,7 @@
     "roof-systems"
   ],
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -59,7 +60,6 @@
     "@radix-ui/react-tooltip": "^1.1.4",
     "@supabase/supabase-js": "^2.50.0",
     "@tanstack/react-query": "^5.56.2",
-    "@anthropic-ai/sdk": "^0.24.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -79,6 +79,7 @@
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^11.1.0",
     "vaul": "^0.9.3",
     "zod": "^3.23.8"
   },
