@@ -3,41 +3,13 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, FileText, Download, Bug, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, FileText, Download, Bug, CheckCircle, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
 import { BuildingSpecsSection } from './sections/BuildingSpecsSection';
 import { MembraneOptionsSection } from './sections/MembraneOptionsSection';
-
-interface SOWPayload {
-  projectName: string;
-  address: string;
-  companyName: string;
-  squareFootage: number;
-  buildingHeight: number;
-  buildingDimensions: {
-    length: number;
-    width: number;
-  };
-  projectType: string;
-  membraneThickness: string;
-  membraneColor: string;
-}
-
-interface SOWResponse {
-  success: boolean;
-  filename?: string;
-  outputPath?: string;
-  fileSize?: number;
-  generationTime?: number;
-  metadata?: {
-    projectName: string;
-    template: string;
-    windPressure: string;
-  };
-  error?: string;
-}
+import { generateSOW, checkHealth, SOWPayload, SOWResponse } from '@/lib/api';
 
 export const SOWInputForm = () => {
   const { toast } = useToast();
@@ -46,6 +18,7 @@ export const SOWInputForm = () => {
   const [generatedFile, setGeneratedFile] = useState<SOWResponse | null>(null);
   const [showDebug, setShowDebug] = useState(false);
   const [lastPayload, setLastPayload] = useState<SOWPayload | null>(null);
+  const [backendStatus, setBackendStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown');
   
   const [formData, setFormData] = useState({
     projectName: '',
@@ -86,6 +59,24 @@ export const SOWInputForm = () => {
     return true;
   };
 
+  const testBackendConnection = async () => {
+    try {
+      await checkHealth();
+      setBackendStatus('connected');
+      toast({
+        title: "Backend Connected ✅",
+        description: "Successfully connected to the SOW generation service",
+      });
+    } catch (error) {
+      setBackendStatus('disconnected');
+      toast({
+        title: "Backend Connection Failed ❌",
+        description: error instanceof Error ? error.message : "Cannot connect to backend",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -117,40 +108,31 @@ export const SOWInputForm = () => {
     }, 200);
 
     try {
-      console.log('Sending SOW request:', payload);
-      
-      const response = await fetch('/api/generate-sow', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result: SOWResponse = await response.json();
+      const result = await generateSOW(payload);
       
       clearInterval(progressInterval);
       setProgress(100);
       
-      if (result.success) {
-        setGeneratedFile(result);
-        toast({
-          title: "SOW Generated Successfully!",
-          description: `PDF generated in ${result.generationTime}ms`,
-        });
-      } else {
-        throw new Error(result.error || 'Generation failed');
-      }
+      setGeneratedFile(result);
+      setBackendStatus('connected');
+      toast({
+        title: "SOW Generated Successfully!",
+        description: `PDF generated in ${result.generationTime}ms`,
+      });
     } catch (error) {
       clearInterval(progressInterval);
       console.error('Error generating SOW:', error);
+      setBackendStatus('disconnected');
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setGeneratedFile({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: errorMessage
       });
+      
       toast({
         title: "Generation Failed",
-        description: "There was an error generating your SOW. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -280,6 +262,23 @@ export const SOWInputForm = () => {
                     <Bug className="mr-1 h-3 w-3" />
                     Debug
                   </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={testBackendConnection}
+                    className="text-xs"
+                  >
+                    {backendStatus === 'connected' ? (
+                      <Wifi className="mr-1 h-3 w-3 text-green-600" />
+                    ) : backendStatus === 'disconnected' ? (
+                      <WifiOff className="mr-1 h-3 w-3 text-red-600" />
+                    ) : (
+                      <Wifi className="mr-1 h-3 w-3" />
+                    )}
+                    Test Connection
+                  </Button>
                 </div>
                 
                 <Button
@@ -315,6 +314,29 @@ export const SOWInputForm = () => {
             <pre className="text-xs bg-slate-800 text-green-400 p-4 rounded overflow-x-auto">
               {JSON.stringify(lastPayload, null, 2)}
             </pre>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Backend Status */}
+      {showDebug && (
+        <Card className="bg-slate-50 border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-sm text-slate-600">Backend Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 text-sm">
+              Status: 
+              {backendStatus === 'connected' && (
+                <span className="text-green-600 font-medium">✅ Connected</span>
+              )}
+              {backendStatus === 'disconnected' && (
+                <span className="text-red-600 font-medium">❌ Disconnected</span>
+              )}
+              {backendStatus === 'unknown' && (
+                <span className="text-gray-600 font-medium">❓ Unknown</span>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -375,6 +397,18 @@ export const SOWInputForm = () => {
                   </h3>
                 </div>
                 <p className="text-red-700">{generatedFile.error}</p>
+                {generatedFile.error?.includes('Cannot connect') && (
+                  <div className="bg-red-100 p-3 rounded border border-red-200">
+                    <p className="text-sm text-red-800">
+                      <strong>Troubleshooting:</strong>
+                    </p>
+                    <ul className="text-sm text-red-700 mt-1 list-disc pl-5">
+                      <li>Make sure your test server is running: <code>node test-server.js</code></li>
+                      <li>Check that it's running on port 3001</li>
+                      <li>Click "Test Connection" to verify backend status</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
