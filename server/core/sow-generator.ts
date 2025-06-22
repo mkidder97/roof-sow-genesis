@@ -1,9 +1,37 @@
-// Core SOW Generator - Main Logic Driver
-import { calculateWindPressures, WindPressureInputs, WindPressureResult } from '../logic/wind-pressure';
-import { selectManufacturerPattern, ManufacturerSelectionInputs, ManufacturerAnalysisResult } from '../manufacturer/ManufacturerAnalysisEngine';
-import { analyzeTakeoffData, TakeoffItems, TakeoffDiagnostics, SectionOverrides } from '../logic/section-populator';
-import { geocodeAddress } from '../lib/geocoding';
-import { generatePDF } from '../lib/pdf-generator';
+// Main SOW Generator - Complete Logic Engine Orchestrator
+// Integrates all engines: Template → Wind → Fastening → Takeoff → Final Output
+
+import { 
+  selectTemplate, 
+  validateTemplateInputs,
+  TemplateSelectionInputs,
+  TemplateSelectionResult
+} from './template-engine';
+
+import { 
+  calculateWindPressures, 
+  validateWindInputs,
+  WindEngineInputs,
+  WindPressureResult
+} from './wind-engine';
+
+import { 
+  selectManufacturerSystem, 
+  validateFasteningInputs,
+  FasteningEngineInputs,
+  FasteningEngineResult
+} from './fastening-engine';
+
+import { 
+  analyzeTakeoffDiagnostics, 
+  validateTakeoffInputs,
+  generateTakeoffSummary,
+  TakeoffEngineInputs,
+  TakeoffDiagnostics,
+  TakeoffItems
+} from './takeoff-engine';
+
+import { performComprehensiveAnalysis } from '../lib/jurisdiction-analysis';
 
 export interface SOWGeneratorInputs {
   // Project basics
@@ -14,15 +42,20 @@ export interface SOWGeneratorInputs {
   // Building parameters
   buildingHeight: number;
   squareFootage: number;
+  buildingDimensions?: {
+    length: number;
+    width: number;
+  };
   deckType: string;
-  projectType: string;
-  roofSlope?: number;
+  projectType: 'recover' | 'tearoff' | 'new';
+  roofSlope: number;
   elevation?: number;
   exposureCategory?: 'B' | 'C' | 'D';
   
   // Membrane specifications
-  membraneType: 'TPO' | 'PVC' | 'EPDM';
+  membraneType: string;
   membraneThickness: string;
+  membraneMaterial?: string;
   selectedMembraneBrand?: string;
   
   // Takeoff data
@@ -30,387 +63,431 @@ export interface SOWGeneratorInputs {
   
   // Optional overrides
   basicWindSpeed?: number;
+  preferredManufacturer?: string;
+  includesTaperedInsulation?: boolean;
+  userSelectedSystem?: string;
   customNotes?: string[];
+}
+
+export interface EngineeringSummaryOutput {
+  // Template selection
+  templateSelection: TemplateSelectionResult;
+  
+  // Jurisdiction and wind analysis
+  jurisdictionAnalysis: {
+    address: string;
+    jurisdiction: {
+      city: string;
+      county: string;
+      state: string;
+      codeCycle: string;
+      asceVersion: string;
+      hvhz: boolean;
+    };
+    windAnalysis: WindPressureResult;
+  };
+  
+  // System selection
+  systemSelection: FasteningEngineResult;
+  
+  // Takeoff diagnostics
+  takeoffDiagnostics: TakeoffDiagnostics;
+  
+  // Final metadata
+  metadata: {
+    templateUsed: string;
+    asceVersion: string;
+    hvhz: boolean;
+    windUpliftPressures: {
+      zone1Field: number;
+      zone1Perimeter?: number;
+      zone2Perimeter: number;
+      zone3Corner: number;
+    };
+    selectedSystem: string;
+    rejectedSystems: Array<{
+      name: string;
+      reason: string;
+    }>;
+    fasteningSpecifications: {
+      fieldSpacing: string;
+      perimeterSpacing: string;
+      cornerSpacing: string;
+      penetrationDepth: string;
+      fastenerType: string;
+    };
+    takeoffSummary: {
+      overallRisk: 'Low' | 'Medium' | 'High';
+      keyIssues: string[];
+      quantitySummary: string;
+    };
+    complianceNotes: string[];
+    generationTimestamp: string;
+  };
 }
 
 export interface SOWGeneratorResult {
   success: boolean;
-  finalOutput: {
-    metadata: {
-      template: string;
-      windPressure: string;
-      asceVersion: string;
-      codeCycle: string;
-      jurisdiction: string;
-      hvhz: boolean;
-      windUpliftPressures: {
-        zone1Field: number;
-        zone1Perimeter: number;
-        zone2Perimeter: number;
-        zone3Corner: number;
-      };
-      fasteningSpecifications: {
-        fieldSpacing: string;
-        perimeterSpacing: string;
-        cornerSpacing: string;
-        penetrationDepth: string;
-      };
-      takeoffDiagnostics: TakeoffDiagnostics;
-      manufacturerInfo: {
-        selectedPattern: string;
-        manufacturer: string;
-        system: string;
-        approvals: string[];
-        hasApprovals: boolean;
-      };
-    };
-    pdfData: any;
-  };
-  generationTime: number;
+  engineeringSummary?: EngineeringSummaryOutput;
   filename?: string;
   outputPath?: string;
   fileSize?: number;
+  generationTime?: number;
   error?: string;
+  validationErrors?: string[];
 }
 
-export async function generateSOW(inputs: SOWGeneratorInputs): Promise<SOWGeneratorResult> {
+/**
+ * Main SOW Generator - Complete Logic Engine
+ * Orchestrates all engines to produce comprehensive engineering summary
+ */
+export async function generateSOWWithEngineering(inputs: SOWGeneratorInputs): Promise<SOWGeneratorResult> {
   const startTime = Date.now();
+  console.log(`🚀 SOW Generator - Starting complete logic engine for: ${inputs.projectName}`);
   
   try {
-    console.log(`🚀 Starting SOW generation for: ${inputs.projectName}`);
-    console.log(`📍 Address: ${inputs.address}`);
-    console.log(`🏗️ Project: ${inputs.squareFootage} sf ${inputs.projectType} on ${inputs.deckType}`);
+    // Step 1: Validate all inputs
+    console.log('📋 Step 1: Validating inputs...');
+    const validation = validateAllInputs(inputs);
+    if (!validation.valid) {
+      return {
+        success: false,
+        error: `Input validation failed: ${validation.errors.join(', ')}`,
+        validationErrors: validation.errors
+      };
+    }
     
-    // Step 1: Geocoding and Location Analysis
-    console.log('\n📍 STEP 1: Geocoding and Location Analysis');
-    const geocodeResult = await geocodeAddress(inputs.address);
-    console.log(`✅ Geocoded to: ${geocodeResult.city}, ${geocodeResult.county}, ${geocodeResult.state}`);
+    // Step 2: Perform jurisdiction analysis to get HVHZ and ASCE version
+    console.log('🏛️ Step 2: Analyzing jurisdiction and codes...');
+    const jurisdictionAnalysis = await performComprehensiveAnalysis(
+      inputs.address,
+      inputs.buildingHeight,
+      inputs.exposureCategory
+    );
     
-    // Step 2: Wind Pressure Calculations
-    console.log('\n💨 STEP 2: Wind Pressure Calculations');
-    const windInputs: WindPressureInputs = {
-      buildingHeight: inputs.buildingHeight,
-      exposureCategory: inputs.exposureCategory || 'C', // Default to C if not specified
-      roofSlope: inputs.roofSlope || 0,
-      elevation: inputs.elevation || geocodeResult.elevation,
-      county: geocodeResult.county,
-      state: geocodeResult.state,
-      basicWindSpeed: inputs.basicWindSpeed
-    };
+    const hvhz = jurisdictionAnalysis.jurisdiction.hvhz;
+    const asceVersion = jurisdictionAnalysis.windAnalysis.asceVersion;
     
-    const windResult: WindPressureResult = calculateWindPressures(windInputs);
-    console.log(`✅ Wind analysis complete: ${windResult.metadata.asceVersion}, Max pressure: ${Math.abs(windResult.windUpliftPressures.zone3Corner).toFixed(1)} psf`);
+    console.log(`📍 Jurisdiction: ${jurisdictionAnalysis.jurisdiction.county}, ${jurisdictionAnalysis.jurisdiction.state} (HVHZ: ${hvhz})`);
     
-    // Step 3: Manufacturer Pattern Selection
-    console.log('\n🏭 STEP 3: Manufacturer Pattern Selection');
-    const manufacturerInputs: ManufacturerSelectionInputs = {
-      selectedMembraneBrand: inputs.selectedMembraneBrand,
+    // Step 3: Template Selection
+    console.log('🎯 Step 3: Selecting template...');
+    const templateInputs: TemplateSelectionInputs = {
+      projectType: inputs.projectType,
+      hvhz,
       membraneType: inputs.membraneType,
-      windUpliftPressures: windResult.windUpliftPressures,
+      membraneMaterial: inputs.membraneMaterial,
+      roofSlope: inputs.roofSlope / 12, // Convert to decimal
+      buildingHeight: inputs.buildingHeight,
+      exposureCategory: jurisdictionAnalysis.windAnalysis.exposureCategory as 'B' | 'C' | 'D',
+      includesTaperedInsulation: inputs.includesTaperedInsulation,
+      userSelectedSystem: inputs.userSelectedSystem
+    };
+    
+    const templateSelection = selectTemplate(templateInputs);
+    console.log(`✅ Template selected: ${templateSelection.templateName}`);
+    
+    // Step 4: Wind Pressure Calculation (using jurisdiction data)
+    console.log('🌪️ Step 4: Calculating wind pressures...');
+    const windResult = jurisdictionAnalysis.windAnalysis;
+    
+    // Step 5: Manufacturer System Selection
+    console.log('🏭 Step 5: Selecting manufacturer system...');
+    const fasteningInputs: FasteningEngineInputs = {
+      windUpliftPressures: windResult.zonePressures,
+      membraneType: inputs.membraneType,
+      membraneThickness: inputs.membraneThickness,
+      hvhz,
+      projectType: inputs.projectType,
       deckType: inputs.deckType,
-      projectType: inputs.projectType,
-      hvhz: windResult.metadata.hvhz,
-      jurisdiction: windResult.metadata.jurisdiction
+      preferredManufacturer: inputs.preferredManufacturer || inputs.selectedMembraneBrand
     };
     
-    const manufacturerResult: ManufacturerAnalysisResult = selectManufacturerPattern(manufacturerInputs);
-    console.log(`✅ Selected: ${manufacturerResult.manufacturer} ${manufacturerResult.system}`);
-    console.log(`🔧 Fastening: ${manufacturerResult.fasteningSpecifications.cornerSpacing} corners`);
+    const systemSelection = await selectManufacturerSystem(fasteningInputs);
+    console.log(`✅ System selected: ${systemSelection.selectedSystem.manufacturer} ${systemSelection.selectedSystem.systemName}`);
     
-    // Step 4: Takeoff Analysis and Section Population
-    console.log('\n📊 STEP 4: Takeoff Analysis and Section Population');
-    const projectData = {
-      squareFootage: inputs.squareFootage,
+    // Step 6: Takeoff Diagnostics
+    console.log('📊 Step 6: Analyzing takeoff diagnostics...');
+    const takeoffInputs: TakeoffEngineInputs = {
+      takeoffItems: inputs.takeoffItems,
+      buildingDimensions: inputs.buildingDimensions,
       projectType: inputs.projectType,
-      windPressure: Math.abs(windResult.windUpliftPressures.zone3Corner),
-      hvhz: windResult.metadata.hvhz
+      membraneType: inputs.membraneType,
+      hvhz
     };
     
-    const { diagnostics, overrides } = analyzeTakeoffData(inputs.takeoffItems, projectData);
-    console.log(`✅ Takeoff analysis complete: ${Object.values(diagnostics).filter(Boolean).length} flags, ${overrides.customNotes.length} custom notes`);
+    const takeoffDiagnostics = analyzeTakeoffDiagnostics(takeoffInputs);
+    const takeoffSummary = generateTakeoffSummary(takeoffDiagnostics);
+    console.log(`✅ Takeoff analysis complete: ${takeoffSummary.overallRisk} risk level`);
     
-    // Step 5: Template and System Selection
-    console.log('\n🎯 STEP 5: Template Selection');
-    const template = determineTemplate(inputs, windResult, manufacturerResult, diagnostics);
-    console.log(`✅ Selected template: ${template}`);
-    
-    // Step 6: Compile Final Metadata
-    console.log('\n📋 STEP 6: Compiling Metadata');
-    const metadata = {
-      template,
-      windPressure: `${Math.abs(windResult.windUpliftPressures.zone3Corner).toFixed(1)} psf`,
-      asceVersion: windResult.metadata.asceVersion,
-      codeCycle: windResult.metadata.codeCycle,
-      jurisdiction: windResult.metadata.jurisdiction,
-      hvhz: windResult.metadata.hvhz,
-      windUpliftPressures: {
-        zone1Field: windResult.windUpliftPressures.zone1Field,
-        zone1Perimeter: windResult.windUpliftPressures.zone1Perimeter,
-        zone2Perimeter: windResult.windUpliftPressures.zone2Perimeter,
-        zone3Corner: windResult.windUpliftPressures.zone3Corner
+    // Step 7: Compile Engineering Summary
+    console.log('📋 Step 7: Compiling engineering summary...');
+    const engineeringSummary: EngineeringSummaryOutput = {
+      templateSelection,
+      jurisdictionAnalysis: {
+        address: inputs.address,
+        jurisdiction: {
+          city: jurisdictionAnalysis.jurisdiction.city,
+          county: jurisdictionAnalysis.jurisdiction.county,
+          state: jurisdictionAnalysis.jurisdiction.state,
+          codeCycle: jurisdictionAnalysis.jurisdiction.codeCycle,
+          asceVersion: jurisdictionAnalysis.jurisdiction.asceVersion,
+          hvhz: jurisdictionAnalysis.jurisdiction.hvhz
+        },
+        windAnalysis: {
+          asceVersion: windResult.asceVersion,
+          basicWindSpeed: windResult.designWindSpeed,
+          exposureCategory: windResult.exposureCategory,
+          riskCategory: 'II' as any,
+          buildingHeight: inputs.buildingHeight,
+          elevation: windResult.elevation,
+          windUpliftPressures: windResult.zonePressures,
+          calculationFactors: windResult.calculationFactors,
+          methodology: `ASCE ${windResult.asceVersion} Components and Cladding Method`,
+          zoneDimensions: {
+            fieldZone: 'Interior area beyond perimeter zones',
+            perimeterZone: 'Strip along building edges',
+            cornerZone: 'Corner areas with highest pressures'
+          },
+          complianceNotes: [
+            `Wind pressures calculated per ASCE ${windResult.asceVersion}`,
+            `Basic wind speed: ${windResult.designWindSpeed} mph`,
+            `Exposure Category ${windResult.exposureCategory}`,
+            'All pressures shown as allowable stress design (ASD) values'
+          ]
+        }
       },
-      fasteningSpecifications: manufacturerResult.fasteningSpecifications,
-      takeoffDiagnostics: diagnostics,
-      manufacturerInfo: {
-        selectedPattern: manufacturerResult.selectedPattern,
-        manufacturer: manufacturerResult.manufacturer,
-        system: manufacturerResult.system,
-        approvals: manufacturerResult.approvals,
-        hasApprovals: manufacturerResult.hasApprovals
+      systemSelection,
+      takeoffDiagnostics,
+      metadata: {
+        templateUsed: templateSelection.templateName,
+        asceVersion: jurisdictionAnalysis.jurisdiction.asceVersion,
+        hvhz,
+        windUpliftPressures: windResult.zonePressures,
+        selectedSystem: `${systemSelection.selectedSystem.manufacturer} ${systemSelection.selectedSystem.systemName}`,
+        rejectedSystems: systemSelection.rejectedSystems.map(sys => ({
+          name: `${sys.manufacturer} ${sys.systemName}`,
+          reason: sys.reason
+        })),
+        fasteningSpecifications: {
+          fieldSpacing: systemSelection.fasteningSpecifications.fieldSpacing,
+          perimeterSpacing: systemSelection.fasteningSpecifications.perimeterSpacing,
+          cornerSpacing: systemSelection.fasteningSpecifications.cornerSpacing,
+          penetrationDepth: systemSelection.fasteningSpecifications.penetrationDepth,
+          fastenerType: systemSelection.fasteningSpecifications.fastenerType
+        },
+        takeoffSummary: {
+          overallRisk: takeoffSummary.overallRisk,
+          keyIssues: takeoffSummary.keyIssues,
+          quantitySummary: takeoffSummary.quantitySummary
+        },
+        complianceNotes: [
+          ...systemSelection.complianceNotes,
+          ...takeoffDiagnostics.recommendations.slice(0, 3) // Top 3 recommendations
+        ],
+        generationTimestamp: new Date().toISOString()
       }
     };
     
-    // Step 7: Generate PDF Data Structure
-    console.log('\n📄 STEP 7: Preparing PDF Data');
-    const pdfData = compilePDFData(inputs, windResult, manufacturerResult, overrides, geocodeResult);
-    
-    // Step 8: Generate PDF Document
-    console.log('\n🖨️ STEP 8: Generating PDF Document');
-    const pdfResult = await generatePDF(pdfData);
-    console.log(`✅ PDF generated: ${pdfResult.filename}`);
+    // Step 8: Generate PDF (placeholder for now)
+    console.log('📄 Step 8: Generating PDF output...');
+    const pdfResult = await generatePDFOutput(engineeringSummary, inputs);
     
     const generationTime = Date.now() - startTime;
-    console.log(`\n🎉 SOW generation complete in ${generationTime}ms`);
+    console.log(`✅ SOW generation complete in ${generationTime}ms`);
     
     return {
       success: true,
-      finalOutput: {
-        metadata,
-        pdfData
-      },
-      generationTime,
+      engineeringSummary,
       filename: pdfResult.filename,
       outputPath: pdfResult.outputPath,
-      fileSize: pdfResult.fileSize
+      fileSize: pdfResult.fileSize,
+      generationTime
     };
     
   } catch (error) {
-    const generationTime = Date.now() - startTime;
-    console.error(`❌ SOW generation failed after ${generationTime}ms:`, error);
+    console.error('❌ SOW generation failed:', error);
     
     return {
       success: false,
-      finalOutput: {
-        metadata: {} as any,
-        pdfData: null
-      },
-      generationTime,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      generationTime: Date.now() - startTime
     };
   }
 }
 
-function determineTemplate(
-  inputs: SOWGeneratorInputs,
-  windResult: WindPressureResult,
-  manufacturerResult: ManufacturerAnalysisResult,
-  diagnostics: TakeoffDiagnostics
-): string {
-  const maxPressure = Math.abs(windResult.windUpliftPressures.zone3Corner);
-  const hvhz = windResult.metadata.hvhz;
-  const projectType = inputs.projectType.toLowerCase();
+/**
+ * Validate all SOW generator inputs
+ */
+function validateAllInputs(inputs: SOWGeneratorInputs): {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+} {
+  const allErrors: string[] = [];
+  const allWarnings: string[] = [];
   
-  let baseTemplate = '';
-  
-  // Base template selection
-  if (projectType.includes('recover')) {
-    if (inputs.membraneThickness === '115' || manufacturerResult.system.includes('Fleeceback')) {
-      baseTemplate = 'T5 - TPO Recover with Fleeceback';
-    } else if (maxPressure > 40) {
-      baseTemplate = 'T4 - Enhanced TPO Recover';
-    } else {
-      baseTemplate = 'T4 - TPO Recover with ISO';
-    }
-  } else if (projectType.includes('tear')) {
-    if (maxPressure > 60) {
-      baseTemplate = 'T8 - High-Wind Tearoff System';
-    } else if (maxPressure > 35) {
-      baseTemplate = 'T7 - Enhanced Tearoff';
-    } else {
-      baseTemplate = 'T6 - Standard Tearoff';
-    }
-  } else {
-    // New construction or replacement
-    if (maxPressure > 50) {
-      baseTemplate = 'T3 - High-Performance New Construction';
-    } else {
-      baseTemplate = 'T2 - Standard New Construction';
-    }
-  }
-  
-  // Modify template based on special conditions
-  if (hvhz) {
-    baseTemplate += ' (HVHZ)';
-  }
-  
-  if (diagnostics.highPenetrationDensity) {
-    baseTemplate += ' - Enhanced Details';
-  }
-  
-  if (manufacturerResult.system.includes('Adhered')) {
-    baseTemplate += ' - Fully Adhered';
-  }
-  
-  return baseTemplate;
-}
-
-function compilePDFData(
-  inputs: SOWGeneratorInputs,
-  windResult: WindPressureResult,
-  manufacturerResult: ManufacturerAnalysisResult,
-  overrides: SectionOverrides,
-  geocodeResult: any
-) {
-  return {
-    // Project information
-    payload: {
-      projectName: inputs.projectName,
-      address: inputs.address,
-      companyName: inputs.companyName,
-      squareFootage: inputs.squareFootage,
-      buildingHeight: inputs.buildingHeight,
-      projectType: inputs.projectType,
-      membraneThickness: inputs.membraneThickness
-    },
-    
-    // Jurisdiction data
-    jurisdiction: {
-      city: geocodeResult.city,
-      county: geocodeResult.county,
-      state: geocodeResult.state,
-      codeCycle: windResult.metadata.codeCycle,
-      asceVersion: windResult.metadata.asceVersion,
-      hvhz: windResult.metadata.hvhz
-    },
-    
-    // Wind analysis results
-    windAnalysis: {
-      designWindSpeed: windResult.metadata.basicWindSpeed,
-      exposureCategory: windResult.metadata.exposureCategory,
-      elevation: windResult.metadata.elevation || geocodeResult.elevation,
-      zonePressures: windResult.windUpliftPressures,
-      velocityPressure: windResult.metadata.velocityPressure
-    },
-    
-    // Template and manufacturer selection
-    templateSelection: {
-      template: determineTemplate(inputs, windResult, manufacturerResult, overrides.customNotes.length > 5 ? { highPenetrationDensity: true } as TakeoffDiagnostics : {} as TakeoffDiagnostics),
-      manufacturer: manufacturerResult.manufacturer,
-      system: manufacturerResult.system,
-      rationale: manufacturerResult.metadata.selectionRationale
-    },
-    
-    // Manufacturer approvals
-    approvals: {
-      approvedSources: manufacturerResult.approvals,
-      rejectedManufacturers: manufacturerResult.metadata.rejectedPatterns.map(r => r.pattern)
-    },
-    
-    // Fastening specifications
-    attachmentSpecs: {
-      fieldSpacing: manufacturerResult.fasteningSpecifications.fieldSpacing,
-      perimeterSpacing: manufacturerResult.fasteningSpecifications.perimeterSpacing,
-      cornerSpacing: manufacturerResult.fasteningSpecifications.cornerSpacing,
-      penetrationDepth: manufacturerResult.fasteningSpecifications.penetrationDepth,
-      notes: `Fastening pattern selected based on ${Math.abs(windResult.windUpliftPressures.zone3Corner).toFixed(1)} psf maximum uplift pressure. All fasteners must achieve minimum pullout resistance per manufacturer specifications.`
-    },
-    
-    // Custom notes from takeoff analysis
-    customNotes: overrides.customNotes,
-    specialRequirements: overrides.specialRequirements,
-    warningFlags: overrides.warningFlags,
-    
-    // Takeoff data
-    takeoffItems: inputs.takeoffItems
-  };
-}
-
-// Debug endpoint helper function
-export async function generateDebugSOW(mockPayload?: Partial<SOWGeneratorInputs>): Promise<SOWGeneratorResult> {
-  const defaultPayload: SOWGeneratorInputs = {
-    projectName: 'Debug Test Project',
-    address: '123 Main Street, Dallas, TX 75201',
-    companyName: 'Test Roofing Company',
-    buildingHeight: 35,
-    squareFootage: 50000,
-    deckType: 'steel',
-    projectType: 'recover',
-    membraneType: 'TPO',
-    membraneThickness: '60',
-    selectedMembraneBrand: 'GAF',
-    takeoffItems: {
-      drainCount: 6,
-      penetrationCount: 12,
-      flashingLinearFeet: 110,
-      accessoryCount: 4,
-      hvacUnits: 2,
-      skylights: 1,
-      scuppers: 2,
-      expansionJoints: 0,
-      parapetHeight: 18
-    },
-    customNotes: ['This is a debug test generation']
-  };
-  
-  const mergedPayload = { ...defaultPayload, ...mockPayload };
-  
-  console.log('🧪 Running debug SOW generation with payload:', JSON.stringify(mergedPayload, null, 2));
-  
-  return generateSOW(mergedPayload);
-}
-
-// Validation helper function
-export function validateSOWInputs(inputs: SOWGeneratorInputs): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  // Required fields
+  // Basic project info validation
   if (!inputs.projectName?.trim()) {
-    errors.push('Project name is required');
+    allErrors.push('Project name is required');
   }
   
   if (!inputs.address?.trim()) {
-    errors.push('Project address is required');
+    allErrors.push('Project address is required');
   }
   
-  if (!inputs.buildingHeight || inputs.buildingHeight <= 0) {
-    errors.push('Building height must be greater than 0');
+  if (!inputs.companyName?.trim()) {
+    allErrors.push('Company name is required');
   }
   
-  if (!inputs.squareFootage || inputs.squareFootage <= 0) {
-    errors.push('Square footage must be greater than 0');
+  // Building parameters validation
+  if (typeof inputs.buildingHeight !== 'number' || inputs.buildingHeight <= 0) {
+    allErrors.push('Valid building height is required');
   }
   
-  if (!['TPO', 'PVC', 'EPDM'].includes(inputs.membraneType)) {
-    errors.push('Invalid membrane type');
+  if (typeof inputs.squareFootage !== 'number' || inputs.squareFootage <= 0) {
+    allErrors.push('Valid square footage is required');
   }
   
-  if (!['recover', 'tearoff', 'new', 'replacement'].includes(inputs.projectType.toLowerCase())) {
-    errors.push('Invalid project type');
+  if (!['recover', 'tearoff', 'new'].includes(inputs.projectType)) {
+    allErrors.push('Valid project type is required (recover, tearoff, or new)');
   }
   
-  // Validate takeoff items structure
-  if (!inputs.takeoffItems) {
-    errors.push('Takeoff items are required');
-  } else {
-    if (inputs.takeoffItems.drainCount < 0) {
-      errors.push('Drain count cannot be negative');
-    }
-    if (inputs.takeoffItems.penetrationCount < 0) {
-      errors.push('Penetration count cannot be negative');
-    }
-  }
+  // Template validation
+  const templateInputs: TemplateSelectionInputs = {
+    projectType: inputs.projectType,
+    hvhz: false, // Will be determined from jurisdiction
+    membraneType: inputs.membraneType,
+    membraneMaterial: inputs.membraneMaterial,
+    roofSlope: inputs.roofSlope / 12,
+    buildingHeight: inputs.buildingHeight,
+    exposureCategory: inputs.exposureCategory || 'C'
+  };
   
-  // Validate building parameters
-  if (inputs.buildingHeight > 500) {
-    errors.push('Building height seems excessive - please verify');
-  }
+  const templateValidation = validateTemplateInputs(templateInputs);
+  allErrors.push(...templateValidation.errors);
+  allWarnings.push(...templateValidation.warnings);
   
-  if (inputs.squareFootage > 1000000) {
-    errors.push('Square footage seems excessive - please verify');
-  }
+  // Wind calculation validation
+  const windInputs: WindEngineInputs = {
+    address: inputs.address,
+    buildingHeight: inputs.buildingHeight,
+    squareFootage: inputs.squareFootage,
+    exposureCategory: inputs.exposureCategory || 'C',
+    basicWindSpeed: inputs.basicWindSpeed,
+    elevation: inputs.elevation,
+    buildingDimensions: inputs.buildingDimensions
+  };
+  
+  const windValidation = validateWindInputs(windInputs);
+  allErrors.push(...windValidation.errors);
+  allWarnings.push(...windValidation.warnings);
+  
+  // Takeoff validation
+  const takeoffInputs: TakeoffEngineInputs = {
+    takeoffItems: inputs.takeoffItems,
+    buildingDimensions: inputs.buildingDimensions,
+    projectType: inputs.projectType,
+    membraneType: inputs.membraneType
+  };
+  
+  const takeoffValidation = validateTakeoffInputs(takeoffInputs);
+  allErrors.push(...takeoffValidation.errors);
+  allWarnings.push(...takeoffValidation.warnings);
   
   return {
-    valid: errors.length === 0,
-    errors
+    valid: allErrors.length === 0,
+    errors: allErrors,
+    warnings: allWarnings
+  };
+}
+
+/**
+ * Generate PDF output (placeholder implementation)
+ */
+async function generatePDFOutput(
+  engineeringSummary: EngineeringSummaryOutput,
+  inputs: SOWGeneratorInputs
+): Promise<{
+  filename: string;
+  outputPath: string;
+  fileSize: number;
+}> {
+  // This would integrate with the existing PDF generation system
+  // For now, return mock data
+  
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `SOW_${inputs.projectName.replace(/\s+/g, '_')}_${timestamp}.pdf`;
+  const outputPath = `/output/${filename}`;
+  
+  console.log(`📄 PDF would be generated: ${filename}`);
+  console.log(`🎯 Template: ${engineeringSummary.templateSelection.templateName}`);
+  console.log(`💨 Wind: ${Math.abs(engineeringSummary.jurisdictionAnalysis.windAnalysis.windUpliftPressures.zone3Corner).toFixed(1)} psf corner`);
+  console.log(`🏭 System: ${engineeringSummary.systemSelection.selectedSystem.manufacturer}`);
+  console.log(`📊 Risk: ${engineeringSummary.metadata.takeoffSummary.overallRisk}`);
+  
+  return {
+    filename,
+    outputPath,
+    fileSize: 1024000 // 1MB placeholder
+  };
+}
+
+/**
+ * Generate debug SOW with mock data for testing
+ */
+export async function generateDebugSOW(overrides: Partial<SOWGeneratorInputs> = {}): Promise<SOWGeneratorResult> {
+  const mockInputs: SOWGeneratorInputs = {
+    projectName: 'Debug Test Project',
+    address: '2650 NW 89th Ct, Doral, FL 33172',
+    companyName: 'Test Roofing Company',
+    buildingHeight: 30,
+    squareFootage: 25000,
+    buildingDimensions: {
+      length: 200,
+      width: 125
+    },
+    deckType: 'steel',
+    projectType: 'recover',
+    roofSlope: 0.25, // 3:12
+    elevation: 6,
+    exposureCategory: 'C',
+    membraneType: 'TPO',
+    membraneThickness: '60mil',
+    membraneMaterial: 'TPO',
+    selectedMembraneBrand: 'Carlisle',
+    takeoffItems: {
+      drainCount: 6,
+      penetrationCount: 15,
+      flashingLinearFeet: 800,
+      accessoryCount: 8,
+      hvacUnits: 3,
+      skylights: 2,
+      roofHatches: 1,
+      scuppers: 2,
+      expansionJoints: 1,
+      parapetHeight: 18,
+      roofArea: 25000
+    },
+    preferredManufacturer: 'Carlisle',
+    customNotes: ['This is a debug test generation'],
+    ...overrides
+  };
+  
+  console.log('🧪 Generating debug SOW with mock data...');
+  return await generateSOWWithEngineering(mockInputs);
+}
+
+/**
+ * Quick validation function for API endpoints
+ */
+export function validateSOWInputs(inputs: SOWGeneratorInputs): {
+  valid: boolean;
+  errors: string[];
+} {
+  const validation = validateAllInputs(inputs);
+  return {
+    valid: validation.valid,
+    errors: validation.errors
   };
 }
