@@ -1,0 +1,169 @@
+// ASCE to Jurisdiction Mapping Data
+{
+  "states": {
+    "FL": {
+      "defaultCode": "2023 FBC",
+      "defaultASCE": "7-16",
+      "counties": {
+        "Miami-Dade County": {
+          "codeCycle": "2023 FBC",
+          "asceVersion": "7-16",
+          "hvhz": true,
+          "windSpeed": 185,
+          "specialRequirements": ["TAS-100", "NOA-Required", "Third-Party-Inspection"]
+        },
+        "Broward County": {
+          "codeCycle": "2023 FBC", 
+          "asceVersion": "7-16",
+          "hvhz": true,
+          "windSpeed": 180,
+          "specialRequirements": ["NOA-Required"]
+        },
+        "Monroe County": {
+          "codeCycle": "2023 FBC",
+          "asceVersion": "7-16", 
+          "hvhz": true,
+          "windSpeed": 185,
+          "specialRequirements": ["TAS-100", "NOA-Required"]
+        },
+        "Palm Beach County": {
+          "codeCycle": "2023 FBC",
+          "asceVersion": "7-16",
+          "hvhz": true,
+          "windSpeed": 175,
+          "specialRequirements": ["NOA-Required"]
+        },
+        "Orange County": {
+          "codeCycle": "2023 FBC",
+          "asceVersion": "7-16",
+          "hvhz": false,
+          "windSpeed": 150
+        }
+      }
+    },
+    "TX": {
+      "defaultCode": "2021 IBC",
+      "defaultASCE": "7-16", 
+      "counties": {
+        "Dallas County": {
+          "codeCycle": "2021 IBC",
+          "asceVersion": "7-16",
+          "hvhz": false,
+          "windSpeed": 115
+        },
+        "Harris County": {
+          "codeCycle": "2021 IBC",
+          "asceVersion": "7-16", 
+          "hvhz": false,
+          "windSpeed": 140
+        },
+        "Travis County": {
+          "codeCycle": "2021 IBC",
+          "asceVersion": "7-16",
+          "hvhz": false,
+          "windSpeed": 115
+        },
+        "Tarrant County": {
+          "codeCycle": "2021 IBC",
+          "asceVersion": "7-16",
+          "hvhz": false,
+          "windSpeed": 115
+        }
+      }
+    },
+    "CA": {
+      "defaultCode": "2022 CBC",
+      "defaultASCE": "7-22",
+      "counties": {
+        "Los Angeles County": {
+          "codeCycle": "2022 CBC",
+          "asceVersion": "7-22",
+          "hvhz": false,
+          "windSpeed": 85
+        },
+        "Orange County": {
+          "codeCycle": "2022 CBC", 
+          "asceVersion": "7-22",
+          "hvhz": false,
+          "windSpeed": 85
+        },
+        "San Diego County": {
+          "codeCycle": "2022 CBC",
+          "asceVersion": "7-22", 
+          "hvhz": false,
+          "windSpeed": 85
+        }
+      }
+    },
+    "NY": {
+      "defaultCode": "2020 IBC",
+      "defaultASCE": "7-16",
+      "counties": {
+        "New York County": {
+          "codeCycle": "2020 NYC BC",
+          "asceVersion": "7-16",
+          "hvhz": false,
+          "windSpeed": 115
+        },
+        "Kings County": {
+          "codeCycle": "2020 NYC BC",
+          "asceVersion": "7-16",
+          "hvhz": false,
+          "windSpeed": 115
+        }
+      }
+    }
+  },
+  "windSpeedDefaults": {
+    "coastal": 140,
+    "inland": 115,
+    "mountain": 120,
+    "default": 115
+  },
+  "asceVersions": {
+    "7-10": {
+      "pressureCoefficients": {
+        "zone1Field": -0.7,
+        "zone1Perimeter": -1.0,
+        "zone2Perimeter": -1.4,
+        "zone3Corner": -2.0
+      }
+    },
+    "7-16": {
+      "pressureCoefficients": {
+        "zone1Field": -0.9,
+        "zone1Perimeter": -1.4,
+        "zone2Perimeter": -2.0,
+        "zone3Corner": -2.8
+      }
+    },
+    "7-22": {
+      "pressureCoefficients": {
+        "zone1Field": -0.9,
+        "zone1Perimeter": -1.4,
+        "zone2Perimeter": -2.0,
+        "zone3Corner": -2.8
+      }
+    }
+  },
+  "exposureCategories": {
+    "B": {
+      "alpha": 7.0,
+      "zg": 1200,
+      "Kh15": 0.57,
+      "description": "Urban and suburban areas with numerous closely spaced obstructions"
+    },
+    "C": {
+      "alpha": 9.5,
+      "zg": 900,
+      "Kh15": 0.85,
+      "description": "Open terrain with scattered obstructions"
+    },
+    "D": {
+      "alpha": 11.5,
+      "zg": 700,
+      "Kh15": 1.03,
+      "description": "Flat, unobstructed coastal areas directly exposed to wind"
+    }
+  }
+}
