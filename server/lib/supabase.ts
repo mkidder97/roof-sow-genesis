@@ -1,17 +1,17 @@
 /**
  * SUPABASE CLIENT SETUP
- * Database integration for SOW Generator project storage
+ * Database integration for storing project inputs and SOW outputs
  */
 
 import { createClient } from '@supabase/supabase-js';
 
-// Environment variables for Supabase connection
+// Environment variables validation
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.warn('⚠️ Supabase environment variables not configured. Database features will be disabled.');
-  console.warn('   Set SUPABASE_URL and SUPABASE_KEY in your .env file to enable database storage.');
+  console.warn('⚠️ Supabase credentials not found - database features will be disabled');
+  console.warn('Please set SUPABASE_URL and SUPABASE_KEY environment variables');
 }
 
 // Create Supabase client
@@ -20,7 +20,7 @@ export const supabase = supabaseUrl && supabaseKey
   : null;
 
 // Database table interfaces matching Lovable's schema
-export interface ProjectInput {
+export interface ProjectRecord {
   id?: string;
   user_id?: string;
   project_name: string;
@@ -31,140 +31,171 @@ export interface ProjectInput {
   length?: number;
   width?: number;
   project_type: string;
-  membrane_thickness: string;
-  membrane_color: string;
+  membrane_thickness?: string;
+  membrane_color?: string;
   created_at?: string;
 }
 
-export interface SOWOutput {
+export interface SOWOutputRecord {
   id?: string;
   project_id: string;
   template_name: string;
-  rationale: string;
+  rationale?: string;
   asce_version: string;
   wind_speed: number;
   hvhz: boolean;
-  zone1_field: number;
-  zone2_perimeter: number;
-  zone3_corner: number;
-  manufacturer: string;
-  spacing_corner: string;
-  spacing_field: string;
-  penetration_depth: string;
-  takeoff_risk: string;
-  key_issues: string;
+  zone1_field?: number;
+  zone2_perimeter?: number;
+  zone3_corner?: number;
+  manufacturer?: string;
+  spacing_corner?: string;
+  spacing_field?: string;
+  penetration_depth?: string;
+  takeoff_risk?: string;
+  key_issues?: string;
   generation_time_ms: number;
-  file_url: string;
+  file_url?: string;
   created_at?: string;
 }
 
 /**
- * Check if Supabase is configured and available
+ * Check if Supabase is available
  */
 export function isSupabaseAvailable(): boolean {
   return supabase !== null;
 }
 
 /**
- * Save project inputs to the projects table
+ * Test database connection
  */
-export async function saveProjectInputs(projectData: ProjectInput): Promise<string | null> {
+export async function testDatabaseConnection(): Promise<{ success: boolean; error?: string }> {
   if (!supabase) {
-    console.warn('⚠️ Supabase not configured - skipping project save');
-    return null;
+    return { success: false, error: 'Supabase client not initialized' };
   }
 
   try {
-    console.log('💾 Saving project inputs to Supabase...');
+    const { error } = await supabase.from('projects').select('id').limit(1);
     
-    const { data, error } = await supabase
-      .from('projects')
-      .insert([projectData])
-      .select('id')
-      .single();
-
     if (error) {
-      console.error('❌ Error saving project to Supabase:', error);
-      return null;
+      return { success: false, error: error.message };
     }
-
-    console.log(`✅ Project saved to Supabase with ID: ${data.id}`);
-    return data.id;
     
+    return { success: true };
   } catch (error) {
-    console.error('❌ Supabase save error:', error);
-    return null;
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown database error' 
+    };
   }
 }
 
 /**
- * Save SOW output metadata to the sow_outputs table
+ * Save project inputs to database
  */
-export async function saveSOWOutput(outputData: SOWOutput): Promise<string | null> {
+export async function saveProject(projectData: ProjectRecord): Promise<{ success: boolean; projectId?: string; error?: string }> {
   if (!supabase) {
-    console.warn('⚠️ Supabase not configured - skipping SOW output save');
-    return null;
+    console.warn('Database not available - skipping project save');
+    return { success: false, error: 'Database not configured' };
   }
 
   try {
-    console.log('💾 Saving SOW output metadata to Supabase...');
+    console.log('💾 Saving project to database:', projectData.project_name);
+    
+    const { data, error } = await supabase
+      .from('projects')
+      .insert(projectData)
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('❌ Failed to save project:', error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ Project saved successfully:', data.id);
+    return { success: true, projectId: data.id };
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Project save error:', errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Save SOW output metadata to database
+ */
+export async function saveSOWOutput(sowData: SOWOutputRecord): Promise<{ success: boolean; sowId?: string; error?: string }> {
+  if (!supabase) {
+    console.warn('Database not available - skipping SOW output save');
+    return { success: false, error: 'Database not configured' };
+  }
+
+  try {
+    console.log('💾 Saving SOW output to database for project:', sowData.project_id);
     
     const { data, error } = await supabase
       .from('sow_outputs')
-      .insert([outputData])
+      .insert(sowData)
       .select('id')
       .single();
 
     if (error) {
-      console.error('❌ Error saving SOW output to Supabase:', error);
-      return null;
+      console.error('❌ Failed to save SOW output:', error.message);
+      return { success: false, error: error.message };
     }
 
-    console.log(`✅ SOW output saved to Supabase with ID: ${data.id}`);
-    return data.id;
+    console.log('✅ SOW output saved successfully:', data.id);
+    return { success: true, sowId: data.id };
     
   } catch (error) {
-    console.error('❌ Supabase SOW output save error:', error);
-    return null;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ SOW output save error:', errorMessage);
+    return { success: false, error: errorMessage };
   }
 }
 
 /**
- * Fetch project history for a user
+ * Get project history for a user
  */
-export async function getProjectHistory(userId: string): Promise<ProjectInput[]> {
+export async function getProjectHistory(userId?: string): Promise<{ success: boolean; projects?: any[]; error?: string }> {
   if (!supabase) {
-    console.warn('⚠️ Supabase not configured - returning empty history');
-    return [];
+    return { success: false, error: 'Database not configured' };
   }
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('projects')
-      .select('*')
-      .eq('user_id', userId)
+      .select(`
+        *,
+        sow_outputs (*)
+      `)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ Error fetching project history:', error);
-      return [];
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
 
-    return data || [];
+    const { data, error } = await query;
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, projects: data };
     
   } catch (error) {
-    console.error('❌ Supabase fetch error:', error);
-    return [];
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 
 /**
- * Fetch SOW outputs for a specific project
+ * Get SOW outputs for a specific project
  */
-export async function getProjectSOWs(projectId: string): Promise<SOWOutput[]> {
+export async function getProjectSOWs(projectId: string): Promise<{ success: boolean; sows?: any[]; error?: string }> {
   if (!supabase) {
-    console.warn('⚠️ Supabase not configured - returning empty SOW history');
-    return [];
+    return { success: false, error: 'Database not configured' };
   }
 
   try {
@@ -175,114 +206,15 @@ export async function getProjectSOWs(projectId: string): Promise<SOWOutput[]> {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ Error fetching project SOWs:', error);
-      return [];
+      return { success: false, error: error.message };
     }
 
-    return data || [];
+    return { success: true, sows: data };
     
   } catch (error) {
-    console.error('❌ Supabase SOW fetch error:', error);
-    return [];
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
   }
 }
 
-/**
- * Get project with its SOW outputs
- */
-export async function getProjectWithSOWs(projectId: string): Promise<{
-  project: ProjectInput | null;
-  sows: SOWOutput[];
-}> {
-  if (!supabase) {
-    return { project: null, sows: [] };
-  }
-
-  try {
-    // Fetch project details
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', projectId)
-      .single();
-
-    if (projectError) {
-      console.error('❌ Error fetching project:', projectError);
-      return { project: null, sows: [] };
-    }
-
-    // Fetch associated SOWs
-    const sows = await getProjectSOWs(projectId);
-
-    return { project, sows };
-    
-  } catch (error) {
-    console.error('❌ Error fetching project with SOWs:', error);
-    return { project: null, sows: [] };
-  }
-}
-
-/**
- * Update project inputs
- */
-export async function updateProject(projectId: string, updates: Partial<ProjectInput>): Promise<boolean> {
-  if (!supabase) {
-    console.warn('⚠️ Supabase not configured - skipping project update');
-    return false;
-  }
-
-  try {
-    const { error } = await supabase
-      .from('projects')
-      .update(updates)
-      .eq('id', projectId);
-
-    if (error) {
-      console.error('❌ Error updating project:', error);
-      return false;
-    }
-
-    console.log(`✅ Project ${projectId} updated successfully`);
-    return true;
-    
-  } catch (error) {
-    console.error('❌ Supabase update error:', error);
-    return false;
-  }
-}
-
-/**
- * Delete a project and its associated SOWs
- */
-export async function deleteProject(projectId: string): Promise<boolean> {
-  if (!supabase) {
-    console.warn('⚠️ Supabase not configured - skipping project deletion');
-    return false;
-  }
-
-  try {
-    // First delete associated SOWs
-    await supabase
-      .from('sow_outputs')
-      .delete()
-      .eq('project_id', projectId);
-
-    // Then delete the project
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', projectId);
-
-    if (error) {
-      console.error('❌ Error deleting project:', error);
-      return false;
-    }
-
-    console.log(`✅ Project ${projectId} deleted successfully`);
-    return true;
-    
-  } catch (error) {
-    console.error('❌ Supabase deletion error:', error);
-    return false;
-  }
-}
+export default supabase;
