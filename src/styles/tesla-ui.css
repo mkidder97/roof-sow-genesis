@@ -1,0 +1,401 @@
+/* Tesla-Level Professional UI Styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Tesla-inspired Color Palette */
+  --tesla-bg-primary: #0a0a0a;
+  --tesla-bg-secondary: #1a1a1a;
+  --tesla-bg-tertiary: #2a2a2a;
+  --tesla-surface: rgba(255, 255, 255, 0.05);
+  --tesla-surface-hover: rgba(255, 255, 255, 0.08);
+  --tesla-border: rgba(255, 255, 255, 0.1);
+  --tesla-border-focus: rgba(59, 130, 246, 0.5);
+  
+  /* Tesla Electric Blue */
+  --tesla-blue: #3b82f6;
+  --tesla-blue-light: #60a5fa;
+  --tesla-blue-dark: #1d4ed8;
+  --tesla-blue-glow: rgba(59, 130, 246, 0.3);
+  
+  /* Tesla Text Colors */
+  --tesla-text-primary: #ffffff;
+  --tesla-text-secondary: #a1a1aa;
+  --tesla-text-tertiary: #71717a;
+  --tesla-text-muted: #52525b;
+  
+  /* Tesla Status Colors */
+  --tesla-success: #10b981;
+  --tesla-warning: #f59e0b;
+  --tesla-error: #ef4444;
+  --tesla-success-glow: rgba(16, 185, 129, 0.3);
+  --tesla-warning-glow: rgba(245, 158, 11, 0.3);
+  --tesla-error-glow: rgba(239, 68, 68, 0.3);
+  
+  /* Tesla Shadows */
+  --tesla-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --tesla-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --tesla-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --tesla-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+  --tesla-shadow-glow: 0 0 20px var(--tesla-blue-glow);
+  
+  /* Tesla Gradients */
+  --tesla-gradient-primary: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --tesla-gradient-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  --tesla-gradient-blue: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  --tesla-gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  
+  /* Tesla Spacing */
+  --tesla-space-xs: 0.25rem;
+  --tesla-space-sm: 0.5rem;
+  --tesla-space-md: 1rem;
+  --tesla-space-lg: 1.5rem;
+  --tesla-space-xl: 2rem;
+  --tesla-space-2xl: 3rem;
+  
+  /* Tesla Border Radius */
+  --tesla-radius-sm: 0.375rem;
+  --tesla-radius-md: 0.5rem;
+  --tesla-radius-lg: 0.75rem;
+  --tesla-radius-xl: 1rem;
+  --tesla-radius-2xl: 1.5rem;
+  
+  /* Tesla Transitions */
+  --tesla-transition-fast: 0.15s ease-out;
+  --tesla-transition-normal: 0.3s ease-out;
+  --tesla-transition-slow: 0.5s ease-out;
+}
+
+/* Tesla Global Styles */
+.tesla-dark {
+  background: var(--tesla-bg-primary);
+  color: var(--tesla-text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Tesla Glass Cards */
+.tesla-glass-card {
+  background: var(--tesla-gradient-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--tesla-border);
+  border-radius: var(--tesla-radius-xl);
+  box-shadow: var(--tesla-shadow-lg);
+  transition: all var(--tesla-transition-normal);
+}
+
+.tesla-glass-card:hover {
+  background: var(--tesla-surface-hover);
+  border-color: var(--tesla-border-focus);
+  box-shadow: var(--tesla-shadow-xl), var(--tesla-shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* Tesla Section Headers */
+.tesla-section-header {
+  background: var(--tesla-gradient-primary);
+  border: 1px solid var(--tesla-border);
+  border-radius: var(--tesla-radius-lg);
+  padding: var(--tesla-space-lg);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--tesla-transition-normal);
+}
+
+.tesla-section-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  transition: left var(--tesla-transition-slow);
+}
+
+.tesla-section-header:hover::before {
+  left: 100%;
+}
+
+.tesla-section-header:hover {
+  border-color: var(--tesla-blue);
+  box-shadow: 0 0 30px var(--tesla-blue-glow);
+}
+
+/* Tesla Inputs */
+.tesla-input {
+  background: var(--tesla-surface);
+  border: 1px solid var(--tesla-border);
+  border-radius: var(--tesla-radius-md);
+  color: var(--tesla-text-primary);
+  padding: var(--tesla-space-md) var(--tesla-space-lg);
+  font-size: 0.875rem;
+  font-weight: 400;
+  transition: all var(--tesla-transition-fast);
+  position: relative;
+}
+
+.tesla-input:focus {
+  outline: none;
+  border-color: var(--tesla-blue);
+  box-shadow: 0 0 0 3px var(--tesla-blue-glow);
+  background: var(--tesla-surface-hover);
+}
+
+.tesla-input::placeholder {
+  color: var(--tesla-text-muted);
+}
+
+/* Tesla Floating Labels */
+.tesla-floating-label {
+  position: relative;
+}
+
+.tesla-floating-label input:focus + label,
+.tesla-floating-label input:not(:placeholder-shown) + label {
+  transform: translateY(-1.5rem) scale(0.875);
+  color: var(--tesla-blue);
+}
+
+.tesla-floating-label label {
+  position: absolute;
+  left: var(--tesla-space-lg);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--tesla-bg-primary);
+  padding: 0 var(--tesla-space-sm);
+  color: var(--tesla-text-secondary);
+  font-size: 0.875rem;
+  transition: all var(--tesla-transition-fast);
+  pointer-events: none;
+}
+
+/* Tesla Buttons */
+.tesla-btn {
+  background: var(--tesla-gradient-blue);
+  border: none;
+  border-radius: var(--tesla-radius-md);
+  color: white;
+  font-weight: 600;
+  padding: var(--tesla-space-md) var(--tesla-space-xl);
+  cursor: pointer;
+  transition: all var(--tesla-transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.tesla-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--tesla-transition-normal);
+}
+
+.tesla-btn:hover::before {
+  left: 100%;
+}
+
+.tesla-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--tesla-shadow-lg), var(--tesla-shadow-glow);
+}
+
+.tesla-btn:active {
+  transform: translateY(0);
+}
+
+/* Tesla Progress Rings */
+.tesla-progress-ring {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: conic-gradient(var(--tesla-blue) 0deg, var(--tesla-surface) 0deg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tesla-progress-ring::before {
+  content: '';
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--tesla-bg-secondary);
+}
+
+.tesla-progress-ring span {
+  z-index: 1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--tesla-blue);
+}
+
+/* Tesla Animations */
+@keyframes tesla-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes tesla-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tesla-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--tesla-blue-glow); }
+  50% { box-shadow: 0 0 40px var(--tesla-blue-glow); }
+}
+
+.tesla-animate-in {
+  animation: tesla-slide-in var(--tesla-transition-normal) ease-out;
+}
+
+.tesla-pulse {
+  animation: tesla-pulse 2s infinite;
+}
+
+.tesla-glow {
+  animation: tesla-glow 3s infinite;
+}
+
+/* Tesla File Upload */
+.tesla-file-upload {
+  background: var(--tesla-gradient-surface);
+  border: 2px dashed var(--tesla-border);
+  border-radius: var(--tesla-radius-xl);
+  padding: var(--tesla-space-2xl);
+  text-align: center;
+  transition: all var(--tesla-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.tesla-file-upload::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(transparent, var(--tesla-blue-glow), transparent);
+  animation: rotate 4s linear infinite;
+  opacity: 0;
+  transition: opacity var(--tesla-transition-normal);
+}
+
+.tesla-file-upload:hover::before {
+  opacity: 1;
+}
+
+.tesla-file-upload:hover {
+  border-color: var(--tesla-blue);
+  background: var(--tesla-surface-hover);
+  transform: scale(1.02);
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Tesla Status Indicators */
+.tesla-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tesla-space-sm);
+  padding: var(--tesla-space-sm) var(--tesla-space-md);
+  border-radius: var(--tesla-radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.tesla-status.success {
+  background: var(--tesla-success-glow);
+  color: var(--tesla-success);
+  border: 1px solid var(--tesla-success);
+}
+
+.tesla-status.warning {
+  background: var(--tesla-warning-glow);
+  color: var(--tesla-warning);
+  border: 1px solid var(--tesla-warning);
+}
+
+.tesla-status.error {
+  background: var(--tesla-error-glow);
+  color: var(--tesla-error);
+  border: 1px solid var(--tesla-error);
+}
+
+/* Tesla Scrollbar */
+.tesla-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tesla-scrollbar::-webkit-scrollbar-track {
+  background: var(--tesla-bg-secondary);
+  border-radius: var(--tesla-radius-sm);
+}
+
+.tesla-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--tesla-surface);
+  border-radius: var(--tesla-radius-sm);
+  border: 2px solid var(--tesla-bg-secondary);
+}
+
+.tesla-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--tesla-blue);
+}
+
+/* Tesla Typography */
+.tesla-h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  background: linear-gradient(135deg, var(--tesla-text-primary), var(--tesla-blue-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tesla-h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--tesla-text-primary);
+}
+
+.tesla-h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--tesla-text-primary);
+}
+
+.tesla-body {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--tesla-text-secondary);
+}
+
+.tesla-small {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--tesla-text-tertiary);
+}
