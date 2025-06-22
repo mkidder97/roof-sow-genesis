@@ -2,12 +2,14 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import supabaseClient from '../../utils/supabaseClient.js';
+import { backupManager } from '../../utils/backupManager.js';
 
 /**
- * Fix History Logger
+ * Enhanced Fix History Logger with Supabase Integration
  * 
- * This tool manages the change_log.json file, tracking all fixes applied
- * by the self-healing PDF agent system.
+ * This tool manages the change_log.json file and syncs data with Supabase,
+ * tracking all fixes applied by the self-healing PDF agent system.
  */
 
 interface FixLogEntry {
@@ -34,6 +36,14 @@ interface FixLogEntry {
     proposal_engine_version: string;
     [key: string]: any;
   };
+  // New fields for enhanced tracking
+  fixId?: string;
+  baseVersionId?: string;
+  newVersionId?: string;
+  confidenceScore?: number;
+  executionTimeMs?: number;
+  errorDetails?: Record<string, any>;
+  quarantineReason?: string;
 }
 
 interface ChangeLog {
@@ -47,6 +57,12 @@ interface ChangeLog {
     failedFixes: number;
     avgGenerationTime: number;
     mostCommonIssues: string[];
+  };
+  // Enhanced stats
+  supabaseSync?: {
+    lastSyncedAt: string;
+    syncedFixCount: number;
+    syncErrors: string[];
   };
 }
 
@@ -62,6 +78,14 @@ interface LogInput {
   generationTime?: number;
   fileSize?: number;
   metadata?: Record<string, any>;
+  // New enhanced fields
+  baseVersionId?: string;
+  newVersionId?: string;
+  confidenceScore?: number;
+  executionTimeMs?: number;
+  errorDetails?: Record<string, any>;
+  quarantineReason?: string;
+  projectId?: string;
 }
 
 class FixHistoryLogger {
@@ -73,6 +97,14 @@ class FixHistoryLogger {
 
   async logFix(input: LogInput): Promise<FixLogEntry> {
     try {
+      // Generate unique fix ID
+      const fixId = this.generateFixId();
+      
+      // Create backup of target modules before logging
+      if (input.success && input.targetModules.length > 0) {
+        await this.createModuleBackups(input.targetModules, fixId);
+      }
+
       // Create the log entry
       const entry: FixLogEntry = {
         version: input.version,
@@ -93,7 +125,15 @@ class FixHistoryLogger {
           pdf_analyzer_version: '1.0.0',
           proposal_engine_version: '1.0.0',
           ...input.metadata
-        }
+        },
+        // Enhanced fields
+        fixId,
+        baseVersionId: input.baseVersionId,
+        newVersionId: input.newVersionId,
+        confidenceScore: input.confidenceScore,
+        executionTimeMs: input.executionTimeMs,
+        errorDetails: input.errorDetails,
+        quarantineReason: input.quarantineReason
       };
 
       // Load existing change log
@@ -110,6 +150,9 @@ class FixHistoryLogger {
       // Save updated change log
       await this.saveChangeLog(changeLog);
       
+      // Sync to Supabase
+      await this.syncToSupabase(entry, input.projectId || 'default-project');
+      
       console.log(`✅ Logged fix ${entry.version} to change log`);
       console.log(`📊 Total fixes in log: ${changeLog.fixes.length}`);
       console.log(`📈 Success rate: ${(changeLog.stats.successfulFixes / changeLog.stats.totalFixes * 100).toFixed(1)}%`);
@@ -120,6 +163,93 @@ class FixHistoryLogger {
       console.error('❌ Failed to log fix:', error);
       throw error;
     }
+  }
+
+  private generateFixId(): string {
+    return `fix_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private async createModuleBackups(moduleNames: string[], fixId: string): Promise<void> {
+    try {
+      for (const moduleName of moduleNames) {
+        const modulePath = path.join(process.cwd(), 'src', `${moduleName}.ts`);
+        
+        try {
+          await backupManager.createBackup(modulePath, {
+            reason: 'fix_application',
+            relatedFixId: fixId,
+            maxBackups: 10
+          });
+          console.log(`📦 Created backup for ${moduleName}`);
+        } catch (error) {
+          console.warn(`⚠️ Could not backup ${moduleName}:`, error);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Error creating module backups:', error);
+    }
+  }
+
+  private async syncToSupabase(entry: FixLogEntry, projectId: string): Promise<void> {
+    try {
+      if (!entry.baseVersionId) {
+        console.warn('⚠️ No baseVersionId provided, skipping Supabase sync');
+        return;
+      }
+
+      await supabaseClient.logFix({
+        baseVersionId: entry.baseVersionId,
+        newVersionId: entry.newVersionId,
+        fixType: this.determineFix Type(entry.fixes),
+        claudeSummary: entry.fixes.join('; '),
+        fixSnippet: this.generateFixSnippet(entry),
+        success: entry.success,
+        analysisData: {
+          targetModules: entry.targetModules,
+          functionNames: entry.functionNames,
+          issueCount: entry.issueCount,
+          checksums: entry.checksums
+        },
+        confidenceScore: entry.confidenceScore,
+        executionTimeMs: entry.executionTimeMs || entry.generationTime,
+        errorDetails: entry.errorDetails,
+        quarantineReason: entry.quarantineReason
+      });
+
+      console.log(`🔄 Synced fix ${entry.fixId} to Supabase`);
+    } catch (error) {
+      console.error('❌ Failed to sync fix to Supabase:', error);
+      // Don't throw - local logging should continue even if Supabase fails
+    }
+  }
+
+  private determineFixType(fixes: string[]): string {
+    const fixText = fixes.join(' ').toLowerCase();
+    
+    if (fixText.includes('wind') || fixText.includes('load')) {
+      return 'wind_calculation';
+    } else if (fixText.includes('layout') || fixText.includes('format')) {
+      return 'layout';
+    } else if (fixText.includes('content') || fixText.includes('text')) {
+      return 'content';
+    } else if (fixText.includes('attachment') || fixText.includes('fastener')) {
+      return 'attachment';
+    } else {
+      return 'general';
+    }
+  }
+
+  private generateFixSnippet(entry: FixLogEntry): string {
+    return `// Fix ${entry.version} - ${entry.timestamp}
+// Target modules: ${entry.targetModules.join(', ')}
+// Issues addressed: ${entry.fixes.join(', ')}
+
+${entry.fixes.map(fix => `// - ${fix}`).join('\n')}
+
+// Applied to functions: ${entry.functionNames.join(', ')}
+// Success: ${entry.success}
+// Execution time: ${entry.executionTimeMs || entry.generationTime || 'N/A'}ms
+`;
   }
 
   async loadChangeLog(): Promise<ChangeLog> {
@@ -137,7 +267,12 @@ class FixHistoryLogger {
         fixes: [],
         version: 'v1',
         lastUpdated: new Date().toISOString(),
-        description: 'Self-healing PDF agent fix history'
+        description: 'Self-healing PDF agent fix history',
+        supabaseSync: {
+          lastSyncedAt: new Date().toISOString(),
+          syncedFixCount: 0,
+          syncErrors: []
+        }
       };
     }
   }
@@ -223,9 +358,9 @@ class FixHistoryLogger {
     const failed = fixes.filter(f => !f.success);
     
     // Calculate average generation time
-    const timesWithGenTime = fixes.filter(f => f.generationTime);
+    const timesWithGenTime = fixes.filter(f => f.generationTime || f.executionTimeMs);
     const avgGenTime = timesWithGenTime.length > 0 
-      ? timesWithGenTime.reduce((sum, f) => sum + (f.generationTime || 0), 0) / timesWithGenTime.length
+      ? timesWithGenTime.reduce((sum, f) => sum + (f.executionTimeMs || f.generationTime || 0), 0) / timesWithGenTime.length
       : 0;
 
     // Find most common issues
@@ -296,27 +431,35 @@ class FixHistoryLogger {
 - **Successful Fixes**: ${stats.successfulFixes}
 - **Failed Fixes**: ${stats.failedFixes}
 - **Success Rate**: ${stats.totalFixes > 0 ? (stats.successfulFixes / stats.totalFixes * 100).toFixed(1) : 0}%
-- **Average Generation Time**: ${stats.avgGenerationTime}ms
+- **Average Execution Time**: ${stats.avgGenerationTime}ms
 - **Last Updated**: ${changeLog.lastUpdated}
 
+## Supabase Sync Status
+- **Last Synced**: ${changeLog.supabaseSync?.lastSyncedAt || 'Never'}
+- **Synced Fix Count**: ${changeLog.supabaseSync?.syncedFixCount || 0}
+- **Sync Errors**: ${changeLog.supabaseSync?.syncErrors?.length || 0}
+
 ## Most Common Issues
-${stats.mostCommonIssues.map((issue, i) => `${i + 1}. ${issue}`).join('\\n')}
+${stats.mostCommonIssues.map((issue, i) => `${i + 1}. ${issue}`).join('\n')}
 
 ## Recent Fixes (Last 10)
 ${changeLog.fixes.slice(-10).reverse().map(fix => `
 ### ${fix.version} - ${fix.success ? '✅ Success' : '❌ Failed'}
 - **Timestamp**: ${fix.timestamp}
+- **Fix ID**: ${fix.fixId || 'N/A'}
 - **Issues Fixed**: ${fix.issueCount}
 - **Target Modules**: ${fix.targetModules.join(', ')}
-- **Generation Time**: ${fix.generationTime || 'N/A'}ms
+- **Execution Time**: ${fix.executionTimeMs || fix.generationTime || 'N/A'}ms
+- **Confidence Score**: ${fix.confidenceScore ? (fix.confidenceScore * 100).toFixed(1) + '%' : 'N/A'}
 - **File Size**: ${fix.fileSize ? `${(fix.fileSize / 1024).toFixed(1)}KB` : 'N/A'}
+${fix.quarantineReason ? `- **Quarantined**: ${fix.quarantineReason}` : ''}
 
 **Issues Addressed**:
-${fix.fixes.map(f => `- ${f}`).join('\\n')}
-`).join('\\n')}
+${fix.fixes.map(f => `- ${f}`).join('\n')}
+`).join('\n')}
 
 ## Fix Timeline
-${changeLog.fixes.map(fix => `- ${fix.timestamp}: ${fix.version} (${fix.success ? 'Success' : 'Failed'}) - ${fix.issueCount} issues`).join('\\n')}
+${changeLog.fixes.map(fix => `- ${fix.timestamp}: ${fix.version} (${fix.success ? 'Success' : 'Failed'}) - ${fix.issueCount} issues`).join('\n')}
 `;
 
     return report.trim();
@@ -333,16 +476,57 @@ ${changeLog.fixes.map(fix => `- ${fix.timestamp}: ${fix.version} (${fix.success 
     if (format === 'json') {
       await fs.writeFile(defaultPath, JSON.stringify(changeLog, null, 2));
     } else if (format === 'csv') {
-      const csvHeader = 'Version,Timestamp,Success,Issues Count,Target Modules,Generation Time,File Size\\n';
+      const csvHeader = 'Version,Fix ID,Timestamp,Success,Issues Count,Target Modules,Execution Time,Confidence Score,File Size,Quarantine Reason\n';
       const csvRows = changeLog.fixes.map(fix => 
-        `${fix.version},${fix.timestamp},${fix.success},${fix.issueCount},"${fix.targetModules.join(';')}",${fix.generationTime || ''},${fix.fileSize || ''}`
-      ).join('\\n');
+        `${fix.version},${fix.fixId || ''},${fix.timestamp},${fix.success},${fix.issueCount},"${fix.targetModules.join(';')}",${fix.executionTimeMs || fix.generationTime || ''},${fix.confidenceScore || ''},${fix.fileSize || ''},"${fix.quarantineReason || ''}"`
+      ).join('\n');
       
       await fs.writeFile(defaultPath, csvHeader + csvRows);
     }
 
     console.log(`📊 Exported fix history to: ${defaultPath}`);
     return defaultPath;
+  }
+
+  /**
+   * Sync all unsynced fixes to Supabase
+   */
+  async syncAllToSupabase(projectId: string = 'default-project'): Promise<void> {
+    try {
+      const changeLog = await this.loadChangeLog();
+      let syncCount = 0;
+      const errors: string[] = [];
+
+      for (const fix of changeLog.fixes) {
+        if (fix.baseVersionId) {
+          try {
+            await this.syncToSupabase(fix, projectId);
+            syncCount++;
+          } catch (error) {
+            const errorMsg = `Failed to sync ${fix.fixId}: ${error}`;
+            errors.push(errorMsg);
+            console.error(errorMsg);
+          }
+        }
+      }
+
+      // Update sync status
+      changeLog.supabaseSync = {
+        lastSyncedAt: new Date().toISOString(),
+        syncedFixCount: syncCount,
+        syncErrors: errors
+      };
+
+      await this.saveChangeLog(changeLog);
+      console.log(`🔄 Synced ${syncCount} fixes to Supabase`);
+      
+      if (errors.length > 0) {
+        console.warn(`⚠️ ${errors.length} sync errors occurred`);
+      }
+    } catch (error) {
+      console.error('❌ Failed to sync fixes to Supabase:', error);
+      throw error;
+    }
   }
 }
 
@@ -377,6 +561,16 @@ async function main() {
       });
     } catch (error) {
       console.error('Error logging fix:', error);
+      process.exit(1);
+    }
+
+  } else if (command === 'sync') {
+    const projectId = args[1] || 'default-project';
+
+    try {
+      await logger.syncAllToSupabase(projectId);
+    } catch (error) {
+      console.error('Error syncing to Supabase:', error);
       process.exit(1);
     }
 
@@ -430,6 +624,7 @@ async function main() {
     console.log('');
     console.log('Commands:');
     console.log('  log <version> <input> <output> <success> <fix1> ...  Log a new fix');
+    console.log('  sync [project-id]                                    Sync all fixes to Supabase');
     console.log('  report                                               Generate fix report');
     console.log('  export [json|csv] [output-path]                     Export fix history');
     console.log('  history [version]                                    Show fix history');
@@ -437,6 +632,7 @@ async function main() {
     console.log('');
     console.log('Examples:');
     console.log('  log-fix-history log v2 input.json output.pdf true "Fixed missing project name"');
+    console.log('  log-fix-history sync my-project-id');
     console.log('  log-fix-history report');
     console.log('  log-fix-history export csv');
     console.log('  log-fix-history history v2');
