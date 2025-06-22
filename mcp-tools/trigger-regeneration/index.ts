@@ -3,12 +3,16 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { execSync } from 'child_process';
+import { runPDFGenerationV3Test } from '../../tests/regression/test_generatePDF_v3.js';
+import { comparePDFLayouts } from '../../tests/regression/compare_pdf_layout.js';
+import supabaseClient from '../../utils/supabaseClient.js';
+import { backupManager } from '../../utils/backupManager.js';
 
 /**
- * PDF Regeneration Trigger
+ * Enhanced PDF Regeneration Trigger with Testing & Validation
  * 
- * This tool regenerates PDFs using the latest fixes from the self-healing agent system.
- * It applies the versioned fixes and creates new PDF outputs with incremented versions.
+ * This tool regenerates PDFs using the latest fixes from the self-healing agent system,
+ * with optional testing and validation to ensure quality before deployment.
  */
 
 interface RegenerationInput {
@@ -17,6 +21,9 @@ interface RegenerationInput {
   outputDir?: string;
   version?: string;
   originalGeneratorPath?: string;
+  runTests?: boolean;
+  comparisonBaseline?: string;
+  projectId?: string;
 }
 
 interface RegenerationResult {
@@ -31,6 +38,15 @@ interface RegenerationResult {
     input: string;
     output: string;
     fixes: string[];
+  };
+  testResults?: {
+    passed: boolean;
+    testSuite?: any;
+    layoutComparison?: any;
+  };
+  backupInfo?: {
+    created: boolean;
+    backupPaths: string[];
   };
 }
 
@@ -57,10 +73,13 @@ class PDFRegenerationTrigger {
     const startTime = Date.now();
     
     try {
-      console.log('🔄 Starting PDF regeneration with fixes...');
+      console.log('🔄 Starting enhanced PDF regeneration with fixes...');
       
       // Ensure directories exist
       await this.ensureDirectoriesExist();
+      
+      // Create backups if requested
+      const backupInfo = await this.createBackups(input);
       
       // Load and validate input JSON
       const inputData = await this.loadInputData(input.inputJsonPath);
@@ -77,12 +96,20 @@ class PDFRegenerationTrigger {
       // Generate the PDF using the fixed generator
       const outputPath = await this.executeGeneration(inputData, tempGeneratorPath, outputVersion);
       
+      // Run tests if requested
+      const testResults = input.runTests ? await this.runValidationTests(outputPath, inputData, input) : undefined;
+      
       // Verify the generated PDF
       const verification = await this.verifyGeneratedPDF(outputPath, inputData);
       
       // Calculate file size and checksums
       const stats = await fs.stat(outputPath);
       const checksums = await this.generateChecksums(input, outputPath, fixModules);
+      
+      // Log to Supabase if projectId provided
+      if (input.projectId) {
+        await this.logToSupabase(input, outputPath, outputVersion, stats.size, testResults);
+      }
       
       // Clean up temporary files
       await this.cleanup(tempGeneratorPath);
@@ -94,6 +121,10 @@ class PDFRegenerationTrigger {
       console.log(`📊 File size: ${(stats.size / 1024).toFixed(1)}KB`);
       console.log(`🔧 Applied fixes: ${fixModules.length}`);
       
+      if (testResults) {
+        console.log(`🧪 Tests: ${testResults.passed ? 'PASSED' : 'FAILED'}`);
+      }
+      
       return {
         success: true,
         outputPath,
@@ -101,7 +132,9 @@ class PDFRegenerationTrigger {
         generationTime,
         fileSize: stats.size,
         appliedFixes: fixModules.map(f => `${f.targetModule}_${f.version}`),
-        checksums
+        checksums,
+        testResults,
+        backupInfo
       };
       
     } catch (error) {
@@ -114,8 +147,121 @@ class PDFRegenerationTrigger {
         version: input.version || 'unknown',
         generationTime,
         appliedFixes: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        backupInfo: { created: false, backupPaths: [] }
       };
+    }
+  }
+
+  private async createBackups(input: RegenerationInput): Promise<{ created: boolean; backupPaths: string[] }> {
+    const backupPaths: string[] = [];
+    
+    try {
+      // Create backup of original generator
+      if (input.originalGeneratorPath) {
+        const backup = await backupManager.createBackup(input.originalGeneratorPath, {
+          reason: 'pre_modification',
+          maxBackups: 5
+        });
+        backupPaths.push(backup.backupPath);
+      }
+      
+      // Create backups of any modules that will be modified
+      for (const fixModule of input.fixModules) {
+        try {
+          const modulePath = path.join('src', fixModule.replace(/_v\d+\.ts$/, '.ts'));
+          const backup = await backupManager.createBackup(modulePath, {
+            reason: 'fix_application',
+            maxBackups: 10
+          });
+          backupPaths.push(backup.backupPath);
+        } catch (error) {
+          console.warn(`⚠️ Could not backup module for ${fixModule}:`, error);
+        }
+      }
+      
+      console.log(`📦 Created ${backupPaths.length} backups`);
+      return { created: true, backupPaths };
+      
+    } catch (error) {
+      console.warn('⚠️ Backup creation failed:', error);
+      return { created: false, backupPaths };
+    }
+  }
+
+  private async runValidationTests(
+    outputPath: string, 
+    inputData: any, 
+    input: RegenerationInput
+  ): Promise<{ passed: boolean; testSuite?: any; layoutComparison?: any }> {
+    try {
+      console.log('🧪 Running validation tests...');
+      
+      // Run regression test suite
+      const testSuite = await runPDFGenerationV3Test(input.inputJsonPath, path.dirname(outputPath));
+      
+      // Run layout comparison if baseline provided
+      let layoutComparison;
+      if (input.comparisonBaseline) {
+        layoutComparison = await comparePDFLayouts(input.comparisonBaseline, outputPath);
+        console.log(`📐 Layout comparison: ${layoutComparison.isMatch ? 'MATCH' : 'DIFFERS'} (confidence: ${(layoutComparison.confidence * 100).toFixed(1)}%)`);
+      }
+      
+      const allTestsPassed = testSuite.overallPassed && (!layoutComparison || layoutComparison.isMatch);
+      
+      console.log(`🧪 Test Results: ${allTestsPassed ? '✅ PASSED' : '❌ FAILED'}`);
+      console.log(`   Regression Tests: ${testSuite.summary.passed}/${testSuite.summary.total} passed`);
+      if (layoutComparison) {
+        console.log(`   Layout Comparison: ${layoutComparison.isMatch ? 'MATCH' : 'DIFFERS'}`);
+      }
+      
+      return {
+        passed: allTestsPassed,
+        testSuite,
+        layoutComparison
+      };
+      
+    } catch (error) {
+      console.error('❌ Test validation failed:', error);
+      return {
+        passed: false,
+        testSuite: { error: error instanceof Error ? error.message : 'Unknown error' }
+      };
+    }
+  }
+
+  private async logToSupabase(
+    input: RegenerationInput,
+    outputPath: string,
+    version: string,
+    fileSize: number,
+    testResults?: any
+  ): Promise<void> {
+    try {
+      // Load input data for hash calculation
+      const inputContent = await fs.readFile(input.inputJsonPath, 'utf-8');
+      const inputData = JSON.parse(inputContent);
+      
+      // Log PDF generation
+      const pdfVersion = await supabaseClient.logPDFGeneration({
+        projectId: input.projectId!,
+        inputData,
+        pdfPath: outputPath,
+        fileSize,
+        metrics: {
+          appliedFixes: input.fixModules.length,
+          testsPassed: testResults?.passed || false,
+          testSummary: testResults?.testSuite?.summary
+        },
+        status: testResults?.passed === false ? 'failed' : 'completed'
+      });
+      
+      if (pdfVersion) {
+        console.log(`🔄 Logged PDF generation to Supabase: ${pdfVersion.id}`);
+      }
+      
+    } catch (error) {
+      console.warn('⚠️ Failed to log to Supabase:', error);
     }
   }
 
@@ -130,7 +276,7 @@ class PDFRegenerationTrigger {
       const data = JSON.parse(content);
       
       console.log(`📥 Loaded input data from: ${inputPath}`);
-      console.log(`📋 Project: ${data.projectName || 'Unknown'}`);
+      console.log(`📋 Project: ${data.projectName || data.project?.name || 'Unknown'}`);
       
       return data;
     } catch (error) {
@@ -162,7 +308,7 @@ class PDFRegenerationTrigger {
         const checksum = this.generateChecksum(content);
         
         // Extract function name from content
-        const functionNameMatch = content.match(/function\\s+(\\w+)\\s*\\(/);
+        const functionNameMatch = content.match(/function\s+(\w+)\s*\(/);
         const functionName = functionNameMatch ? functionNameMatch[1] : 'unknown';
         
         modules.push({
@@ -194,7 +340,7 @@ class PDFRegenerationTrigger {
       
       // Extract version numbers
       const versions = pdfFiles
-        .map(f => f.match(/_v(\\d+)\\.pdf$/))
+        .map(f => f.match(/_v(\d+)\.pdf$/))
         .filter(Boolean)
         .map(m => parseInt(m![1]))
         .sort((a, b) => b - a);
@@ -220,17 +366,9 @@ class PDFRegenerationTrigger {
     // Add imports for fix modules
     const imports = fixModules.map(fix => 
       `import { ${fix.functionName} } from '../fixes/snippets/${path.basename(fix.filePath, '.ts')}';`
-    ).join('\\n');
+    ).join('\n');
     
-    modifiedContent = imports + '\\n\\n' + modifiedContent;
-    
-    // Replace function calls with fixed versions
-    for (const fix of fixModules) {
-      // Look for function calls to replace
-      const originalFunctionRegex = new RegExp(`\\\\b${fix.functionName}\\\\b`, 'g');
-      // Note: This is a simplified replacement. In practice, you'd want more sophisticated
-      // code transformation using an AST parser like TypeScript Compiler API
-    }
+    modifiedContent = imports + '\n\n' + modifiedContent;
     
     // Add fix application wrapper
     const wrapperCode = `
@@ -254,7 +392,7 @@ export function generatePDF(inputData: any, options: any = {}) {
 }
 `;
     
-    modifiedContent += '\\n\\n' + wrapperCode;
+    modifiedContent += '\n\n' + wrapperCode;
     
     // Create temporary file
     const tempPath = path.join(this.outputDir, `temp_generator_${Date.now()}.ts`);
@@ -289,7 +427,7 @@ export function generatePDF(inputData: any, options: any = {}) {
 
   private async executeGeneration(inputData: any, generatorPath: string, version: string): Promise<string> {
     // Generate output filename
-    const projectName = (inputData.projectName || 'Unknown_Project').replace(/[^a-zA-Z0-9]/g, '_');
+    const projectName = (inputData.projectName || inputData.project?.name || 'Unknown_Project').replace(/[^a-zA-Z0-9]/g, '_');
     const timestamp = new Date().toISOString().split('T')[0];
     const outputFileName = `SOW_${projectName}_${version}_${timestamp}.pdf`;
     const outputPath = path.join(this.outputDir, outputFileName);
@@ -307,11 +445,6 @@ export function generatePDF(inputData: any, options: any = {}) {
       
       // Execute the generator
       console.log('🎨 Generating PDF with applied fixes...');
-      
-      // This is a simplified execution. In practice, you'd want to:
-      // 1. Import and call the generator function directly
-      // 2. Or use a proper module loader
-      // 3. Handle different generator interfaces
       
       const generatorModule = require(path.resolve(jsPath));
       const result = await generatorModule.generatePDF(inputData, {
@@ -423,8 +556,8 @@ export function generatePDF(inputData: any, options: any = {}) {
     
     // Sort by version number
     return moduleFixes.sort((a, b) => {
-      const aVersion = parseInt(a.match(/_v(\\d+)\\.ts$/)?.[1] || '0');
-      const bVersion = parseInt(b.match(/_v(\\d+)\\.ts$/)?.[1] || '0');
+      const aVersion = parseInt(a.match(/_v(\d+)\.ts$/)?.[1] || '0');
+      const bVersion = parseInt(b.match(/_v(\d+)\.ts$/)?.[1] || '0');
       return bVersion - aVersion; // Descending order (latest first)
     });
   }
@@ -439,29 +572,66 @@ async function main() {
 
   if (command === 'generate') {
     const inputJsonPath = args[1];
-    const fixModules = args.slice(2);
+    const fixModules = [];
+    let runTests = false;
+    let comparisonBaseline: string | undefined;
+    let projectId: string | undefined;
+    
+    // Parse arguments
+    for (let i = 2; i < args.length; i++) {
+      const arg = args[i];
+      if (arg === '--test') {
+        runTests = true;
+      } else if (arg === '--baseline') {
+        comparisonBaseline = args[++i];
+      } else if (arg === '--project-id') {
+        projectId = args[++i];
+      } else if (arg.endsWith('.ts')) {
+        fixModules.push(arg);
+      }
+    }
 
     if (!inputJsonPath || fixModules.length === 0) {
-      console.error('Usage: trigger-regeneration generate <input-json-path> <fix-module1> [fix-module2] ...');
+      console.error('Usage: trigger-regeneration generate <input-json-path> <fix-module1> [fix-module2] ... [--test] [--baseline <pdf-path>] [--project-id <id>]');
+      console.error('');
+      console.error('Options:');
+      console.error('  --test                Run regression tests after generation');
+      console.error('  --baseline <path>     Compare layout against baseline PDF');
+      console.error('  --project-id <id>     Log results to Supabase project');
       console.error('');
       console.error('Example:');
-      console.error('  trigger-regeneration generate input.json addProjectInfo_v2.ts addZonePressures_v1.ts');
+      console.error('  trigger-regeneration generate input.json addProjectInfo_v2.ts --test --project-id my-project');
       process.exit(1);
     }
 
     try {
       const result = await trigger.regeneratePDF({
         inputJsonPath,
-        fixModules
+        fixModules,
+        runTests,
+        comparisonBaseline,
+        projectId
       });
 
       if (result.success) {
-        console.log('\\n✅ Regeneration completed successfully!');
+        console.log('\n✅ Regeneration completed successfully!');
         console.log(`📄 Output: ${result.outputPath}`);
         console.log(`🔖 Version: ${result.version}`);
         console.log(`⏱️ Time: ${result.generationTime}ms`);
         console.log(`📊 Size: ${result.fileSize ? (result.fileSize / 1024).toFixed(1) + 'KB' : 'Unknown'}`);
         console.log(`🔧 Applied fixes: ${result.appliedFixes.join(', ')}`);
+        
+        if (result.testResults) {
+          console.log(`🧪 Tests: ${result.testResults.passed ? '✅ PASSED' : '❌ FAILED'}`);
+        }
+        
+        if (result.backupInfo?.created) {
+          console.log(`📦 Backups created: ${result.backupInfo.backupPaths.length}`);
+        }
+        
+        // Exit with appropriate code based on test results
+        const exitCode = result.testResults ? (result.testResults.passed ? 0 : 1) : 0;
+        process.exit(exitCode);
       } else {
         console.error('❌ Regeneration failed:', result.error);
         process.exit(1);
@@ -502,12 +672,18 @@ async function main() {
     console.log('Usage: trigger-regeneration <command> [options]');
     console.log('');
     console.log('Commands:');
-    console.log('  generate <input-json> <fix1> [fix2] ...  Regenerate PDF with fixes');
-    console.log('  list-fixes                               List available fix modules');
-    console.log('  latest-fixes <module-name>               Get latest fixes for module');
+    console.log('  generate <input-json> <fix1> [fix2] ... [options]  Regenerate PDF with fixes');
+    console.log('  list-fixes                                          List available fix modules');
+    console.log('  latest-fixes <module-name>                          Get latest fixes for module');
+    console.log('');
+    console.log('Options for generate:');
+    console.log('  --test                Run regression tests after generation');
+    console.log('  --baseline <path>     Compare layout against baseline PDF');
+    console.log('  --project-id <id>     Log results to Supabase project');
     console.log('');
     console.log('Examples:');
-    console.log('  trigger-regeneration generate input.json addProjectInfo_v2.ts');
+    console.log('  trigger-regeneration generate input.json addProjectInfo_v2.ts --test');
+    console.log('  trigger-regeneration generate input.json fix1.ts fix2.ts --baseline old.pdf');
     console.log('  trigger-regeneration list-fixes');
     console.log('  trigger-regeneration latest-fixes addProjectInfo');
   }
