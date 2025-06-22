@@ -1,4 +1,3 @@
-
 /* Tesla-Level Professional UI Styles */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -19,11 +18,11 @@
   --tesla-blue-dark: #1d4ed8;
   --tesla-blue-glow: rgba(59, 130, 246, 0.3);
   
-  /* Tesla Text Colors */
+  /* Tesla Text Colors - Updated for better visibility */
   --tesla-text-primary: #ffffff;
-  --tesla-text-secondary: #a1a1aa;
-  --tesla-text-tertiary: #71717a;
-  --tesla-text-muted: #52525b;
+  --tesla-text-secondary: #d1d5db;
+  --tesla-text-tertiary: #9ca3af;
+  --tesla-text-muted: #6b7280;
   
   /* Tesla Status Colors */
   --tesla-success: #10b981;
@@ -364,7 +363,7 @@
   background: var(--tesla-blue);
 }
 
-/* Tesla Typography */
+/* Tesla Typography - Updated for better visibility */
 .tesla-h1 {
   font-size: 2.25rem;
   font-weight: 700;
@@ -398,10 +397,10 @@
 .tesla-small {
   font-size: 0.75rem;
   line-height: 1.5;
-  color: var(--tesla-text-tertiary);
+  color: var(--tesla-text-secondary);
 }
 
-/* Override shadcn components for Tesla theme */
+/* Override shadcn components for Tesla theme with better visibility */
 .tesla-dark label {
   color: var(--tesla-text-primary) !important;
   font-weight: 500;
@@ -447,3 +446,33 @@
   background: rgba(255, 255, 255, 1) !important;
 }
 
+/* Additional overrides for better text visibility */
+.tesla-dark .text-muted-foreground {
+  color: var(--tesla-text-secondary) !important;
+}
+
+.tesla-dark .text-gray-500,
+.tesla-dark .text-gray-600,
+.tesla-dark .text-gray-700 {
+  color: var(--tesla-text-secondary) !important;
+}
+
+.tesla-dark .text-slate-600,
+.tesla-dark .text-slate-700 {
+  color: var(--tesla-text-secondary) !important;
+}
+
+/* Make card descriptions more visible */
+.tesla-dark [data-description] {
+  color: var(--tesla-text-secondary) !important;
+}
+
+/* Override any remaining gray text */
+.tesla-dark p,
+.tesla-dark span {
+  color: inherit;
+}
+
+.tesla-dark .text-sm {
+  color: var(--tesla-text-secondary) !important;
+}
