@@ -1,4 +1,3 @@
-
 // Enhanced PDF parsing service for comprehensive roofing project data extraction
 // Supports takeoff quantities, roof features, and detailed specifications
 
@@ -730,7 +729,7 @@ export class PDFParsingService {
         label: 'Drain Types',
         value: extractedData.drainTypes.join(', '),
         confidence: extractedData.confidence,
-        willPopulate: extractedData.confidence >= minConf idence,
+        willPopulate: extractedData.confidence >= minConfidence,
       });
     }
 
