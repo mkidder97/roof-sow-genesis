@@ -1,0 +1,44 @@
+# **SOW TEMPLATE T1 - RECOVER SYSTEM**
+
+## Project Overview
+This project involves a **{{selectedSystem}}** roof recover system installed over the existing roof assembly at {{projectAddress}}. The recover system has been engineered to meet {{asceVersion}} wind load requirements with {{jurisdictionNotes}}.
+
+## Scope of Work
+The scope of work includes:
+- Installation of new {{selectedSystem}} membrane system
+- {{fasteningSpecs}} attachment patterns to meet {{zonePressures}} wind uplift requirements  
+- All necessary flashing and accessory work
+- Compliance with {{codeCycle}} and applicable building codes
+
+## Template Selection Rationale
+{{rationale}}
+
+## Wind Load Requirements
+Wind pressures calculated using {{asceVersion}} methodology:
+{{windCalculationSummary}}
+
+Zone pressure requirements:
+{{zonePressureDetails}}
+
+## Fastening Specifications
+**Field Area**: {{fieldSpacing}}  
+**Perimeter Area**: {{perimeterSpacing}}  
+**Corner Area**: {{cornerSpacing}}  
+**Fastener Type**: {{fastenerType}}  
+**Penetration Depth**: {{penetrationDepth}}
+
+## System Compliance
+{{complianceNotes}}
+
+## Special Considerations
+{{specialRequirements}}
+
+## Quality Assurance
+- All work to be performed in accordance with manufacturer specifications
+- Regular inspection and quality control throughout installation
+- Final inspection to verify compliance with all requirements
+
+---
+*Template: T1 - Recover System*  
+*Generated: {{generationTimestamp}}*  
+*Version: {{templateVersion}}*
