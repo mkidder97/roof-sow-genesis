@@ -1,0 +1,230 @@
+// Manufacturer Fastening Patterns Database
+{
+  "patterns": {
+    "GAF_TPO_Standard": {
+      "manufacturer": "GAF",
+      "system": "TPO Standard",
+      "approvals": ["FM I-175", "UL 580"],
+      "pressureThresholds": {
+        "zone1Field": -25,
+        "zone1Perimeter": -35,
+        "zone2Perimeter": -45,
+        "zone3Corner": -60
+      },
+      "fasteningSpecifications": {
+        "fieldSpacing": "12\" o.c.",
+        "perimeterSpacing": "9\" o.c.",
+        "cornerSpacing": "6\" o.c.",
+        "penetrationDepth": "¾ inch min"
+      },
+      "deckTypes": ["steel", "wood", "concrete"],
+      "projectTypes": ["recover", "tearoff", "new"]
+    },
+    "GAF_TPO_HVHZ": {
+      "manufacturer": "GAF",
+      "system": "TPO HVHZ",
+      "approvals": ["FM I-175", "UL 580", "NOA 22-0208.03"],
+      "pressureThresholds": {
+        "zone1Field": -35,
+        "zone1Perimeter": -50,
+        "zone2Perimeter": -70,
+        "zone3Corner": -90
+      },
+      "fasteningSpecifications": {
+        "fieldSpacing": "9\" o.c.",
+        "perimeterSpacing": "6\" o.c.",
+        "cornerSpacing": "4\" o.c.",
+        "penetrationDepth": "1 inch min"
+      },
+      "deckTypes": ["steel", "concrete"],
+      "projectTypes": ["recover", "tearoff", "new"],
+      "specialRequirements": ["TAS-100", "Third-Party-Inspection"]
+    },
+    "Firestone_TPO_Enhanced": {
+      "manufacturer": "Firestone",
+      "system": "TPO Enhanced Wind",
+      "approvals": ["FM I-195", "UL 580", "ICC-ES ESR-1289"],
+      "pressureThresholds": {
+        "zone1Field": -30,
+        "zone1Perimeter": -45,
+        "zone2Perimeter": -60,
+        "zone3Corner": -80
+      },
+      "fasteningSpecifications": {
+        "fieldSpacing": "10\" o.c.",
+        "perimeterSpacing": "7\" o.c.",
+        "cornerSpacing": "5\" o.c.",
+        "penetrationDepth": "¾ inch min"
+      },
+      "deckTypes": ["steel", "wood"],
+      "projectTypes": ["recover", "tearoff", "new"]
+    },
+    "Carlisle_TPO_Recover": {
+      "manufacturer": "Carlisle",
+      "system": "TPO Recover System",
+      "approvals": ["FM I-175", "UL 580"],
+      "pressureThresholds": {
+        "zone1Field": -20,
+        "zone1Perimeter": -30,
+        "zone2Perimeter": -40,
+        "zone3Corner": -55
+      },
+      "fasteningSpecifications": {
+        "fieldSpacing": "12\" o.c.",
+        "perimeterSpacing": "8\" o.c.",
+        "cornerSpacing": "6\" o.c.",
+        "penetrationDepth": "¾ inch min"
+      },
+      "deckTypes": ["steel", "wood"],
+      "projectTypes": ["recover"]
+    },
+    "JohnsManville_TPO_Fleeceback": {
+      "manufacturer": "Johns Manville",
+      "system": "TPO Fleeceback",
+      "approvals": ["FM I-175", "UL 580", "NOA 16758.3-R35"],
+      "pressureThresholds": {
+        "zone1Field": -40,
+        "zone1Perimeter": -60,
+        "zone2Perimeter": -80,
+        "zone3Corner": -110
+      },
+      "fasteningSpecifications": {
+        "fieldSpacing": "8\" o.c.",
+        "perimeterSpacing": "5\" o.c.",
+        "cornerSpacing": "3\" o.c.",
+        "penetrationDepth": "1 inch min"
+      },
+      "deckTypes": ["steel", "concrete"],
+      "projectTypes": ["recover", "tearoff"],
+      "specialRequirements": ["HVHZ-Approved"]
+    },
+    "Versico_TPO_High_Wind": {
+      "manufacturer": "Versico",
+      "system": "TPO High Wind",
+      "approvals": ["FM I-195", "UL 580", "ASTM D6878"],
+      "pressureThresholds": {
+        "zone1Field": -35,
+        "zone1Perimeter": -55,
+        "zone2Perimeter": -75,
+        "zone3Corner": -100
+      },
+      "fasteningSpecifications": {
+        "fieldSpacing": "9\" o.c.",
+        "perimeterSpacing": "6\" o.c.",
+        "cornerSpacing": "4\" o.c.",
+        "penetrationDepth": "1 inch min"
+      },
+      "deckTypes": ["steel", "wood", "concrete"],
+      "projectTypes": ["tearoff", "new"]
+    },
+    "Sika_TPO_Adhered": {
+      "manufacturer": "Sika",
+      "system": "TPO Fully Adhered",
+      "approvals": ["FM I-175", "UL 580"],
+      "pressureThresholds": {
+        "zone1Field": -45,
+        "zone1Perimeter": -65,
+        "zone2Perimeter": -85,
+        "zone3Corner": -120
+      },
+      "fasteningSpecifications": {
+        "fieldSpacing": "Fully Adhered",
+        "perimeterSpacing": "6\" o.c.",
+        "cornerSpacing": "4\" o.c.",
+        "penetrationDepth": "¾ inch min"
+      },
+      "deckTypes": ["steel", "concrete"],
+      "projectTypes": ["new", "tearoff"],
+      "specialRequirements": ["Primer-Required", "Temperature-Controlled"]
+    },
+    "Generic_Basic_TPO": {
+      "manufacturer": "Generic",
+      "system": "Basic TPO",
+      "approvals": ["UL 580"],
+      "pressureThresholds": {
+        "zone1Field": -15,
+        "zone1Perimeter": -25,
+        "zone2Perimeter": -35,
+        "zone3Corner": -45
+      },
+      "fasteningSpecifications": {
+        "fieldSpacing": "15\" o.c.",
+        "perimeterSpacing": "12\" o.c.",
+        "cornerSpacing": "9\" o.c.",
+        "penetrationDepth": "¾ inch min"
+      },
+      "deckTypes": ["steel", "wood"],
+      "projectTypes": ["recover", "tearoff"],
+      "note": "Fallback pattern for low wind applications"
+    }
+  },
+  "priorityOrder": [
+    "HVHZ_Compliance",
+    "Miami_Dade_NOA",
+    "FM_Approval",
+    "UL_Rating",
+    "Pressure_Threshold",
+    "Manufacturer_Preference"
+  ],
+  "approvalHierarchy": {
+    "NOA": {
+      "priority": 1,
+      "description": "Notice of Acceptance (Miami-Dade County)",
+      "required_for": ["HVHZ"]
+    },
+    "TAS-100": {
+      "priority": 2,
+      "description": "Test Acceptance Standard 100",
+      "required_for": ["HVHZ"]
+    },
+    "FM I-195": {
+      "priority": 3,
+      "description": "Factory Mutual Severe Wind Standard"
+    },
+    "FM I-175": {
+      "priority": 4,
+      "description": "Factory Mutual Standard Wind"
+    },
+    "UL 580": {
+      "priority": 5,
+      "description": "Underwriters Laboratory Wind Standard"
+    },
+    "ICC-ES": {
+      "priority": 6,
+      "description": "International Code Council Evaluation Service"
+    },
+    "ASTM D6878": {
+      "priority": 7,
+      "description": "ASTM High Wind Resistance Standard"
+    }
+  },
+  "membraneCompatibility": {
+    "TPO": {
+      "compatible_patterns": ["GAF_TPO_Standard", "GAF_TPO_HVHZ", "Firestone_TPO_Enhanced", "Carlisle_TPO_Recover", "JohnsManville_TPO_Fleeceback", "Versico_TPO_High_Wind", "Sika_TPO_Adhered", "Generic_Basic_TPO"]
+    },
+    "PVC": {
+      "compatible_patterns": ["Firestone_TPO_Enhanced", "Versico_TPO_High_Wind", "Sika_TPO_Adhered"]
+    },
+    "EPDM": {
+      "compatible_patterns": ["Carlisle_TPO_Recover", "Generic_Basic_TPO"]
+    }
+  },
+  "deckTypeCompatibility": {
+    "steel": {
+      "note": "Standard fastener penetration requirements",
+      "recommended_fasteners": ["#14 fasteners", "Galvanized plates"]
+    },
+    "wood": {
+      "note": "Enhanced penetration depth required",
+      "recommended_fasteners": ["#14 fasteners", "Minimum 1.25\" penetration"]
+    },
+    "concrete": {
+      "note": "Concrete anchors or adhesive attachment",
+      "recommended_fasteners": ["Concrete screws", "Structural adhesive"]
+    },
+    "lightweight_concrete": {
+      "note": "Special fasteners required for pullout resistance",
+      "recommended_fasteners": ["Long fasteners", "Enhanced plates"]
+    }
+  }
+}
