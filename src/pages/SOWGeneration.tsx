@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building, Wind, FileText, Download, Eye, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import ManufacturerAnalysisPreview from '@/components/ManufacturerAnalysisPreview';
-import SOWInputForm from '@/components/SOWInputForm';
+import { SOWInputForm } from '@/components/SOWInputForm'; // Changed to named import
 import { useSOWGeneration, useSOWDebug } from '@/hooks/useSOWGeneration';
 import { SOWGenerationRequest } from '@/lib/api';
 
