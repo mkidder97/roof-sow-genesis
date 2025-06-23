@@ -17,6 +17,7 @@ import BuildingSpecsStep from './form-steps/BuildingSpecsStep';
 import EquipmentInventoryStep from './form-steps/EquipmentInventoryStep';
 import PhotoDocumentationStep from './form-steps/PhotoDocumentationStep';
 import AssessmentNotesStep from './form-steps/AssessmentNotesStep';
+import FloatingCameraButton from './FloatingCameraButton';
 
 const FieldInspectionForm = () => {
   const navigate = useNavigate();
@@ -77,6 +78,11 @@ const FieldInspectionForm = () => {
 
   const updateFormData = (updates: Partial<FieldInspection>) => {
     setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const handlePhotosAdded = (newPhotos: string[]) => {
+    const updatedPhotos = [...(formData.photos || []), ...newPhotos];
+    updateFormData({ photos: updatedPhotos });
   };
 
   const validateCurrentStep = (): boolean => {
@@ -332,6 +338,12 @@ const FieldInspectionForm = () => {
             </Button>
           </div>
         </div>
+
+        {/* Floating Camera Button */}
+        <FloatingCameraButton 
+          onPhotosAdded={handlePhotosAdded}
+          disabled={isLoading}
+        />
       </div>
     </div>
   );
