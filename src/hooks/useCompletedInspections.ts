@@ -15,6 +15,7 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
     roof_drains: row.roof_drains ? (Array.isArray(row.roof_drains) ? row.roof_drains : JSON.parse(row.roof_drains as string)) : [],
     penetrations: row.penetrations ? (Array.isArray(row.penetrations) ? row.penetrations : JSON.parse(row.penetrations as string)) : [],
     insulation_layers: row.insulation_layers ? (Array.isArray(row.insulation_layers) ? row.insulation_layers : JSON.parse(row.insulation_layers as string)) : [],
+    skylights_detailed: row.skylights_detailed ? (Array.isArray(row.skylights_detailed) ? row.skylights_detailed : JSON.parse(row.skylights_detailed as string)) : [],
     skylights: row.skylights || 0,
     photos: row.photos || [],
     sow_generated: row.sow_generated || false,
@@ -24,6 +25,8 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
     conduit_attached: row.conduit_attached || false,
     upgraded_lighting: row.upgraded_lighting || false,
     interior_fall_protection: row.interior_fall_protection || false,
+    curbs_above_8: row.curbs_above_8 || false,
+    gas_line_penetrating_deck: row.gas_line_penetrating_deck || false,
     access_method: (row.access_method as 'internal_hatch' | 'external_ladder' | 'extension_ladder') || 'internal_hatch',
   };
 };

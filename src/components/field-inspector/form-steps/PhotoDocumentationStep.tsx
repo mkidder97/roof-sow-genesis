@@ -2,9 +2,8 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Camera, Upload, X, Eye, Loader2 } from 'lucide-react';
+import { Camera, Upload, X, Eye } from 'lucide-react';
 import { FieldInspection } from '@/types/fieldInspection';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -63,7 +62,10 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
   };
 
   const uploadPhoto = async (file: File): Promise<string> => {
-    if (!user) throw new Error('User not authenticated');
+    if (!user) {
+      toast.error('You must be logged in to upload photos');
+      throw new Error('User not authenticated');
+    }
 
     const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setUploading(prev => [...prev, fileId]);
@@ -91,7 +93,10 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
         .from('inspection-photos')
         .upload(fileName, compressedFile);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
 
       const { data: urlData } = supabase.storage
         .from('inspection-photos')
@@ -102,6 +107,9 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
       setTimeout(() => clearInterval(progressInterval), 500);
       
       return urlData.publicUrl;
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      throw error;
     } finally {
       setTimeout(() => {
         setUploading(prev => prev.filter(id => id !== fileId));
@@ -116,6 +124,10 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    if (!user) {
+      toast.error('You must be logged in to upload photos');
+      return;
+    }
 
     const newPhotos: string[] = [];
     
@@ -148,11 +160,16 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
   };
 
   const removePhoto = async (photoUrl: string, index: number) => {
+    if (!user) {
+      toast.error('You must be logged in to remove photos');
+      return;
+    }
+
     try {
       // Extract file path from URL to delete from storage
       const urlParts = photoUrl.split('/');
       const fileName = urlParts[urlParts.length - 1];
-      const filePath = `${user?.id}/${fileName}`;
+      const filePath = `${user.id}/${fileName}`;
       
       await supabase.storage
         .from('inspection-photos')
@@ -178,6 +195,21 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
       fileInputRef.current.click();
     }
   };
+
+  // Show login message if user is not authenticated
+  if (!user) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-white mb-4">You must be logged in to upload photos</p>
+        <Button 
+          onClick={() => window.location.href = '/auth'}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          Login to Continue
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

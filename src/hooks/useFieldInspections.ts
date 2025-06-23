@@ -1,19 +1,22 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { FieldInspection, FieldInspectionRow } from '@/types/fieldInspection';
+import { toast } from 'sonner';
 
 // Convert database row to FieldInspection type
 const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
   return {
     ...row,
-    inspection_date: row.inspection_date || new Date().toISOString().split('T')[0],
+    inspection_date: row.inspection_date || '',
     priority_level: (row.priority_level as 'Standard' | 'Expedited' | 'Emergency') || 'Standard',
     status: (row.status as 'Draft' | 'Completed' | 'Under Review' | 'Approved') || 'Draft',
     hvac_units: row.hvac_units ? (Array.isArray(row.hvac_units) ? row.hvac_units : JSON.parse(row.hvac_units as string)) : [],
     roof_drains: row.roof_drains ? (Array.isArray(row.roof_drains) ? row.roof_drains : JSON.parse(row.roof_drains as string)) : [],
     penetrations: row.penetrations ? (Array.isArray(row.penetrations) ? row.penetrations : JSON.parse(row.penetrations as string)) : [],
     insulation_layers: row.insulation_layers ? (Array.isArray(row.insulation_layers) ? row.insulation_layers : JSON.parse(row.insulation_layers as string)) : [],
+    skylights_detailed: row.skylights_detailed ? (Array.isArray(row.skylights_detailed) ? row.skylights_detailed : JSON.parse(row.skylights_detailed as string)) : [],
     skylights: row.skylights || 0,
     photos: row.photos || [],
     sow_generated: row.sow_generated || false,
@@ -23,87 +26,10 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
     conduit_attached: row.conduit_attached || false,
     upgraded_lighting: row.upgraded_lighting || false,
     interior_fall_protection: row.interior_fall_protection || false,
+    curbs_above_8: row.curbs_above_8 || false,
+    gas_line_penetrating_deck: row.gas_line_penetrating_deck || false,
     access_method: (row.access_method as 'internal_hatch' | 'external_ladder' | 'extension_ladder') || 'internal_hatch',
   };
-};
-
-// Convert FieldInspection to database insert format
-const convertInspectionToRow = (inspection: Partial<FieldInspection>) => {
-  const row: any = { ...inspection };
-  
-  // Ensure required fields have values
-  if (!row.project_name) {
-    throw new Error('Project name is required');
-  }
-  if (!row.project_address) {
-    throw new Error('Project address is required');
-  }
-  if (!row.inspector_name) {
-    throw new Error('Inspector name is required');
-  }
-  
-  // Convert arrays to proper format for database storage
-  if (row.hvac_units && Array.isArray(row.hvac_units)) {
-    // Keep as array since the column is jsonb
-    row.hvac_units = row.hvac_units;
-  } else if (!row.hvac_units) {
-    row.hvac_units = [];
-  }
-  
-  if (row.roof_drains && Array.isArray(row.roof_drains)) {
-    row.roof_drains = row.roof_drains;
-  } else if (!row.roof_drains) {
-    row.roof_drains = [];
-  }
-  
-  if (row.penetrations && Array.isArray(row.penetrations)) {
-    row.penetrations = row.penetrations;
-  } else if (!row.penetrations) {
-    row.penetrations = [];
-  }
-  
-  if (row.insulation_layers && Array.isArray(row.insulation_layers)) {
-    row.insulation_layers = row.insulation_layers;
-  } else if (!row.insulation_layers) {
-    row.insulation_layers = [];
-  }
-  
-  if (row.drainage_options && Array.isArray(row.drainage_options)) {
-    row.drainage_options = row.drainage_options;
-  } else if (!row.drainage_options) {
-    row.drainage_options = [];
-  }
-  
-  // Ensure proper defaults for other fields
-  if (!row.inspection_date) {
-    row.inspection_date = new Date().toISOString().split('T')[0];
-  }
-  
-  if (!row.priority_level) {
-    row.priority_level = 'Standard';
-  }
-  
-  if (!row.status) {
-    row.status = 'Draft';
-  }
-  
-  if (!row.access_method) {
-    row.access_method = 'internal_hatch';
-  }
-  
-  // Ensure boolean fields are properly set
-  row.interior_protection_needed = row.interior_protection_needed || false;
-  row.conduit_attached = row.conduit_attached || false;
-  row.upgraded_lighting = row.upgraded_lighting || false;
-  row.interior_fall_protection = row.interior_fall_protection || false;
-  row.sow_generated = row.sow_generated || false;
-  
-  // Ensure numeric fields are properly set
-  row.skylights = row.skylights || 0;
-  row.interior_protection_sqft = row.interior_protection_sqft || 0;
-  row.number_of_stories = row.number_of_stories || 1;
-  
-  return row;
 };
 
 export function useFieldInspections() {
@@ -139,104 +65,144 @@ export function useFieldInspections() {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch inspections';
       console.error('Fetch inspections error:', errorMessage);
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const createInspection = async (inspection: Partial<FieldInspection>) => {
-    if (!user) throw new Error('User not authenticated');
+  const saveInspection = async (inspectionData: Partial<FieldInspection>): Promise<string | null> => {
+    if (!user) {
+      toast.error('You must be logged in to save inspections');
+      return null;
+    }
 
     try {
-      const inspectionData = {
-        ...inspection,
+      console.log('Saving inspection:', inspectionData);
+      
+      const dataToSave = {
+        ...inspectionData,
         inspector_id: user.id,
-        inspector_name: user.user_metadata?.full_name || user.email || 'Unknown Inspector',
+        inspector_name: inspectionData.inspector_name || user.email || 'Unknown Inspector',
+        updated_at: new Date().toISOString(),
       };
-      
-      const insertData = convertInspectionToRow(inspectionData);
-      
-      console.log('Creating inspection with data:', insertData);
 
-      const { data, error } = await supabase
-        .from('field_inspections')
-        .insert(insertData)
-        .select()
-        .single();
+      let result;
+      
+      if (inspectionData.id) {
+        // Update existing inspection
+        const { data, error } = await supabase
+          .from('field_inspections')
+          .update(dataToSave)
+          .eq('id', inspectionData.id)
+          .eq('inspector_id', user.id)
+          .select()
+          .single();
 
-      if (error) {
-        console.error('Create inspection error:', error);
-        throw error;
+        if (error) throw error;
+        result = data;
+        toast.success('Inspection updated successfully');
+      } else {
+        // Create new inspection
+        const { data, error } = await supabase
+          .from('field_inspections')
+          .insert({
+            ...dataToSave,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        result = data;
+        toast.success('Inspection saved successfully');
       }
+
+      // Refresh the inspections list
+      await fetchInspections();
       
-      console.log('Created inspection:', data);
-      const convertedData = convertRowToInspection(data);
-      setInspections(prev => [convertedData, ...prev]);
-      return convertedData;
+      return result.id;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create inspection';
-      console.error('Create inspection error:', errorMessage);
-      throw new Error(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save inspection';
+      console.error('Save inspection error:', errorMessage);
+      toast.error(errorMessage);
+      return null;
     }
   };
 
-  const updateInspection = async (id: string, updates: Partial<FieldInspection>) => {
-    if (!user) throw new Error('User not authenticated');
+  const completeInspection = async (inspectionId: string): Promise<boolean> => {
+    if (!user) {
+      toast.error('You must be logged in to complete inspections');
+      return false;
+    }
 
     try {
-      const updateData = convertInspectionToRow(updates);
-      
-      console.log('Updating inspection with data:', updateData);
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('field_inspections')
-        .update(updateData)
-        .eq('id', id)
-        .eq('inspector_id', user.id)
-        .select()
-        .single();
+        .update({
+          status: 'Completed',
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', inspectionId)
+        .eq('inspector_id', user.id);
 
-      if (error) {
-        console.error('Update inspection error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Updated inspection:', data);
-      const convertedData = convertRowToInspection(data);
-      setInspections(prev => 
-        prev.map(inspection => 
-          inspection.id === id ? convertedData : inspection
-        )
-      );
-      
-      return convertedData;
+      toast.success('Inspection marked as completed');
+      await fetchInspections();
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update inspection';
-      console.error('Update inspection error:', errorMessage);
-      throw new Error(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to complete inspection';
+      console.error('Complete inspection error:', errorMessage);
+      toast.error(errorMessage);
+      return false;
     }
   };
 
-  const deleteInspection = async (id: string) => {
-    if (!user) throw new Error('User not authenticated');
+  const deleteInspection = async (inspectionId: string): Promise<boolean> => {
+    if (!user) {
+      toast.error('You must be logged in to delete inspections');
+      return false;
+    }
 
     try {
       const { error } = await supabase
         .from('field_inspections')
         .delete()
-        .eq('id', id)
+        .eq('id', inspectionId)
         .eq('inspector_id', user.id);
 
-      if (error) {
-        console.error('Delete inspection error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      setInspections(prev => prev.filter(inspection => inspection.id !== id));
+      toast.success('Inspection deleted successfully');
+      await fetchInspections();
+      return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete inspection';
       console.error('Delete inspection error:', errorMessage);
-      throw new Error(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    }
+  };
+
+  const getInspection = async (inspectionId: string): Promise<FieldInspection | null> => {
+    if (!user) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('field_inspections')
+        .select('*')
+        .eq('id', inspectionId)
+        .eq('inspector_id', user.id)
+        .single();
+
+      if (error) throw error;
+      
+      return convertRowToInspection(data);
+    } catch (err) {
+      console.error('Get inspection error:', err);
+      return null;
     }
   };
 
@@ -248,9 +214,10 @@ export function useFieldInspections() {
     inspections,
     loading,
     error,
-    createInspection,
-    updateInspection,
+    saveInspection,
+    completeInspection,
     deleteInspection,
+    getInspection,
     refetch: fetchInspections,
   };
 }

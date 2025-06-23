@@ -19,12 +19,14 @@ export type Database = {
           conduit_attached: boolean | null
           cover_board_type: string | null
           created_at: string | null
+          curbs_above_8: boolean | null
           customer_name: string | null
           customer_phone: string | null
           deck_type: string | null
           drainage_options: Json | null
           existing_membrane_condition: number | null
           existing_membrane_type: string | null
+          gas_line_penetrating_deck: boolean | null
           hvac_units: Json | null
           id: string
           inspection_date: string | null
@@ -49,6 +51,7 @@ export type Database = {
           roof_hatches: number | null
           roof_slope: string | null
           skylights: number | null
+          skylights_detailed: Json | null
           sow_generated: boolean | null
           sow_id: string | null
           special_requirements: string | null
@@ -67,12 +70,14 @@ export type Database = {
           conduit_attached?: boolean | null
           cover_board_type?: string | null
           created_at?: string | null
+          curbs_above_8?: boolean | null
           customer_name?: string | null
           customer_phone?: string | null
           deck_type?: string | null
           drainage_options?: Json | null
           existing_membrane_condition?: number | null
           existing_membrane_type?: string | null
+          gas_line_penetrating_deck?: boolean | null
           hvac_units?: Json | null
           id?: string
           inspection_date?: string | null
@@ -97,6 +102,7 @@ export type Database = {
           roof_hatches?: number | null
           roof_slope?: string | null
           skylights?: number | null
+          skylights_detailed?: Json | null
           sow_generated?: boolean | null
           sow_id?: string | null
           special_requirements?: string | null
@@ -115,12 +121,14 @@ export type Database = {
           conduit_attached?: boolean | null
           cover_board_type?: string | null
           created_at?: string | null
+          curbs_above_8?: boolean | null
           customer_name?: string | null
           customer_phone?: string | null
           deck_type?: string | null
           drainage_options?: Json | null
           existing_membrane_condition?: number | null
           existing_membrane_type?: string | null
+          gas_line_penetrating_deck?: boolean | null
           hvac_units?: Json | null
           id?: string
           inspection_date?: string | null
@@ -145,6 +153,7 @@ export type Database = {
           roof_hatches?: number | null
           roof_slope?: string | null
           skylights?: number | null
+          skylights_detailed?: Json | null
           sow_generated?: boolean | null
           sow_id?: string | null
           special_requirements?: string | null
