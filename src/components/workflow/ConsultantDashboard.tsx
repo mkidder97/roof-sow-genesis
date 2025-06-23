@@ -11,7 +11,10 @@ const ConsultantDashboard = () => {
   const { projects, userTasks, projectsLoading } = useWorkflow();
 
   const consultantProjects = projects.filter(p => p.current_stage === 'consultant_review');
-  const priorityProjects = consultantProjects.filter(p => p.stage_data?.priority === 'high');
+  const priorityProjects = consultantProjects.filter(p => {
+    const stageData = p.stage_data as any;
+    return stageData?.priority === 'high';
+  });
   const completedReviews = projects.filter(p => p.current_stage === 'engineering' || p.current_stage === 'complete');
 
   const stats = {
@@ -89,60 +92,63 @@ const ConsultantDashboard = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {consultantProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-all cursor-pointer border border-blue-400/20"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold text-white">{project.project_name}</h3>
-                          {project.stage_data?.priority === 'high' && (
-                            <Badge className="bg-red-500 text-white">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              Priority
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-blue-200 text-sm mb-2">{project.address}</p>
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center text-blue-200">
-                            <Clock className="w-4 h-4 mr-1" />
-                            Received {format(new Date(project.updated_at), 'MMM dd, yyyy')}
+                {consultantProjects.map((project) => {
+                  const stageData = project.stage_data as any;
+                  return (
+                    <div
+                      key={project.id}
+                      className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-all cursor-pointer border border-blue-400/20"
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold text-white">{project.project_name}</h3>
+                            {stageData?.priority === 'high' && (
+                              <Badge className="bg-red-500 text-white">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Priority
+                              </Badge>
+                            )}
                           </div>
-                          {project.square_footage && (
-                            <Badge variant="outline" className="border-blue-400 text-blue-200">
-                              {project.square_footage.toLocaleString()} sq ft
-                            </Badge>
-                          )}
-                          {project.project_type && (
-                            <Badge variant="outline" className="border-green-400 text-green-200">
-                              {project.project_type}
-                            </Badge>
-                          )}
+                          <p className="text-blue-200 text-sm mb-2">{project.address}</p>
+                          <div className="flex items-center gap-4 text-sm">
+                            <div className="flex items-center text-blue-200">
+                              <Clock className="w-4 h-4 mr-1" />
+                              Received {format(new Date(project.updated_at), 'MMM dd, yyyy')}
+                            </div>
+                            {project.square_footage && (
+                              <Badge variant="outline" className="border-blue-400 text-blue-200">
+                                {project.square_footage.toLocaleString()} sq ft
+                              </Badge>
+                            )}
+                            {project.project_type && (
+                              <Badge variant="outline" className="border-green-400 text-green-200">
+                                {project.project_type}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          className="bg-blue-600 hover:bg-blue-700"
-                          size="sm"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Review
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="border-green-400 text-green-200 hover:bg-green-600"
-                          size="sm"
-                        >
-                          <Users className="w-4 h-4 mr-1" />
-                          Handoff
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            className="bg-blue-600 hover:bg-blue-700"
+                            size="sm"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            Review
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="border-green-400 text-green-200 hover:bg-green-600"
+                            size="sm"
+                          >
+                            <Users className="w-4 h-4 mr-1" />
+                            Handoff
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

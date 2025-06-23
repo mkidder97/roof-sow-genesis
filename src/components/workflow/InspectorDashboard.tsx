@@ -17,7 +17,10 @@ const InspectorDashboard = () => {
 
   const stats = {
     activeInspections: inspectionProjects.length,
-    pendingHandoffs: inspectionProjects.filter(p => p.stage_data?.ready_for_handoff).length,
+    pendingHandoffs: inspectionProjects.filter(p => {
+      const stageData = p.stage_data as any;
+      return stageData?.ready_for_handoff;
+    }).length,
     completedThisWeek: completedInspections.filter(p => {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
