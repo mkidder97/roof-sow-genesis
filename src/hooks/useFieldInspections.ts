@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +18,13 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
     roof_hatches: row.roof_hatches || 0,
     photos: row.photos || [],
     sow_generated: row.sow_generated || false,
+    drainage_options: row.drainage_options ? (Array.isArray(row.drainage_options) ? row.drainage_options : []) : [],
+    interior_protection_needed: row.interior_protection_needed || false,
+    interior_protection_sqft: row.interior_protection_sqft || 0,
+    conduit_attached: row.conduit_attached || false,
+    upgraded_lighting: row.upgraded_lighting || false,
+    interior_fall_protection: row.interior_fall_protection || false,
+    access_method: (row.access_method as 'internal_hatch' | 'external_ladder' | 'extension_ladder') || 'internal_hatch',
   };
 };
 
@@ -39,10 +45,16 @@ const convertInspectionToRow = (inspection: Partial<FieldInspection>) => {
   if (row.insulation_layers) {
     row.insulation_layers = JSON.stringify(row.insulation_layers);
   }
+  if (row.drainage_options) {
+    row.drainage_options = JSON.stringify(row.drainage_options);
+  }
   
-  // Ensure required fields are present
+  // Ensure required fields are present with proper defaults
   if (!row.cover_board_type) {
     row.cover_board_type = null;
+  }
+  if (!row.insulation_layers) {
+    row.insulation_layers = JSON.stringify([]);
   }
   
   return row;
