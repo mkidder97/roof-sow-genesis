@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -20,8 +21,7 @@ import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import ComingSoon from "./pages/ComingSoon";
 import Maintenance from "./pages/Maintenance";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
@@ -63,8 +63,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
             <Route path="/coming-soon" element={<ComingSoon />} />
             <Route path="/maintenance" element={<Maintenance />} />
-            <Route path="/auth" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/profile" element={<Profile />} />

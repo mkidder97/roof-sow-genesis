@@ -7,21 +7,56 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import '@/styles/tesla-ui.css';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState<'inspector' | 'consultant' | 'engineer'>('inspector');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      redirectUserBasedOnRole(user.id);
     }
   }, [user, navigate]);
+
+  const redirectUserBasedOnRole = async (userId: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (profile) {
+        switch (profile.role) {
+          case 'inspector':
+            navigate('/field-inspector/dashboard');
+            break;
+          case 'consultant':
+            navigate('/workflow');
+            break;
+          case 'engineer':
+            navigate('/workflow');
+            break;
+          default:
+            navigate('/dashboard');
+        }
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      navigate('/dashboard');
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +68,6 @@ const Auth = () => {
       toast.error(error.message);
     } else {
       toast.success('Signed in successfully!');
-      navigate('/dashboard');
     }
     
     setLoading(false);
@@ -43,12 +77,34 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await signUp(email, password);
-    
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Account created! Please check your email to confirm your account.');
+    try {
+      const { error } = await signUp(email, password);
+      
+      if (error) {
+        toast.error(error.message);
+      } else {
+        // Create user profile with role
+        const { data: { user: newUser } } = await supabase.auth.getUser();
+        if (newUser) {
+          const { error: profileError } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: newUser.id,
+              email: email,
+              full_name: fullName,
+              role: role
+            });
+
+          if (profileError) {
+            console.error('Error creating profile:', profileError);
+          }
+        }
+        
+        toast.success('Account created! Please check your email to confirm your account.');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast.error('An error occurred during signup');
     }
     
     setLoading(false);
@@ -75,9 +131,9 @@ const Auth = () => {
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
             </div>
-            <h1 className="tesla-h2 mb-2">Welcome Back</h1>
+            <h1 className="tesla-h2 mb-2">SOW Genesis</h1>
             <p className="tesla-body text-tesla-text-secondary">
-              Sign in to your account or create a new one
+              Professional Roofing Workflow Platform
             </p>
           </div>
 
@@ -85,7 +141,7 @@ const Auth = () => {
             <CardHeader>
               <CardTitle className="tesla-h3">Authentication</CardTitle>
               <CardDescription className="tesla-small text-tesla-text-muted">
-                Access your TPO Roof SOW projects
+                Access your multi-role roofing projects
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -134,6 +190,18 @@ const Auth = () => {
                 <TabsContent value="signup">
                   <form onSubmit={handleSignUp} className="space-y-4">
                     <div className="space-y-2">
+                      <Label htmlFor="signup-name">Full Name</Label>
+                      <Input
+                        id="signup-name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                        className="tesla-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
                       <Input
                         id="signup-email"
@@ -157,12 +225,25 @@ const Auth = () => {
                         className="tesla-input"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="role-select">Role</Label>
+                      <Select value={role} onValueChange={(value: 'inspector' | 'consultant' | 'engineer') => setRole(value)}>
+                        <SelectTrigger id="role-select" className="tesla-input">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="inspector">Field Inspector</SelectItem>
+                          <SelectItem value="consultant">Consultant</SelectItem>
+                          <SelectItem value="engineer">Engineer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Button
                       type="submit"
                       className="w-full bg-tesla-success hover:bg-tesla-success/90"
                       disabled={loading}
                     >
-                      {loading ? 'Creating account...' : 'Sign Up'}
+                      {loading ? 'Creating account...' : 'Create Account'}
                     </Button>
                   </form>
                 </TabsContent>
