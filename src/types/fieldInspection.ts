@@ -26,6 +26,7 @@ export interface FieldInspection {
   roof_drains?: RoofDrain[];
   penetrations?: Penetration[];
   skylights?: number;
+  skylights_detailed?: SkylightDetail[];
   overall_condition?: number;
   priority_level: 'Standard' | 'Expedited' | 'Emergency';
   photos?: string[];
@@ -43,6 +44,8 @@ export interface FieldInspection {
   conduit_attached?: boolean;
   upgraded_lighting?: boolean;
   interior_fall_protection?: boolean;
+  curbs_above_8?: boolean;
+  gas_line_penetrating_deck?: boolean;
   access_method?: 'internal_hatch' | 'external_ladder' | 'extension_ladder';
 }
 
@@ -74,6 +77,11 @@ export interface DrainageOption {
 }
 
 export interface Penetration {
+  type: string;
+  count: number;
+}
+
+export interface SkylightDetail {
   type: string;
   count: number;
 }
