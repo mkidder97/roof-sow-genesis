@@ -11,6 +11,9 @@ import { Upload, FileText } from 'lucide-react';
 interface ProjectData {
   projectName?: string;
   address?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
   buildingHeight?: number;
   squareFootage?: number;
   membraneType?: string;
@@ -29,6 +32,9 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({ onSubmit, initialDat
   const [formData, setFormData] = useState<ProjectData>({
     projectName: '',
     address: '',
+    customerName: '',
+    customerPhone: '',
+    customerEmail: '',
     buildingHeight: undefined,
     squareFootage: undefined,
     membraneType: '',
@@ -68,18 +74,56 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({ onSubmit, initialDat
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="bg-white/5 border-blue-400/30">
         <CardHeader>
-          <CardTitle className="text-white">Project Information</CardTitle>
+          <CardTitle className="text-white">Customer & Project Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="projectName" className="text-blue-200">Project Name</Label>
+              <Label htmlFor="customerName" className="text-blue-200">Customer Name</Label>
+              <Input
+                id="customerName"
+                value={formData.customerName || ''}
+                onChange={(e) => handleInputChange('customerName', e.target.value)}
+                className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
+                placeholder="Customer or company name"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="customerPhone" className="text-blue-200">Customer Phone</Label>
+              <Input
+                id="customerPhone"
+                type="tel"
+                value={formData.customerPhone || ''}
+                onChange={(e) => handleInputChange('customerPhone', e.target.value)}
+                className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
+                placeholder="(555) 123-4567"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="customerEmail" className="text-blue-200">Customer Email</Label>
+            <Input
+              id="customerEmail"
+              type="email"
+              value={formData.customerEmail || ''}
+              onChange={(e) => handleInputChange('customerEmail', e.target.value)}
+              className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
+              placeholder="customer@email.com"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="projectName" className="text-blue-200">Building/Project Name</Label>
               <Input
                 id="projectName"
                 value={formData.projectName || ''}
                 onChange={(e) => handleInputChange('projectName', e.target.value)}
                 className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                placeholder="Enter project name"
+                placeholder="Enter building name"
                 required
               />
             </div>
@@ -95,7 +139,14 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({ onSubmit, initialDat
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
 
+      <Card className="bg-white/5 border-blue-400/30">
+        <CardHeader>
+          <CardTitle className="text-white">Building Specifications</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="buildingHeight" className="text-blue-200">Building Height (ft)</Label>
@@ -193,7 +244,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({ onSubmit, initialDat
             />
             <label htmlFor="file-upload" className="cursor-pointer">
               <Upload className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-              <p className="text-white mb-1">Upload Takeoff or Specification Document</p>
+              <p className="text-white mb-1">Upload Field Inspection Report or Specification Document</p>
               <p className="text-blue-300 text-sm">PDF, Excel, or CSV files supported</p>
             </label>
             {uploadedFile && (
@@ -211,7 +262,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({ onSubmit, initialDat
           type="submit"
           className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg"
         >
-          Continue to Analysis
+          Generate SOW Document
         </Button>
       </div>
     </form>
