@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,38 +75,42 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
       
       const fileName = `${user.id}/${fileId}-${file.name}`;
       
-      // Remove the onUploadProgress option since it's not supported
+      // Simulate progress for UI feedback
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          const current = prev[fileId] || 0;
+          if (current >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return { ...prev, [fileId]: Math.min(current + 20, 90) };
+        });
+      }, 200);
+
       const { data: uploadData, error } = await supabase.storage
         .from('inspection-photos')
         .upload(fileName, compressedFile);
 
       if (error) throw error;
 
-      // Simulate progress for UI feedback
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const current = prev[fileId] || 0;
-          if (current >= 100) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return { ...prev, [fileId]: Math.min(current + 20, 100) };
-        });
-      }, 100);
-
       const { data: urlData } = supabase.storage
         .from('inspection-photos')
         .getPublicUrl(uploadData.path);
 
+      // Complete progress
+      setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
       setTimeout(() => clearInterval(progressInterval), 500);
+      
       return urlData.publicUrl;
     } finally {
-      setUploading(prev => prev.filter(id => id !== fileId));
-      setUploadProgress(prev => {
-        const newProgress = { ...prev };
-        delete newProgress[fileId];
-        return newProgress;
-      });
+      setTimeout(() => {
+        setUploading(prev => prev.filter(id => id !== fileId));
+        setUploadProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[fileId];
+          return newProgress;
+        });
+      }, 1000);
     }
   };
 
@@ -176,20 +181,27 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
 
   return (
     <div className="space-y-6">
-      {/* Upload Controls */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Primary Camera Button */}
+      <div className="text-center">
         <Button
           onClick={openCamera}
-          className="bg-blue-600 hover:bg-blue-700 flex-1"
+          className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4 h-auto"
+          size="lg"
         >
-          <Camera className="w-4 h-4 mr-2" />
-          Take Photo
+          <Camera className="w-6 h-6 mr-3" />
+          Take Photos
         </Button>
-        
+        <p className="text-blue-200 text-sm mt-2">
+          Tap to open camera and take multiple photos at once
+        </p>
+      </div>
+
+      {/* Secondary Upload Option */}
+      <div className="text-center">
         <Button
           onClick={openFileSelect}
           variant="outline"
-          className="border-blue-400 text-blue-200 hover:bg-blue-800 flex-1"
+          className="border-blue-400 text-blue-200 hover:bg-blue-800"
         >
           <Upload className="w-4 h-4 mr-2" />
           Upload from Gallery
@@ -315,11 +327,11 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
       <div className="bg-purple-500/20 rounded-lg p-4">
         <p className="text-purple-200 text-sm">
           <strong>Photo Tips:</strong><br />
-          • Take clear, well-lit photos<br />
-          • Include multiple angles of problem areas<br />
-          • Photos will be compressed for faster upload<br />
-          • Maximum file size: 10MB per photo<br />
-          • All photos are stored securely and linked to this inspection
+          • Camera will open for multiple photo capture on mobile devices<br />
+          • Take clear, well-lit photos from multiple angles<br />
+          • Include wide shots and detail shots of problem areas<br />
+          • Photos are automatically compressed and stored securely<br />
+          • Maximum file size: 10MB per photo
         </p>
       </div>
     </div>
