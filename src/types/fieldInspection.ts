@@ -20,6 +20,8 @@ export interface FieldInspection {
   roof_age_years?: number;
   insulation_type?: string;
   insulation_condition?: string;
+  insulation_layers?: InsulationLayer[];
+  cover_board_type?: string;
   hvac_units?: HVACUnit[];
   roof_drains?: RoofDrain[];
   penetrations?: Penetration[];
@@ -37,6 +39,13 @@ export interface FieldInspection {
   created_at?: string;
   updated_at?: string;
   completed_at?: string;
+}
+
+export interface InsulationLayer {
+  id: string;
+  type: string;
+  thickness: number;
+  description?: string;
 }
 
 export interface HVACUnit {
@@ -85,6 +94,8 @@ export interface FieldInspectionRow {
   roof_age_years: number | null;
   insulation_type: string | null;
   insulation_condition: string | null;
+  insulation_layers: any; // JSON from database
+  cover_board_type: string | null;
   hvac_units: any; // JSON from database
   roof_drains: any; // JSON from database
   penetrations: any; // JSON from database
