@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Camera } from 'lucide-react';
 import { FieldInspection, DrainageOption } from '@/types/fieldInspection';
 
 interface EquipmentInventoryStepProps {
@@ -29,6 +29,7 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
       id: Date.now().toString(),
       type: 'internal_gutter',
       count: 1,
+      linear_feet: 0,
       condition: 'Good'
     };
     handleDrainageOptionsChange([...drainageOptions, newOption]);
@@ -46,15 +47,35 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
     );
   };
 
-  const getDrainageTypeLabel = (type: string) => {
-    switch (type) {
-      case 'internal_gutter': return 'Internal Gutter';
-      case 'external_gutter': return 'External Gutter';
-      case 'deck_drain': return 'Deck Drain';
-      case 'overflow_drain': return 'Overflow Drain';
-      case 'overflow_scuppers': return 'Overflow Scuppers';
-      default: return type;
-    }
+  const isGutterType = (type: string) => {
+    return type === 'internal_gutter' || type === 'external_gutter';
+  };
+
+  const handlePhotoCapture = () => {
+    // Create file input for multiple photos
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.capture = 'environment'; // Use rear camera on mobile
+    
+    input.onchange = (event) => {
+      const files = (event.target as HTMLInputElement).files;
+      if (files) {
+        // Convert files to URLs for preview (in real app, upload to storage)
+        const newPhotos = Array.from(files).map(file => URL.createObjectURL(file));
+        const currentPhotos = data.photos || [];
+        onChange({ photos: [...currentPhotos, ...newPhotos] });
+      }
+    };
+    
+    input.click();
+  };
+
+  const removePhoto = (index: number) => {
+    const currentPhotos = data.photos || [];
+    const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
+    onChange({ photos: updatedPhotos });
   };
 
   return (
@@ -80,7 +101,7 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
           ) : (
             drainageOptions.map((option) => (
               <div key={option.id} className="bg-white/10 rounded p-4 border border-blue-400/30">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
                   <div>
                     <Label className="text-white text-sm">Type</Label>
                     <Select
@@ -100,16 +121,30 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
                     </Select>
                   </div>
                   
-                  <div>
-                    <Label className="text-white text-sm">Count</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={option.count}
-                      onChange={(e) => updateDrainageOption(option.id, { count: parseInt(e.target.value) || 1 })}
-                      className="bg-white/20 border-blue-400/30 text-white text-sm"
-                    />
-                  </div>
+                  {isGutterType(option.type) ? (
+                    <div>
+                      <Label className="text-white text-sm">Linear Feet</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={option.linear_feet || 0}
+                        onChange={(e) => updateDrainageOption(option.id, { linear_feet: parseInt(e.target.value) || 0 })}
+                        className="bg-white/20 border-blue-400/30 text-white text-sm"
+                        placeholder="0"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <Label className="text-white text-sm">Count</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={option.count || 1}
+                        onChange={(e) => updateDrainageOption(option.id, { count: parseInt(e.target.value) || 1 })}
+                        className="bg-white/20 border-blue-400/30 text-white text-sm"
+                      />
+                    </div>
+                  )}
                   
                   <div>
                     <Label className="text-white text-sm">Condition</Label>
@@ -138,6 +173,47 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
                 </div>
               </div>
             ))
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Photo Documentation */}
+      <Card className="bg-white/10 border-blue-400/30">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center justify-between">
+            Photo Documentation
+            <Button
+              type="button"
+              onClick={handlePhotoCapture}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2 h-auto"
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              Take Photos
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {data.photos && data.photos.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {data.photos.map((photo, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={photo}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-32 object-cover rounded border border-blue-400/30"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 h-auto text-xs"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-blue-200 italic">No photos added yet. Tap "Take Photos" to add multiple photos at once.</p>
           )}
         </CardContent>
       </Card>
@@ -229,30 +305,16 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
           <CardTitle className="text-white">Equipment Counts</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="skylights" className="text-white">Skylights</Label>
-              <Input
-                id="skylights"
-                type="number"
-                min="0"
-                value={data.skylights || 0}
-                onChange={(e) => onChange({ skylights: parseInt(e.target.value) || 0 })}
-                className="bg-white/20 border-blue-400/30 text-white"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="roof_hatches" className="text-white">Roof Hatches</Label>
-              <Input
-                id="roof_hatches"
-                type="number"
-                min="0"
-                value={data.roof_hatches || 0}
-                onChange={(e) => onChange({ roof_hatches: parseInt(e.target.value) || 0 })}
-                className="bg-white/20 border-blue-400/30 text-white"
-              />
-            </div>
+          <div>
+            <Label htmlFor="skylights" className="text-white">Skylights</Label>
+            <Input
+              id="skylights"
+              type="number"
+              min="0"
+              value={data.skylights || 0}
+              onChange={(e) => onChange({ skylights: parseInt(e.target.value) || 0 })}
+              className="bg-white/20 border-blue-400/30 text-white"
+            />
           </div>
         </CardContent>
       </Card>

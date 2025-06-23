@@ -26,11 +26,8 @@ export interface FieldInspection {
   roof_drains?: RoofDrain[];
   penetrations?: Penetration[];
   skylights?: number;
-  roof_hatches?: number;
   overall_condition?: number;
   priority_level: 'Standard' | 'Expedited' | 'Emergency';
-  special_requirements?: string;
-  weather_conditions?: string;
   photos?: string[];
   notes?: string;
   status: 'Draft' | 'Completed' | 'Under Review' | 'Approved';
@@ -71,7 +68,8 @@ export interface RoofDrain {
 export interface DrainageOption {
   id: string;
   type: 'internal_gutter' | 'external_gutter' | 'deck_drain' | 'overflow_drain' | 'overflow_scuppers';
-  count: number;
+  count?: number;
+  linear_feet?: number;
   condition?: string;
 }
 
@@ -115,11 +113,8 @@ export interface FieldInspectionRow {
   roof_drains: any; // JSON from database
   penetrations: any; // JSON from database
   skylights: number | null;
-  roof_hatches: number | null;
   overall_condition: number | null;
   priority_level: string | null;
-  special_requirements: string | null;
-  weather_conditions: string | null;
   photos: string[] | null;
   notes: string | null;
   status: string | null;
@@ -128,4 +123,11 @@ export interface FieldInspectionRow {
   created_at: string | null;
   updated_at: string | null;
   completed_at: string | null;
+  drainage_options: any; // JSON from database
+  interior_protection_needed: boolean | null;
+  interior_protection_sqft: number | null;
+  conduit_attached: boolean | null;
+  upgraded_lighting: boolean | null;
+  interior_fall_protection: boolean | null;
+  access_method: string | null;
 }

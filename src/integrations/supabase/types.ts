@@ -11,14 +11,18 @@ export type Database = {
     Tables: {
       field_inspections: {
         Row: {
+          access_method: string | null
           building_height: number | null
           building_length: number | null
           building_width: number | null
           completed_at: string | null
+          conduit_attached: boolean | null
+          cover_board_type: string | null
           created_at: string | null
           customer_name: string | null
           customer_phone: string | null
           deck_type: string | null
+          drainage_options: Json | null
           existing_membrane_condition: number | null
           existing_membrane_type: string | null
           hvac_units: Json | null
@@ -27,7 +31,11 @@ export type Database = {
           inspector_id: string | null
           inspector_name: string
           insulation_condition: string | null
+          insulation_layers: Json | null
           insulation_type: string | null
+          interior_fall_protection: boolean | null
+          interior_protection_needed: boolean | null
+          interior_protection_sqft: number | null
           notes: string | null
           number_of_stories: number | null
           overall_condition: number | null
@@ -47,17 +55,22 @@ export type Database = {
           square_footage: number | null
           status: string | null
           updated_at: string | null
+          upgraded_lighting: boolean | null
           weather_conditions: string | null
         }
         Insert: {
+          access_method?: string | null
           building_height?: number | null
           building_length?: number | null
           building_width?: number | null
           completed_at?: string | null
+          conduit_attached?: boolean | null
+          cover_board_type?: string | null
           created_at?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           deck_type?: string | null
+          drainage_options?: Json | null
           existing_membrane_condition?: number | null
           existing_membrane_type?: string | null
           hvac_units?: Json | null
@@ -66,7 +79,11 @@ export type Database = {
           inspector_id?: string | null
           inspector_name: string
           insulation_condition?: string | null
+          insulation_layers?: Json | null
           insulation_type?: string | null
+          interior_fall_protection?: boolean | null
+          interior_protection_needed?: boolean | null
+          interior_protection_sqft?: number | null
           notes?: string | null
           number_of_stories?: number | null
           overall_condition?: number | null
@@ -86,17 +103,22 @@ export type Database = {
           square_footage?: number | null
           status?: string | null
           updated_at?: string | null
+          upgraded_lighting?: boolean | null
           weather_conditions?: string | null
         }
         Update: {
+          access_method?: string | null
           building_height?: number | null
           building_length?: number | null
           building_width?: number | null
           completed_at?: string | null
+          conduit_attached?: boolean | null
+          cover_board_type?: string | null
           created_at?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           deck_type?: string | null
+          drainage_options?: Json | null
           existing_membrane_condition?: number | null
           existing_membrane_type?: string | null
           hvac_units?: Json | null
@@ -105,7 +127,11 @@ export type Database = {
           inspector_id?: string | null
           inspector_name?: string
           insulation_condition?: string | null
+          insulation_layers?: Json | null
           insulation_type?: string | null
+          interior_fall_protection?: boolean | null
+          interior_protection_needed?: boolean | null
+          interior_protection_sqft?: number | null
           notes?: string | null
           number_of_stories?: number | null
           overall_condition?: number | null
@@ -125,6 +151,7 @@ export type Database = {
           square_footage?: number | null
           status?: string | null
           updated_at?: string | null
+          upgraded_lighting?: boolean | null
           weather_conditions?: string | null
         }
         Relationships: []

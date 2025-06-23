@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +16,6 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
     penetrations: Array.isArray(row.penetrations) ? row.penetrations : [],
     insulation_layers: Array.isArray(row.insulation_layers) ? row.insulation_layers : [],
     skylights: row.skylights || 0,
-    roof_hatches: row.roof_hatches || 0,
     photos: row.photos || [],
     sow_generated: row.sow_generated || false,
     drainage_options: row.drainage_options ? (Array.isArray(row.drainage_options) ? row.drainage_options : []) : [],
@@ -125,7 +125,7 @@ export function useFieldInspections() {
         .select()
         .single();
 
-      if (error) throw error;
+      if error) throw error;
 
       const convertedData = convertRowToInspection(data);
       setInspections(prev => 

@@ -6,7 +6,8 @@ import { useFieldInspections } from '@/hooks/useFieldInspections';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, Save, Check, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ChevronLeft, ChevronRight, Save, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { FieldInspection, InspectionFormStep } from '@/types/fieldInspection';
 import { toast } from 'sonner';
 
@@ -27,14 +28,13 @@ const FieldInspectionForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [autoSaveLoading, setAutoSaveLoading] = useState(false);
   
-  const [formData, setFormData] = useState<Partial<FieldInspection>>({
+  const [formData, setFormData] = useState<Partial<FieldInsp ction>>({
     inspector_name: user?.user_metadata?.full_name || user?.email || '',
     inspection_date: new Date().toISOString().split('T')[0],
     priority_level: 'Standard',
     status: 'Draft',
     number_of_stories: 1,
     skylights: 0,
-    roof_hatches: 0,
     hvac_units: [],
     roof_drains: [],
     penetrations: [],
@@ -48,7 +48,6 @@ const FieldInspectionForm = () => {
     access_method: 'internal_hatch',
   });
 
-  // Removed Roof Assessment step (step 2)
   const steps: InspectionFormStep[] = [
     { id: 0, title: 'Project Info', description: 'Basic project details', completed: false },
     { id: 1, title: 'Building Specs', description: 'Building dimensions and roof assembly', completed: false },
@@ -97,6 +96,24 @@ const FieldInspectionForm = () => {
     }
   };
 
+  const getValidationErrors = (): string[] => {
+    const errors: string[] = [];
+    
+    if (!formData.project_name) errors.push('Project name is required');
+    if (!formData.project_address) errors.push('Project address is required');
+    if (!formData.building_height) errors.push('Building height is required');
+    if (!formData.square_footage) errors.push('Square footage is required');
+    if (!formData.deck_type) errors.push('Deck type is required');
+    if (!formData.overall_condition) errors.push('Overall condition rating is required');
+    if (!formData.access_method) errors.push('Access method is required');
+    
+    return errors;
+  };
+
+  const isReadyToComplete = (): boolean => {
+    return getValidationErrors().length === 0;
+  };
+
   const handleNext = () => {
     if (!validateCurrentStep()) {
       toast.error('Please fill in all required fields before continuing');
@@ -134,11 +151,11 @@ const FieldInspectionForm = () => {
 
   const handleComplete = async () => {
     console.log('Complete inspection clicked');
-    console.log('Current validation result:', validateCurrentStep());
+    console.log('Validation errors:', getValidationErrors());
     console.log('Form data:', formData);
     
-    if (!validateCurrentStep()) {
-      toast.error('Please complete all required fields');
+    if (!isReadyToComplete()) {
+      toast.error('Please complete all required fields before finishing');
       return;
     }
 
@@ -186,6 +203,8 @@ const FieldInspectionForm = () => {
   };
 
   const progress = ((currentStep + 1) / steps.length) * 100;
+  const validationErrors = getValidationErrors();
+  const readyToComplete = isReadyToComplete();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
@@ -224,6 +243,31 @@ const FieldInspectionForm = () => {
             <p className="text-blue-200 text-sm">{steps[currentStep].description}</p>
           </CardContent>
         </Card>
+
+        {/* Validation Warnings */}
+        {currentStep === steps.length - 1 && !readyToComplete && (
+          <Alert className="mb-6 bg-orange-500/20 border-orange-400/30">
+            <AlertTriangle className="h-4 w-4 text-orange-400" />
+            <AlertDescription className="text-orange-200">
+              <strong>Missing Required Information:</strong>
+              <ul className="mt-2 list-disc list-inside space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Ready to Complete Alert */}
+        {currentStep === steps.length - 1 && readyToComplete && (
+          <Alert className="mb-6 bg-green-500/20 border-green-400/30">
+            <Check className="h-4 w-4 text-green-400" />
+            <AlertDescription className="text-green-200">
+              <strong>Ready to Complete:</strong> All required information has been provided. You can now complete the inspection.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Step Content */}
         <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 mb-6">
@@ -273,8 +317,11 @@ const FieldInspectionForm = () => {
             
             <Button
               onClick={handleComplete}
-              disabled={isLoading}
-              className="bg-green-600 hover:bg-green-700"
+              disabled={isLoading || !readyToComplete}
+              className={readyToComplete 
+                ? "bg-green-600 hover:bg-green-700" 
+                : "bg-gray-600 cursor-not-allowed opacity-50"
+              }
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
