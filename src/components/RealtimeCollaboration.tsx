@@ -260,13 +260,13 @@ export const ConnectedUsers: React.FC<{
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      {user.fullName.charAt(0).toUpperCase()}
+                      {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {user.fullName}
+                      {user.name}
                       {user.id === currentUser?.id && ' (You)'}
                     </p>
                     <span className={`inline-block px-2 py-1 text-xs rounded ${getRoleColor(user.role)}`}>
@@ -368,6 +368,7 @@ export const RealtimeCollaborationDashboard: React.FC<{
 }> = ({ projectId, authToken }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   
+  // Fix 1: Use hook with single parameter
   const {
     isConnected,
     isReconnecting,
@@ -385,10 +386,7 @@ export const RealtimeCollaborationDashboard: React.FC<{
     markNotificationRead,
     markAllNotificationsRead,
     loadMoreActivities
-  } = useRealtimeCollaboration(authToken, {
-    projectId,
-    enableDebugLogging: process.env.NODE_ENV === 'development'
-  });
+  } = useRealtimeCollaboration(projectId);
 
   return (
     <div className="space-y-6">

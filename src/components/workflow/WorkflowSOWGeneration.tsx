@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useWorkflow } from '@/hooks/useWorkflow';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
@@ -25,8 +24,8 @@ const WorkflowSOWGeneration = () => {
   const handleGenerateSOW = async () => {
     if (!selectedProject) return;
 
-    // Safe property access with fallbacks
-    const membraneThickness = selectedProject.membrane_thickness || 'TPO';
+    // Fix 2: Safe property access with fallback values
+    const membraneThickness = selectedProject.membrane_thickness || 'Standard TPO';
     const insulationType = selectedProject.insulation_type || 'Polyiso';
     const deckType = selectedProject.deck_type || 'Steel';
     const buildingHeight = selectedProject.building_height || 30;

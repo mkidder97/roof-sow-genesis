@@ -19,7 +19,6 @@ export interface RealtimeEvent {
   timestamp: string;
 }
 
-// Add missing interfaces
 export interface ActivityItem {
   id: string;
   activityType: 'project_created' | 'handoff_to_consultant' | 'handoff_to_engineer' | 'file_uploaded' | 'sow_generation_started' | 'sow_generation_completed' | 'sow_generation_failed' | 'project_comment';
@@ -39,10 +38,14 @@ export interface NotificationItem {
   read: boolean;
 }
 
+// Fix 3: Remove fullName from RealtimeUser interface
 export interface RealtimeUser {
   id: string;
-  fullName: string;
+  name: string;
   role: 'inspector' | 'consultant' | 'engineer' | 'admin';
+  status?: 'online' | 'away' | 'offline';
+  avatar?: string;
+  last_seen?: string;
 }
 
 export function useRealtimeCollaboration(projectId: string) {
@@ -153,6 +156,16 @@ export function useRealtimeCollaboration(projectId: string) {
     }
   };
 
+  // Fix 3: Proper type conversion without fullName
+  const connectedUsers: RealtimeUser[] = collaborators.map((user: CollaborationUser) => ({
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    status: 'online' as const,
+    avatar: user.avatar,
+    last_seen: user.lastSeen
+  }));
+
   return {
     isConnected,
     collaborators,
@@ -162,7 +175,7 @@ export function useRealtimeCollaboration(projectId: string) {
     broadcastUpdate,
     // Add missing properties for RealtimeCollaboration component
     isReconnecting: false,
-    connectedUsers: collaborators as RealtimeUser[],
+    connectedUsers,
     currentUser: null as RealtimeUser | null,
     typingUsers: [] as { userId: string; userName: string; location?: string }[],
     activities: [] as ActivityItem[],

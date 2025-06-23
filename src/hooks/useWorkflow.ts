@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +18,9 @@ export interface WorkflowProject {
   square_footage?: number;
   deck_type?: string;
   project_type?: string;
+  // Fix 2: Add missing properties to interface
+  membrane_thickness?: string;
+  insulation_type?: string;
   created_at: string;
   updated_at: string;
 }
