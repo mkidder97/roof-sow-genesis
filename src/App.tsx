@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +13,7 @@ import NotFound from "./pages/NotFound";
 // Import Field Inspector Components
 import InspectorDashboard from "./components/field-inspector/InspectorDashboard";
 import FieldInspectionForm from "./components/field-inspector/FieldInspectionForm";
-import InspectionDetailsPage from "./pages/InspectionDetailsPage";
+import InspectionDetails from "./components/field-inspector/InspectionDetails";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +33,7 @@ const App = () => (
             {/* Field Inspector Routes */}
             <Route path="/field-inspector" element={<InspectorDashboard />} />
             <Route path="/field-inspection/new" element={<FieldInspectionForm />} />
-            <Route path="/field-inspection/:id" element={<InspectionDetailsPage />} />
+            <Route path="/field-inspection/:id" element={<InspectionDetails />} />
             <Route path="/field-inspection/:id/edit" element={<FieldInspectionForm />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
