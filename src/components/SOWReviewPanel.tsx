@@ -209,9 +209,7 @@ export const SOWReviewPanel: React.FC<SOWReviewPanelProps> = ({
           <CollapsibleContent>
             <CardContent>
               <ReviewContent />
-            </Car
-
-dContent>
+            </CardContent>
           </CollapsibleContent>
         </Card>
       </Collapsible>
