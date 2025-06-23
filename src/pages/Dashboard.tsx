@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,9 +50,7 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Add workflow tab in TabsList */}
           <TabsList className="grid w-full grid-cols-5 mb-8 bg-white/10 backdrop-blur-md">
-            {/* Existing tabs */}
             <TabsTrigger 
               value="overview" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -89,7 +88,7 @@ const Dashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Existing TabsContent */}
+          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">Dashboard Overview</h2>
@@ -364,7 +363,7 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Add Workflow Tab */}
+          {/* Workflow Tab */}
           <TabsContent value="workflow" className="space-y-6">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">Multi-Role Workflow</h2>
@@ -419,7 +418,7 @@ const Dashboard = () => {
 
               <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
                 <CardHeader>
-                  <CardTitle className="text-white">SOW Integration</CardHeader>
+                  <CardTitle className="text-white">SOW Integration</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
