@@ -1,19 +1,25 @@
 {
   "name": "roof-sow-backend",
-  "version": "6.0.0",
-  "description": "Enhanced SOW Generator Backend with Multi-Role Workflow, Section Engine, Self-Healing & Live Scraping",
+  "version": "8.0.0",
+  "description": "Enhanced SOW Generator Backend with Complete File Management System, Multi-Role Workflow, Section Engine, Self-Healing & Live Scraping",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch index.ts",
     "dev:enhanced": "tsx watch index-enhanced.ts",
+    "dev:professional": "tsx watch index-professional.ts",
+    "dev:supabase": "tsx watch index-supabase.ts",
     "start:enhanced": "tsx index-enhanced.ts",
+    "start:professional": "tsx index-professional.ts",
+    "start:supabase": "tsx index-supabase.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "scrape:test": "tsx scrapers/manufacturer-scraping-service.js",
     "scrape:carlisle": "tsx scrapers/carlisle-real-scraper.js",
-    "scrape:approvals": "tsx scrapers/automated-approvals-service.js"
+    "scrape:approvals": "tsx scrapers/automated-approvals-service.js",
+    "files:cleanup": "tsx core/file-management.js --cleanup",
+    "files:stats": "tsx core/file-management.js --stats"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -23,7 +29,12 @@
     "pdfkit": "^0.13.0",
     "@supabase/supabase-js": "^2.39.3",
     "puppeteer": "^22.15.0",
-    "cheerio": "^1.0.0-rc.12"
+    "cheerio": "^1.0.0-rc.12",
+    "sharp": "^0.33.2",
+    "exifreader": "^4.21.0",
+    "uuid": "^9.0.1",
+    "mime-types": "^2.1.35",
+    "file-type": "^19.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
@@ -31,6 +42,8 @@
     "@types/multer": "^1.4.7",
     "@types/node": "^20.4.5",
     "@types/pdfkit": "^0.12.9",
+    "@types/uuid": "^9.0.7",
+    "@types/mime-types": "^2.1.4",
     "tsx": "^3.12.7",
     "typescript": "^5.1.6"
   },
