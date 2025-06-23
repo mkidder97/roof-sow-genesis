@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SOWInputForm } from '@/components/SOWInputForm';
@@ -8,6 +9,11 @@ import '@/styles/tesla-ui.css';
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const handleSOWSubmit = (data: any, file?: File) => {
+    // Navigate to SOW generation page with the data
+    navigate('/sow-generation', { state: { projectData: data, uploadedFile: file } });
+  };
 
   return (
     <div className="tesla-dark min-h-screen tesla-scrollbar">
@@ -137,7 +143,7 @@ const Index = () => {
 
             {/* Main Form */}
             <div className="tesla-animate-in" style={{ animationDelay: '0.4s' }}>
-              <SOWInputForm />
+              <SOWInputForm onSubmit={handleSOWSubmit} />
             </div>
           </div>
         </div>
