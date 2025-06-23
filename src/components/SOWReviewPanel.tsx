@@ -122,7 +122,7 @@ export const SOWReviewPanel: React.FC<SOWReviewPanelProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">{generatedSOW.filename}</h4>
-                <p className="text-sm text-gray-600">{generatedSOW.fileSize} KB</p>
+                <p className="text-sm text-gray-600">{engineeringSummary?.fileSize || 'Unknown'} KB</p>
               </div>
               <Button onClick={onDownloadPDF} className="bg-green-600 hover:bg-green-700">
                 <Download className="mr-2 h-4 w-4" />
@@ -162,7 +162,7 @@ export const SOWReviewPanel: React.FC<SOWReviewPanelProps> = ({
       )}
 
       {/* PDF Preview Panel */}
-      {(generatedSOW?.outputPath || generatedSOW?.fileUrl) && (
+      {(generatedSOW?.outputPath || engineeringSummary?.fileUrl) && (
         <div>
           <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-600" />
@@ -170,8 +170,8 @@ export const SOWReviewPanel: React.FC<SOWReviewPanelProps> = ({
           </h4>
           <PDFPreviewPanel
             filename={engineeringSummary?.filename || generatedSOW.filename}
-            fileUrl={engineeringSummary?.fileUrl || generatedSOW.outputPath || generatedSOW.fileUrl}
-            fileSize={engineeringSummary?.fileSize || generatedSOW.fileSize}
+            fileUrl={engineeringSummary?.fileUrl || generatedSOW.outputPath}
+            fileSize={engineeringSummary?.fileSize}
             generationTime={engineeringSummary?.generationTime || generatedSOW.generationTime}
             onDownload={onDownloadPDF}
           />
@@ -209,7 +209,9 @@ export const SOWReviewPanel: React.FC<SOWReviewPanelProps> = ({
           <CollapsibleContent>
             <CardContent>
               <ReviewContent />
-            </CardContent>
+            </Car
+
+dContent>
           </CollapsibleContent>
         </Card>
       </Collapsible>

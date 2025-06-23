@@ -62,3 +62,44 @@ export interface InspectionFormStep {
   description: string;
   completed: boolean;
 }
+
+// Database row type that matches Supabase types exactly
+export interface FieldInspectionRow {
+  id: string;
+  inspector_name: string;
+  inspector_id: string | null;
+  inspection_date: string | null;
+  project_name: string;
+  project_address: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  building_height: number | null;
+  building_length: number | null;
+  building_width: number | null;
+  square_footage: number | null;
+  number_of_stories: number | null;
+  roof_slope: string | null;
+  deck_type: string | null;
+  existing_membrane_type: string | null;
+  existing_membrane_condition: number | null;
+  roof_age_years: number | null;
+  insulation_type: string | null;
+  insulation_condition: string | null;
+  hvac_units: any; // JSON from database
+  roof_drains: any; // JSON from database
+  penetrations: any; // JSON from database
+  skylights: number | null;
+  roof_hatches: number | null;
+  overall_condition: number | null;
+  priority_level: string | null;
+  special_requirements: string | null;
+  weather_conditions: string | null;
+  photos: string[] | null;
+  notes: string | null;
+  status: string | null;
+  sow_generated: boolean | null;
+  sow_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  completed_at: string | null;
+}

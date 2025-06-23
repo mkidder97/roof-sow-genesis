@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,21 +74,30 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
       
       const fileName = `${user.id}/${fileId}-${file.name}`;
       
+      // Remove the onUploadProgress option since it's not supported
       const { data: uploadData, error } = await supabase.storage
         .from('inspection-photos')
-        .upload(fileName, compressedFile, {
-          onUploadProgress: (progress) => {
-            const percent = (progress.loaded / progress.total) * 100;
-            setUploadProgress(prev => ({ ...prev, [fileId]: percent }));
-          }
-        });
+        .upload(fileName, compressedFile);
 
       if (error) throw error;
+
+      // Simulate progress for UI feedback
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          const current = prev[fileId] || 0;
+          if (current >= 100) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return { ...prev, [fileId]: Math.min(current + 20, 100) };
+        });
+      }, 100);
 
       const { data: urlData } = supabase.storage
         .from('inspection-photos')
         .getPublicUrl(uploadData.path);
 
+      setTimeout(() => clearInterval(progressInterval), 500);
       return urlData.publicUrl;
     } finally {
       setUploading(prev => prev.filter(id => id !== fileId));
