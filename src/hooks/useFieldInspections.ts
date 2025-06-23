@@ -14,6 +14,7 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
     hvac_units: Array.isArray(row.hvac_units) ? row.hvac_units : [],
     roof_drains: Array.isArray(row.roof_drains) ? row.roof_drains : [],
     penetrations: Array.isArray(row.penetrations) ? row.penetrations : [],
+    insulation_layers: Array.isArray(row.insulation_layers) ? row.insulation_layers : [],
     skylights: row.skylights || 0,
     roof_hatches: row.roof_hatches || 0,
     photos: row.photos || [],
@@ -34,6 +35,14 @@ const convertInspectionToRow = (inspection: Partial<FieldInspection>) => {
   }
   if (row.penetrations) {
     row.penetrations = JSON.stringify(row.penetrations);
+  }
+  if (row.insulation_layers) {
+    row.insulation_layers = JSON.stringify(row.insulation_layers);
+  }
+  
+  // Ensure required fields are present
+  if (!row.cover_board_type) {
+    row.cover_board_type = null;
   }
   
   return row;

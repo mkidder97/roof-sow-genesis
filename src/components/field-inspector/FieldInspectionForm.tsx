@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 // Import step components
 import ProjectInfoStep from './form-steps/ProjectInfoStep';
 import BuildingSpecsStep from './form-steps/BuildingSpecsStep';
-import RoofAssessmentStep from './form-steps/RoofAssessmentStep';
 import EquipmentInventoryStep from './form-steps/EquipmentInventoryStep';
 import PhotoDocumentationStep from './form-steps/PhotoDocumentationStep';
 import AssessmentNotesStep from './form-steps/AssessmentNotesStep';
@@ -40,15 +39,22 @@ const FieldInspectionForm = () => {
     roof_drains: [],
     penetrations: [],
     photos: [],
+    drainage_options: [],
+    interior_protection_needed: false,
+    interior_protection_sqft: 0,
+    conduit_attached: false,
+    upgraded_lighting: false,
+    interior_fall_protection: false,
+    access_method: 'internal_hatch',
   });
 
+  // Removed Roof Assessment step (step 2)
   const steps: InspectionFormStep[] = [
     { id: 0, title: 'Project Info', description: 'Basic project details', completed: false },
-    { id: 1, title: 'Building Specs', description: 'Building dimensions', completed: false },
-    { id: 2, title: 'Roof Assessment', description: 'Current roof condition', completed: false },
-    { id: 3, title: 'Equipment', description: 'Inventory and features', completed: false },
-    { id: 4, title: 'Photos', description: 'Visual documentation', completed: false },
-    { id: 5, title: 'Assessment', description: 'Final notes and rating', completed: false },
+    { id: 1, title: 'Building Specs', description: 'Building dimensions and roof assembly', completed: false },
+    { id: 2, title: 'Equipment', description: 'Inventory and features', completed: false },
+    { id: 3, title: 'Photos', description: 'Visual documentation', completed: false },
+    { id: 4, title: 'Assessment', description: 'Final notes and rating', completed: false },
   ];
 
   // Auto-save functionality
@@ -79,15 +85,13 @@ const FieldInspectionForm = () => {
       case 0: // Project Info
         return !!(formData.project_name && formData.project_address);
       case 1: // Building Specs
-        return !!(formData.building_height && formData.square_footage);
-      case 2: // Roof Assessment
-        return !!(formData.deck_type && formData.existing_membrane_type);
-      case 3: // Equipment
+        return !!(formData.building_height && formData.square_footage && formData.deck_type);
+      case 2: // Equipment
         return true; // Optional step
-      case 4: // Photos
+      case 3: // Photos
         return true; // Optional step
-      case 5: // Assessment
-        return !!(formData.overall_condition && formData.weather_conditions);
+      case 4: // Assessment
+        return !!(formData.overall_condition && formData.access_method);
       default:
         return true;
     }
@@ -129,6 +133,10 @@ const FieldInspectionForm = () => {
   };
 
   const handleComplete = async () => {
+    console.log('Complete inspection clicked');
+    console.log('Current validation result:', validateCurrentStep());
+    console.log('Form data:', formData);
+    
     if (!validateCurrentStep()) {
       toast.error('Please complete all required fields');
       return;
@@ -141,6 +149,8 @@ const FieldInspectionForm = () => {
         status: 'Completed' as const,
         completed_at: new Date().toISOString(),
       };
+
+      console.log('Attempting to save completed inspection:', completedData);
 
       if (id) {
         await updateInspection(id, completedData);
@@ -165,12 +175,10 @@ const FieldInspectionForm = () => {
       case 1:
         return <BuildingSpecsStep data={formData} onChange={updateFormData} />;
       case 2:
-        return <RoofAssessmentStep data={formData} onChange={updateFormData} />;
-      case 3:
         return <EquipmentInventoryStep data={formData} onChange={updateFormData} />;
-      case 4:
+      case 3:
         return <PhotoDocumentationStep data={formData} onChange={updateFormData} />;
-      case 5:
+      case 4:
         return <AssessmentNotesStep data={formData} onChange={updateFormData} />;
       default:
         return null;
@@ -265,7 +273,7 @@ const FieldInspectionForm = () => {
             
             <Button
               onClick={handleComplete}
-              disabled={isLoading || !validateCurrentStep()}
+              disabled={isLoading}
               className="bg-green-600 hover:bg-green-700"
             >
               {isLoading ? (

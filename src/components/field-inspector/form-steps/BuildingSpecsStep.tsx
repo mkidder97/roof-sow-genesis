@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,6 +32,13 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange })
     setInsulationLayers(layers);
     onChange({ insulation_layers: layers });
   };
+
+  // Set roof slope to fixed value
+  React.useEffect(() => {
+    if (!data.roof_slope) {
+      onChange({ roof_slope: 'Low Slope (1-2/12)' });
+    }
+  }, []);
 
   const addInsulationLayer = () => {
     const newLayer: InsulationLayer = {
@@ -157,21 +163,13 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange })
             </div>
           </div>
 
+          {/* Fixed Roof Slope */}
           <div>
-            <Label htmlFor="roof_slope" className="text-white">Roof Slope</Label>
-            <Select
-              value={data.roof_slope || ''}
-              onValueChange={(value) => onChange({ roof_slope: value })}
-            >
-              <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
-                <SelectValue placeholder="Select roof slope" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Flat (0-2/12)">Flat (0-2/12)</SelectItem>
-                <SelectItem value="Low Slope (2-4/12)">Low Slope (2-4/12)</SelectItem>
-                <SelectItem value="Steep Slope (4+/12)">Steep Slope (4+/12)</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-white">Roof Slope</Label>
+            <div className="bg-white/20 border border-blue-400/30 rounded-md px-3 py-2 text-white">
+              Low Slope (1-2/12)
+            </div>
+            <p className="text-blue-200 text-sm mt-1">Fixed for commercial roofing applications</p>
           </div>
         </CardContent>
       </Card>

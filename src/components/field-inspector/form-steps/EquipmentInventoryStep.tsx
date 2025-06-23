@@ -2,11 +2,12 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Minus, Trash2 } from 'lucide-react';
-import { FieldInspection, HVACUnit, RoofDrain, Penetration } from '@/types/fieldInspection';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Trash2 } from 'lucide-react';
+import { FieldInspection, DrainageOption } from '@/types/fieldInspection';
 
 interface EquipmentInventoryStepProps {
   data: Partial<FieldInspection>;
@@ -14,318 +15,253 @@ interface EquipmentInventoryStepProps {
 }
 
 const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, onChange }) => {
-  const addHVACUnit = () => {
-    const newUnit: HVACUnit = { type: 'RTU', count: 1, condition: 'Good' };
-    onChange({ hvac_units: [...(data.hvac_units || []), newUnit] });
+  const [drainageOptions, setDrainageOptions] = React.useState<DrainageOption[]>(() => {
+    return data.drainage_options || [];
+  });
+
+  const handleDrainageOptionsChange = (options: DrainageOption[]) => {
+    setDrainageOptions(options);
+    onChange({ drainage_options: options });
   };
 
-  const updateHVACUnit = (index: number, updates: Partial<HVACUnit>) => {
-    const units = [...(data.hvac_units || [])];
-    units[index] = { ...units[index], ...updates };
-    onChange({ hvac_units: units });
+  const addDrainageOption = () => {
+    const newOption: DrainageOption = {
+      id: Date.now().toString(),
+      type: 'internal_gutter',
+      count: 1,
+      condition: 'Good'
+    };
+    handleDrainageOptionsChange([...drainageOptions, newOption]);
   };
 
-  const removeHVACUnit = (index: number) => {
-    const units = data.hvac_units?.filter((_, i) => i !== index) || [];
-    onChange({ hvac_units: units });
+  const removeDrainageOption = (id: string) => {
+    handleDrainageOptionsChange(drainageOptions.filter(option => option.id !== id));
   };
 
-  const addRoofDrain = () => {
-    const newDrain: RoofDrain = { type: 'Interior', count: 1, condition: 'Good' };
-    onChange({ roof_drains: [...(data.roof_drains || []), newDrain] });
+  const updateDrainageOption = (id: string, updates: Partial<DrainageOption>) => {
+    handleDrainageOptionsChange(
+      drainageOptions.map(option => 
+        option.id === id ? { ...option, ...updates } : option
+      )
+    );
   };
 
-  const updateRoofDrain = (index: number, updates: Partial<RoofDrain>) => {
-    const drains = [...(data.roof_drains || [])];
-    drains[index] = { ...drains[index], ...updates };
-    onChange({ roof_drains: drains });
-  };
-
-  const removeRoofDrain = (index: number) => {
-    const drains = data.roof_drains?.filter((_, i) => i !== index) || [];
-    onChange({ roof_drains: drains });
-  };
-
-  const addPenetration = () => {
-    const newPenetration: Penetration = { type: 'Plumbing Vent', count: 1 };
-    onChange({ penetrations: [...(data.penetrations || []), newPenetration] });
-  };
-
-  const updatePenetration = (index: number, updates: Partial<Penetration>) => {
-    const penetrations = [...(data.penetrations || [])];
-    penetrations[index] = { ...penetrations[index], ...updates };
-    onChange({ penetrations: penetrations });
-  };
-
-  const removePenetration = (index: number) => {
-    const penetrations = data.penetrations?.filter((_, i) => i !== index) || [];
-    onChange({ penetrations: penetrations });
+  const getDrainageTypeLabel = (type: string) => {
+    switch (type) {
+      case 'internal_gutter': return 'Internal Gutter';
+      case 'external_gutter': return 'External Gutter';
+      case 'deck_drain': return 'Deck Drain';
+      case 'overflow_drain': return 'Overflow Drain';
+      case 'overflow_scuppers': return 'Overflow Scuppers';
+      default: return type;
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* HVAC Units */}
-      <Card className="bg-white/5 border-blue-400/20">
+      {/* Drainage Options */}
+      <Card className="bg-white/10 border-blue-400/30">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white">HVAC Units</CardTitle>
-            <Button onClick={addHVACUnit} size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-1" />
-              Add Unit
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {data.hvac_units?.map((unit, index) => (
-            <div key={index} className="flex gap-2 items-end">
-              <div className="flex-1">
-                <Label className="text-white text-sm">Type</Label>
-                <Select
-                  value={unit.type}
-                  onValueChange={(value) => updateHVACUnit(index, { type: value })}
-                >
-                  <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="RTU">Rooftop Unit (RTU)</SelectItem>
-                    <SelectItem value="Air Handler">Air Handler</SelectItem>
-                    <SelectItem value="Exhaust Fan">Exhaust Fan</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-20">
-                <Label className="text-white text-sm">Count</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={unit.count}
-                  onChange={(e) => updateHVACUnit(index, { count: parseInt(e.target.value) || 1 })}
-                  className="bg-white/20 border-blue-400/30 text-white"
-                />
-              </div>
-              <div className="flex-1">
-                <Label className="text-white text-sm">Condition</Label>
-                <Select
-                  value={unit.condition}
-                  onValueChange={(value) => updateHVACUnit(index, { condition: value })}
-                >
-                  <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Excellent">Excellent</SelectItem>
-                    <SelectItem value="Good">Good</SelectItem>
-                    <SelectItem value="Fair">Fair</SelectItem>
-                    <SelectItem value="Poor">Poor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => removeHVACUnit(index)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
-          {!data.hvac_units?.length && (
-            <p className="text-blue-200 text-sm italic">No HVAC units added yet</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Roof Drains */}
-      <Card className="bg-white/5 border-blue-400/20">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white">Roof Drains</CardTitle>
-            <Button onClick={addRoofDrain} size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-1" />
-              Add Drain
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {data.roof_drains?.map((drain, index) => (
-            <div key={index} className="flex gap-2 items-end">
-              <div className="flex-1">
-                <Label className="text-white text-sm">Type</Label>
-                <Select
-                  value={drain.type}
-                  onValueChange={(value) => updateRoofDrain(index, { type: value })}
-                >
-                  <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Interior">Interior Drain</SelectItem>
-                    <SelectItem value="Scupper">Scupper</SelectItem>
-                    <SelectItem value="Area">Area Drain</SelectItem>
-                    <SelectItem value="Overflow">Overflow Drain</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-20">
-                <Label className="text-white text-sm">Count</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={drain.count}
-                  onChange={(e) => updateRoofDrain(index, { count: parseInt(e.target.value) || 1 })}
-                  className="bg-white/20 border-blue-400/30 text-white"
-                />
-              </div>
-              <div className="flex-1">
-                <Label className="text-white text-sm">Condition</Label>
-                <Select
-                  value={drain.condition}
-                  onValueChange={(value) => updateRoofDrain(index, { condition: value })}
-                >
-                  <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Excellent">Excellent</SelectItem>
-                    <SelectItem value="Good">Good</SelectItem>
-                    <SelectItem value="Fair">Fair</SelectItem>
-                    <SelectItem value="Poor">Poor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => removeRoofDrain(index)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
-          {!data.roof_drains?.length && (
-            <p className="text-blue-200 text-sm italic">No roof drains added yet</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Penetrations */}
-      <Card className="bg-white/5 border-blue-400/20">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white">Penetrations</CardTitle>
-            <Button onClick={addPenetration} size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-1" />
-              Add Penetration
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {data.penetrations?.map((penetration, index) => (
-            <div key={index} className="flex gap-2 items-end">
-              <div className="flex-1">
-                <Label className="text-white text-sm">Type</Label>
-                <Select
-                  value={penetration.type}
-                  onValueChange={(value) => updatePenetration(index, { type: value })}
-                >
-                  <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Plumbing Vent">Plumbing Vent</SelectItem>
-                    <SelectItem value="Electrical">Electrical Conduit</SelectItem>
-                    <SelectItem value="HVAC">HVAC Penetration</SelectItem>
-                    <SelectItem value="Gas Line">Gas Line</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-20">
-                <Label className="text-white text-sm">Count</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={penetration.count}
-                  onChange={(e) => updatePenetration(index, { count: parseInt(e.target.value) || 1 })}
-                  className="bg-white/20 border-blue-400/30 text-white"
-                />
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => removePenetration(index)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
-          {!data.penetrations?.length && (
-            <p className="text-blue-200 text-sm italic">No penetrations added yet</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Simple Counters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="skylights" className="text-white">Skylights</Label>
-          <div className="flex items-center gap-2">
+          <CardTitle className="text-white flex items-center justify-between">
+            Drainage Options
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onChange({ skylights: Math.max(0, (data.skylights || 0) - 1) })}
-              className="border-blue-400 text-blue-200 hover:bg-blue-800"
+              type="button"
+              onClick={addDrainageOption}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-auto"
             >
-              <Minus className="w-4 h-4" />
+              <Plus className="w-3 h-3 mr-1" />
+              Add Drainage
             </Button>
-            <Input
-              type="number"
-              min="0"
-              value={data.skylights || 0}
-              onChange={(e) => onChange({ skylights: parseInt(e.target.value) || 0 })}
-              className="bg-white/20 border-blue-400/30 text-white text-center"
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {drainageOptions.length === 0 ? (
+            <p className="text-blue-200 italic">No drainage options added yet</p>
+          ) : (
+            drainageOptions.map((option) => (
+              <div key={option.id} className="bg-white/10 rounded p-4 border border-blue-400/30">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                  <div>
+                    <Label className="text-white text-sm">Type</Label>
+                    <Select
+                      value={option.type}
+                      onValueChange={(value) => updateDrainageOption(option.id, { type: value as any })}
+                    >
+                      <SelectTrigger className="bg-white/20 border-blue-400/30 text-white text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="internal_gutter">Internal Gutter</SelectItem>
+                        <SelectItem value="external_gutter">External Gutter</SelectItem>
+                        <SelectItem value="deck_drain">Deck Drain</SelectItem>
+                        <SelectItem value="overflow_drain">Overflow Drain</SelectItem>
+                        <SelectItem value="overflow_scuppers">Overflow Scuppers</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-white text-sm">Count</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={option.count}
+                      onChange={(e) => updateDrainageOption(option.id, { count: parseInt(e.target.value) || 1 })}
+                      className="bg-white/20 border-blue-400/30 text-white text-sm"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-white text-sm">Condition</Label>
+                    <Select
+                      value={option.condition || 'Good'}
+                      onValueChange={(value) => updateDrainageOption(option.id, { condition: value })}
+                    >
+                      <SelectTrigger className="bg-white/20 border-blue-400/30 text-white text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Good">Good</SelectItem>
+                        <SelectItem value="Fair">Fair</SelectItem>
+                        <SelectItem value="Poor">Poor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Button
+                    type="button"
+                    onClick={() => removeDrainageOption(option.id)}
+                    className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-2 h-auto"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Interior Protection and Conditions */}
+      <Card className="bg-white/10 border-blue-400/30">
+        <CardHeader>
+          <CardTitle className="text-white">Interior Protection & Conditions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="interior_protection" className="text-white">Interior Protection Needed</Label>
+            <Switch
+              id="interior_protection"
+              checked={data.interior_protection_needed || false}
+              onCheckedChange={(checked) => onChange({ interior_protection_needed: checked })}
             />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onChange({ skylights: (data.skylights || 0) + 1 })}
-              className="border-blue-400 text-blue-200 hover:bg-blue-800"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
           </div>
-        </div>
-        
-        <div>
-          <Label htmlFor="roof_hatches" className="text-white">Roof Hatches</Label>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onChange({ roof_hatches: Math.max(0, (data.roof_hatches || 0) - 1) })}
-              className="border-blue-400 text-blue-200 hover:bg-blue-800"
-            >
-              <Minus className="w-4 h-4" />
-            </Button>
-            <Input
-              type="number"
-              min="0"
-              value={data.roof_hatches || 0}
-              onChange={(e) => onChange({ roof_hatches: parseInt(e.target.value) || 0 })}
-              className="bg-white/20 border-blue-400/30 text-white text-center"
+
+          {data.interior_protection_needed && (
+            <div>
+              <Label htmlFor="protection_sqft" className="text-white">Approximate Square Footage</Label>
+              <Input
+                id="protection_sqft"
+                type="number"
+                min="0"
+                value={data.interior_protection_sqft || ''}
+                onChange={(e) => onChange({ interior_protection_sqft: parseInt(e.target.value) || 0 })}
+                className="bg-white/20 border-blue-400/30 text-white"
+                placeholder="Enter square footage"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="conduit_attached" className="text-white">Conduit Attached to Underside of Deck</Label>
+            <Switch
+              id="conduit_attached"
+              checked={data.conduit_attached || false}
+              onCheckedChange={(checked) => onChange({ conduit_attached: checked })}
             />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onChange({ roof_hatches: (data.roof_hatches || 0) + 1 })}
-              className="border-blue-400 text-blue-200 hover:bg-blue-800"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
           </div>
-        </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="upgraded_lighting" className="text-white">Upgraded Lighting</Label>
+            <Switch
+              id="upgraded_lighting"
+              checked={data.upgraded_lighting || false}
+              onCheckedChange={(checked) => onChange({ upgraded_lighting: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="fall_protection" className="text-white">Interior Fall Protection (if skylights)</Label>
+            <Switch
+              id="fall_protection"
+              checked={data.interior_fall_protection || false}
+              onCheckedChange={(checked) => onChange({ interior_fall_protection: checked })}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Access Method */}
+      <Card className="bg-white/10 border-blue-400/30">
+        <CardHeader>
+          <CardTitle className="text-white">Access Method *</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select
+            value={data.access_method || 'internal_hatch'}
+            onValueChange={(value) => onChange({ access_method: value as any })}
+          >
+            <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
+              <SelectValue placeholder="Select access method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="internal_hatch">Internal Hatch</SelectItem>
+              <SelectItem value="external_ladder">External Ladder</SelectItem>
+              <SelectItem value="extension_ladder">Need Extension Ladder</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Basic Equipment Counts */}
+      <Card className="bg-white/10 border-blue-400/30">
+        <CardHeader>
+          <CardTitle className="text-white">Equipment Counts</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="skylights" className="text-white">Skylights</Label>
+              <Input
+                id="skylights"
+                type="number"
+                min="0"
+                value={data.skylights || 0}
+                onChange={(e) => onChange({ skylights: parseInt(e.target.value) || 0 })}
+                className="bg-white/20 border-blue-400/30 text-white"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="roof_hatches" className="text-white">Roof Hatches</Label>
+              <Input
+                id="roof_hatches"
+                type="number"
+                min="0"
+                value={data.roof_hatches || 0}
+                onChange={(e) => onChange({ roof_hatches: parseInt(e.target.value) || 0 })}
+                className="bg-white/20 border-blue-400/30 text-white"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="bg-blue-500/20 rounded-lg p-4">
+        <p className="text-blue-200 text-sm">
+          <strong>Note:</strong> CAD drawing updates with penetrations will be automated in v2. 
+          For now, focus on accurate field measurements and equipment counts.
+        </p>
       </div>
     </div>
   );

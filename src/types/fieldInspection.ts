@@ -39,6 +39,14 @@ export interface FieldInspection {
   created_at?: string;
   updated_at?: string;
   completed_at?: string;
+  // New fields for enhanced functionality
+  drainage_options?: DrainageOption[];
+  interior_protection_needed?: boolean;
+  interior_protection_sqft?: number;
+  conduit_attached?: boolean;
+  upgraded_lighting?: boolean;
+  interior_fall_protection?: boolean;
+  access_method?: 'internal_hatch' | 'external_ladder' | 'extension_ladder';
 }
 
 export interface InsulationLayer {
@@ -58,6 +66,13 @@ export interface RoofDrain {
   type: string;
   count: number;
   condition: string;
+}
+
+export interface DrainageOption {
+  id: string;
+  type: 'internal_gutter' | 'external_gutter' | 'deck_drain' | 'overflow_drain' | 'overflow_scuppers';
+  count: number;
+  condition?: string;
 }
 
 export interface Penetration {
