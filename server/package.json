@@ -1,7 +1,7 @@
 {
   "name": "roof-sow-backend",
-  "version": "4.0.0",
-  "description": "Enhanced SOW Generator Backend with Section Engine, Self-Healing & Live Scraping",
+  "version": "6.0.0",
+  "description": "Enhanced SOW Generator Backend with Multi-Role Workflow, Section Engine, Self-Healing & Live Scraping",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
