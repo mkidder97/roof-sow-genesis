@@ -9,6 +9,136 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      companies: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          settings: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      consultant_reviews: {
+        Row: {
+          additional_work_items: Json | null
+          bid_alerts: Json | null
+          budget_considerations: string | null
+          client_requirements: Json | null
+          competitive_considerations: string | null
+          consultant_id: string
+          created_at: string | null
+          engineer_briefing: string | null
+          exclusions: string | null
+          field_inspection_id: string | null
+          id: string
+          priority_items: string | null
+          project_id: string
+          review_completed: boolean | null
+          reviewed_at: string | null
+          risk_factors: string | null
+          scope_modifications: Json | null
+          special_conditions: string | null
+          template_concerns: string | null
+          template_preferences: string[] | null
+          timeline_requirements: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          additional_work_items?: Json | null
+          bid_alerts?: Json | null
+          budget_considerations?: string | null
+          client_requirements?: Json | null
+          competitive_considerations?: string | null
+          consultant_id: string
+          created_at?: string | null
+          engineer_briefing?: string | null
+          exclusions?: string | null
+          field_inspection_id?: string | null
+          id?: string
+          priority_items?: string | null
+          project_id: string
+          review_completed?: boolean | null
+          reviewed_at?: string | null
+          risk_factors?: string | null
+          scope_modifications?: Json | null
+          special_conditions?: string | null
+          template_concerns?: string | null
+          template_preferences?: string[] | null
+          timeline_requirements?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          additional_work_items?: Json | null
+          bid_alerts?: Json | null
+          budget_considerations?: string | null
+          client_requirements?: Json | null
+          competitive_considerations?: string | null
+          consultant_id?: string
+          created_at?: string | null
+          engineer_briefing?: string | null
+          exclusions?: string | null
+          field_inspection_id?: string | null
+          id?: string
+          priority_items?: string | null
+          project_id?: string
+          review_completed?: boolean | null
+          reviewed_at?: string | null
+          risk_factors?: string | null
+          scope_modifications?: Json | null
+          special_conditions?: string | null
+          template_concerns?: string | null
+          template_preferences?: string[] | null
+          timeline_requirements?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_reviews_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultant_reviews_field_inspection_id_fkey"
+            columns: ["field_inspection_id"]
+            isOneToOne: false
+            referencedRelation: "field_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultant_reviews_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       field_inspections: {
         Row: {
           access_method: string | null
@@ -164,6 +294,118 @@ export type Database = {
           weather_conditions?: string | null
         }
         Relationships: []
+      }
+      project_comments: {
+        Row: {
+          comment: string
+          comment_type: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          project_id: string
+          stage: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          comment_type?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          project_id: string
+          stage?: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          comment_type?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          project_id?: string
+          stage?: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_comments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_handoffs: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          from_stage: Database["public"]["Enums"]["workflow_stage_enum"]
+          from_user_id: string | null
+          handoff_data: Json | null
+          id: string
+          notes: string | null
+          project_id: string
+          to_stage: Database["public"]["Enums"]["workflow_stage_enum"]
+          to_user_id: string | null
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          from_stage: Database["public"]["Enums"]["workflow_stage_enum"]
+          from_user_id?: string | null
+          handoff_data?: Json | null
+          id?: string
+          notes?: string | null
+          project_id: string
+          to_stage: Database["public"]["Enums"]["workflow_stage_enum"]
+          to_user_id?: string | null
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          from_stage?: Database["public"]["Enums"]["workflow_stage_enum"]
+          from_user_id?: string | null
+          handoff_data?: Json | null
+          id?: string
+          notes?: string | null
+          project_id?: string
+          to_stage?: Database["public"]["Enums"]["workflow_stage_enum"]
+          to_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_handoffs_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_handoffs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_handoffs_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
@@ -377,6 +619,107 @@ export type Database = {
           },
         ]
       }
+      user_profiles: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          permissions: string[] | null
+          phone: string | null
+          preferences: Json | null
+          role: Database["public"]["Enums"]["user_role_enum"]
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          permissions?: string[] | null
+          phone?: string | null
+          preferences?: Json | null
+          role?: Database["public"]["Enums"]["user_role_enum"]
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          permissions?: string[] | null
+          phone?: string | null
+          preferences?: Json | null
+          role?: Database["public"]["Enums"]["user_role_enum"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_activities: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          data_changes: Json | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          project_id: string
+          stage_from: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          stage_to: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          data_changes?: Json | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          project_id: string
+          stage_from?: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          stage_to?: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          data_changes?: Json | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          project_id?: string
+          stage_from?: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          stage_to?: Database["public"]["Enums"]["workflow_stage_enum"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_activities_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -385,7 +728,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role_enum: "inspector" | "consultant" | "engineer" | "admin"
+      workflow_stage_enum:
+        | "inspection"
+        | "consultant_review"
+        | "engineering"
+        | "complete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -500,6 +848,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role_enum: ["inspector", "consultant", "engineer", "admin"],
+      workflow_stage_enum: [
+        "inspection",
+        "consultant_review",
+        "engineering",
+        "complete",
+      ],
+    },
   },
 } as const
