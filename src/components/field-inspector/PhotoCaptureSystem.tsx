@@ -65,10 +65,15 @@ const PhotoCaptureSystem: React.FC<PhotoCaptureSystemProps> = ({
   };
 
   const compressImage = (file: File, maxWidth: number = 1024, quality: number = 0.8): Promise<File> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      const img = new Image();
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas context not available'));
+        return;
+      }
+      
+      const img = document.createElement('img');
       
       img.onload = () => {
         const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
@@ -78,7 +83,11 @@ const PhotoCaptureSystem: React.FC<PhotoCaptureSystemProps> = ({
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
         canvas.toBlob((blob) => {
-          const compressedFile = new File([blob!], file.name, {
+          if (!blob) {
+            reject(new Error('Canvas to blob conversion failed'));
+            return;
+          }
+          const compressedFile = new File([blob], file.name, {
             type: 'image/jpeg',
             lastModified: Date.now(),
           });
@@ -86,15 +95,24 @@ const PhotoCaptureSystem: React.FC<PhotoCaptureSystemProps> = ({
         }, 'image/jpeg', quality);
       };
       
+      img.onerror = () => {
+        reject(new Error('Image load failed'));
+      };
+      
       img.src = URL.createObjectURL(file);
     });
   };
 
   const createThumbnail = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      const img = new Image();
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas context not available'));
+        return;
+      }
+      
+      const img = document.createElement('img');
       
       img.onload = () => {
         const size = 150;
@@ -107,6 +125,10 @@ const PhotoCaptureSystem: React.FC<PhotoCaptureSystemProps> = ({
         
         ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
         resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Image load failed'));
       };
       
       img.src = URL.createObjectURL(file);

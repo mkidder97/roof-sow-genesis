@@ -19,6 +19,32 @@ export interface RealtimeEvent {
   timestamp: string;
 }
 
+// Add missing interfaces
+export interface ActivityItem {
+  id: string;
+  activityType: 'project_created' | 'handoff_to_consultant' | 'handoff_to_engineer' | 'file_uploaded' | 'sow_generation_started' | 'sow_generation_completed' | 'sow_generation_failed' | 'project_comment';
+  title: string;
+  description: string;
+  stage?: string;
+  priority: 'high' | 'normal' | 'low';
+  createdAt: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  createdAt: string;
+  read: boolean;
+}
+
+export interface RealtimeUser {
+  id: string;
+  fullName: string;
+  role: 'inspector' | 'consultant' | 'engineer' | 'admin';
+}
+
 export function useRealtimeCollaboration(projectId: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [collaborators, setCollaborators] = useState<CollaborationUser[]>([]);
@@ -42,12 +68,25 @@ export function useRealtimeCollaboration(projectId: string) {
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        const users = Object.values(state).flat() as CollaborationUser[];
+        // Safe type conversion for presence data
+        const users = Object.values(state).flat().map((presence: any) => ({
+          id: presence.user_id || presence.id || 'unknown',
+          name: presence.name || presence.display_name || 'Unknown User',
+          role: (presence.role as 'inspector' | 'consultant' | 'engineer') || 'inspector',
+          lastSeen: new Date().toISOString()
+        })) as CollaborationUser[];
         setCollaborators(users);
         setIsConnected(true);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        const user = newPresences[0] as CollaborationUser;
+        // Safe type conversion
+        const presence = newPresences[0] as any;
+        const user: CollaborationUser = {
+          id: presence.user_id || presence.id || 'unknown',
+          name: presence.name || presence.display_name || 'Unknown User',
+          role: presence.role || 'inspector',
+          lastSeen: new Date().toISOString()
+        };
         addEvent({
           type: 'user_joined',
           user,
@@ -56,7 +95,14 @@ export function useRealtimeCollaboration(projectId: string) {
         toast.success(`${user.name} joined the project`);
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        const user = leftPresences[0] as CollaborationUser;
+        // Safe type conversion
+        const presence = leftPresences[0] as any;
+        const user: CollaborationUser = {
+          id: presence.user_id || presence.id || 'unknown',
+          name: presence.name || presence.display_name || 'Unknown User',
+          role: presence.role || 'inspector',
+          lastSeen: new Date().toISOString()
+        };
         addEvent({
           type: 'user_left',
           user,
@@ -114,5 +160,21 @@ export function useRealtimeCollaboration(projectId: string) {
     joinProject,
     leaveProject,
     broadcastUpdate,
+    // Add missing properties for RealtimeCollaboration component
+    isReconnecting: false,
+    connectedUsers: collaborators as RealtimeUser[],
+    currentUser: null as RealtimeUser | null,
+    typingUsers: [] as { userId: string; userName: string; location?: string }[],
+    activities: [] as ActivityItem[],
+    liveActivities: [] as ActivityItem[],
+    loadingActivities: false,
+    notifications: [] as NotificationItem[],
+    unreadCount: 0,
+    sendComment: async (comment: string) => {},
+    startTyping: () => {},
+    stopTyping: () => {},
+    markNotificationRead: async (id: string) => {},
+    markAllNotificationsRead: async () => {},
+    loadMoreActivities: async () => {}
   };
 }

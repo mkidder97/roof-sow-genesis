@@ -25,16 +25,22 @@ const WorkflowSOWGeneration = () => {
   const handleGenerateSOW = async () => {
     if (!selectedProject) return;
 
+    // Safe property access with fallbacks
+    const membraneThickness = selectedProject.membrane_thickness || 'TPO';
+    const insulationType = selectedProject.insulation_type || 'Polyiso';
+    const deckType = selectedProject.deck_type || 'Steel';
+    const buildingHeight = selectedProject.building_height || 30;
+
     const sowRequest = {
       projectName: selectedProject.project_name,
       projectAddress: selectedProject.address,
       city: selectedProject.address.split(',')[1]?.trim() || '',
       state: selectedProject.address.split(',')[2]?.trim() || '',
       zipCode: selectedProject.address.split(' ').pop() || '',
-      buildingHeight: selectedProject.building_height || 30,
-      deckType: selectedProject.deck_type || 'Steel',
-      membraneType: selectedProject.membrane_thickness || 'TPO',
-      insulationType: selectedProject.insulation_type || 'Polyiso',
+      buildingHeight: buildingHeight,
+      deckType: deckType,
+      membraneType: membraneThickness,
+      insulationType: insulationType,
       windSpeed: 120,
       exposureCategory: 'C' as const,
       buildingClassification: 'II' as const
