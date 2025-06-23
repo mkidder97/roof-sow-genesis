@@ -121,6 +121,7 @@ export interface FieldInspectionRow {
   roof_drains: any; // JSON from database
   penetrations: any; // JSON from database
   skylights: number | null;
+  skylights_detailed: any; // JSON from database
   overall_condition: number | null;
   priority_level: string | null;
   photos: string[] | null;
@@ -137,5 +138,7 @@ export interface FieldInspectionRow {
   conduit_attached: boolean | null;
   upgraded_lighting: boolean | null;
   interior_fall_protection: boolean | null;
+  curbs_above_8: boolean | null;
+  gas_line_penetrating_deck: boolean | null;
   access_method: string | null;
 }

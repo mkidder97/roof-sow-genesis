@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +23,7 @@ const FieldInspectionForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
-  const { createInspection, updateInspection, inspections } = useFieldInspections();
+  const { saveInspection, inspections } = useFieldInspections();
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -136,15 +137,13 @@ const FieldInspectionForm = () => {
         return;
       }
 
-      let savedInspection;
-      if (id) {
-        savedInspection = await updateInspection(id, formData);
+      const savedInspectionId = await saveInspection(formData);
+      if (savedInspectionId) {
         toast.success('Draft saved successfully');
-      } else {
-        savedInspection = await createInspection(formData);
-        toast.success('Draft created successfully');
-        // Navigate to the edit page for the new inspection
-        navigate(`/field-inspection/${savedInspection.id}/edit`, { replace: true });
+        if (!id) {
+          // Navigate to the edit page for the new inspection
+          navigate(`/field-inspection/${savedInspectionId}/edit`, { replace: true });
+        }
       }
     } catch (error) {
       console.error('Save draft error:', error);
@@ -174,15 +173,11 @@ const FieldInspectionForm = () => {
 
       console.log('Attempting to save completed inspection:', completedData);
 
-      let completedInspection;
-      if (id) {
-        completedInspection = await updateInspection(id, completedData);
-      } else {
-        completedInspection = await createInspection(completedData);
+      const savedInspectionId = await saveInspection(completedData);
+      if (savedInspectionId) {
+        toast.success('Inspection completed successfully');
+        navigate('/field-inspector');
       }
-      
-      toast.success('Inspection completed successfully');
-      navigate('/field-inspector');
     } catch (error) {
       console.error('Complete inspection error:', error);
       toast.error('Failed to complete inspection: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -215,7 +210,7 @@ const FieldInspectionForm = () => {
     const autoSave = async () => {
       try {
         setAutoSaveLoading(true);
-        await updateInspection(id, formData);
+        await saveInspection(formData);
       } catch (error) {
         console.error('Auto-save failed:', error);
       } finally {
@@ -225,7 +220,7 @@ const FieldInspectionForm = () => {
 
     const timer = setTimeout(autoSave, 30000); // Auto-save every 30 seconds
     return () => clearTimeout(timer);
-  }, [formData, id, updateInspection]);
+  }, [formData, id, saveInspection]);
 
   const progress = ((currentStep + 1) / steps.length) * 100;
   const validationErrors = getValidationErrors();

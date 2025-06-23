@@ -32,6 +32,21 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
   };
 };
 
+// Convert FieldInspection to database format
+const convertInspectionToDbFormat = (inspection: Partial<FieldInspection>) => {
+  const dbData: any = { ...inspection };
+  
+  // Convert arrays to JSON for database storage
+  if (dbData.hvac_units) dbData.hvac_units = JSON.stringify(dbData.hvac_units);
+  if (dbData.roof_drains) dbData.roof_drains = JSON.stringify(dbData.roof_drains);
+  if (dbData.penetrations) dbData.penetrations = JSON.stringify(dbData.penetrations);
+  if (dbData.insulation_layers) dbData.insulation_layers = JSON.stringify(dbData.insulation_layers);
+  if (dbData.skylights_detailed) dbData.skylights_detailed = JSON.stringify(dbData.skylights_detailed);
+  if (dbData.drainage_options) dbData.drainage_options = JSON.stringify(dbData.drainage_options);
+  
+  return dbData;
+};
+
 export function useFieldInspections() {
   const { user } = useAuth();
   const [inspections, setInspections] = useState<FieldInspection[]>([]);
@@ -80,12 +95,12 @@ export function useFieldInspections() {
     try {
       console.log('Saving inspection:', inspectionData);
       
-      const dataToSave = {
+      const dbData = convertInspectionToDbFormat({
         ...inspectionData,
         inspector_id: user.id,
         inspector_name: inspectionData.inspector_name || user.email || 'Unknown Inspector',
         updated_at: new Date().toISOString(),
-      };
+      });
 
       let result;
       
@@ -93,7 +108,7 @@ export function useFieldInspections() {
         // Update existing inspection
         const { data, error } = await supabase
           .from('field_inspections')
-          .update(dataToSave)
+          .update(dbData)
           .eq('id', inspectionData.id)
           .eq('inspector_id', user.id)
           .select()
@@ -107,7 +122,7 @@ export function useFieldInspections() {
         const { data, error } = await supabase
           .from('field_inspections')
           .insert({
-            ...dataToSave,
+            ...dbData,
             created_at: new Date().toISOString(),
           })
           .select()
