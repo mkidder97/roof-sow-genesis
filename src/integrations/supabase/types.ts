@@ -9,6 +9,126 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      field_inspections: {
+        Row: {
+          building_height: number | null
+          building_length: number | null
+          building_width: number | null
+          completed_at: string | null
+          created_at: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          deck_type: string | null
+          existing_membrane_condition: number | null
+          existing_membrane_type: string | null
+          hvac_units: Json | null
+          id: string
+          inspection_date: string | null
+          inspector_id: string | null
+          inspector_name: string
+          insulation_condition: string | null
+          insulation_type: string | null
+          notes: string | null
+          number_of_stories: number | null
+          overall_condition: number | null
+          penetrations: Json | null
+          photos: string[] | null
+          priority_level: string | null
+          project_address: string
+          project_name: string
+          roof_age_years: number | null
+          roof_drains: Json | null
+          roof_hatches: number | null
+          roof_slope: string | null
+          skylights: number | null
+          sow_generated: boolean | null
+          sow_id: string | null
+          special_requirements: string | null
+          square_footage: number | null
+          status: string | null
+          updated_at: string | null
+          weather_conditions: string | null
+        }
+        Insert: {
+          building_height?: number | null
+          building_length?: number | null
+          building_width?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          deck_type?: string | null
+          existing_membrane_condition?: number | null
+          existing_membrane_type?: string | null
+          hvac_units?: Json | null
+          id?: string
+          inspection_date?: string | null
+          inspector_id?: string | null
+          inspector_name: string
+          insulation_condition?: string | null
+          insulation_type?: string | null
+          notes?: string | null
+          number_of_stories?: number | null
+          overall_condition?: number | null
+          penetrations?: Json | null
+          photos?: string[] | null
+          priority_level?: string | null
+          project_address: string
+          project_name: string
+          roof_age_years?: number | null
+          roof_drains?: Json | null
+          roof_hatches?: number | null
+          roof_slope?: string | null
+          skylights?: number | null
+          sow_generated?: boolean | null
+          sow_id?: string | null
+          special_requirements?: string | null
+          square_footage?: number | null
+          status?: string | null
+          updated_at?: string | null
+          weather_conditions?: string | null
+        }
+        Update: {
+          building_height?: number | null
+          building_length?: number | null
+          building_width?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          deck_type?: string | null
+          existing_membrane_condition?: number | null
+          existing_membrane_type?: string | null
+          hvac_units?: Json | null
+          id?: string
+          inspection_date?: string | null
+          inspector_id?: string | null
+          inspector_name?: string
+          insulation_condition?: string | null
+          insulation_type?: string | null
+          notes?: string | null
+          number_of_stories?: number | null
+          overall_condition?: number | null
+          penetrations?: Json | null
+          photos?: string[] | null
+          priority_level?: string | null
+          project_address?: string
+          project_name?: string
+          roof_age_years?: number | null
+          roof_drains?: Json | null
+          roof_hatches?: number | null
+          roof_slope?: string | null
+          skylights?: number | null
+          sow_generated?: boolean | null
+          sow_id?: string | null
+          special_requirements?: string | null
+          square_footage?: number | null
+          status?: string | null
+          updated_at?: string | null
+          weather_conditions?: string | null
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           address: string

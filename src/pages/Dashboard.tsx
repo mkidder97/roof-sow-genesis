@@ -1,64 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Navigate, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Plus, Wind, Settings, Server } from 'lucide-react';
-import { toast } from 'sonner';
-import BackendConnectionTest from '@/components/BackendConnectionTest';
-import '@/styles/tesla-ui.css';
+import { Badge } from '@/components/ui/badge';
+import { 
+  FileText, 
+  Building, 
+  TrendingUp, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle,
+  ClipboardCheck,
+  Loader2
+} from 'lucide-react';
 
 const Dashboard = () => {
-  const { user, session, loading, signOut } = useAuth();
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(true);
-
-  useEffect(() => {
-    if (session?.user) {
-      fetchProjects();
-    }
-  }, [session]);
-
-  const fetchProjects = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('user_id', session?.user?.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching projects:', error);
-        toast.error('Failed to load projects');
-      } else {
-        setProjects(data || []);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to load projects');
-    } finally {
-      setLoadingProjects(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success('Signed out successfully');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast.error('Failed to sign out');
-    }
-  };
+  const { user, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl flex items-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          Loading dashboard...
+        </div>
       </div>
     );
   }
@@ -70,224 +38,320 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-            <p className="text-blue-200">Welcome back, {user.email}</p>
-          </div>
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            className="border-blue-400 text-blue-200 hover:bg-blue-800 hover:text-white"
-          >
-            Sign Out
-          </Button>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">
+            Welcome to SOW Genesis
+          </h1>
+          <p className="text-blue-200 text-lg">
+            Professional roof scope of work generation platform
+          </p>
         </div>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 bg-white/10 backdrop-blur-md">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-8 bg-white/10 backdrop-blur-md">
             <TabsTrigger 
               value="overview" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
-              <FileText className="w-4 h-4" />
+              <TrendingUp className="w-4 h-4" />
               Overview
             </TabsTrigger>
             <TabsTrigger 
-              value="projects"
+              value="sow-generation" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
-              <Wind className="w-4 h-4" />
-              Projects
+              <FileText className="w-4 h-4" />
+              SOW Generation
             </TabsTrigger>
             <TabsTrigger 
-              value="backend-test"
+              value="field-inspector" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
-              <Server className="w-4 h-4" />
-              Backend Test
+              <ClipboardCheck className="w-4 h-4" />
+              Field Inspector
+            </TabsTrigger>
+            <TabsTrigger 
+              value="projects" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <Building className="w-4 h-4" />
+              Projects
             </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview">
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 hover:bg-white/15 transition-colors">
-                <CardHeader className="text-center">
-                  <FileText className="w-12 h-12 text-blue-400 mx-auto mb-2" />
-                  <CardTitle className="text-white">Generate New SOW</CardTitle>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Dashboard Overview</h2>
+              <p className="text-blue-200">Quick access to your most important tools and information</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 hover:bg-white/20 transition-all">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-400" />
+                    SOW Generation
+                  </CardTitle>
                   <CardDescription className="text-blue-200">
-                    Create a professional scope of work with manufacturer analysis
+                    Create professional scope of work documents
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <Link to="/sow-generation">
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Start New Project
-                    </Button>
-                  </Link>
+                <CardContent>
+                  <p className="text-blue-100 text-sm mb-4">
+                    Generate comprehensive SOW documents with engineering calculations, 
+                    manufacturer analysis, and professional formatting.
+                  </p>
+                  <Button 
+                    onClick={() => setActiveTab('sow-generation')}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    Start SOW Generation
+                  </Button>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-md border-green-400/30">
-                <CardHeader className="text-center">
-                  <Wind className="w-12 h-12 text-green-400 mx-auto mb-2" />
-                  <CardTitle className="text-white">Enhanced Analysis</CardTitle>
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 hover:bg-white/20 transition-all">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <ClipboardCheck className="w-5 h-5 text-green-400" />
+                    Field Inspector
+                  </CardTitle>
                   <CardDescription className="text-blue-200">
-                    Advanced manufacturer screening with NOA validation
+                    Mobile-first field inspection interface
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <div className="space-y-2">
-                    <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                      Live Scraping Active
-                    </Badge>
-                    <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                      HVHZ Compliance
-                    </Badge>
+                <CardContent>
+                  <p className="text-blue-100 text-sm mb-4">
+                    Collect field data on mobile devices, capture photos, and 
+                    automatically populate SOW generation workflows.
+                  </p>
+                  <Button 
+                    onClick={() => setActiveTab('field-inspector')}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    Open Field Inspector
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 hover:bg-white/20 transition-all">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Building className="w-5 h-5 text-purple-400" />
+                    Project Management
+                  </CardTitle>
+                  <CardDescription className="text-blue-200">
+                    Manage all your roofing projects
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-blue-100 text-sm mb-4">
+                    Track project progress, manage inspections, and maintain 
+                    a complete history of all your work.
+                  </p>
+                  <Button 
+                    onClick={() => setActiveTab('projects')}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  >
+                    View Projects
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+                <CardHeader>
+                  <CardTitle className="text-white">Platform Features</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Dynamic SOW Generation</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Mobile Field Inspections</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Engineering Calculations</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Manufacturer Analysis</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Professional PDF Output</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-md border-purple-400/30">
-                <CardHeader className="text-center">
-                  <Settings className="w-12 h-12 text-purple-400 mx-auto mb-2" />
-                  <CardTitle className="text-white">System Status</CardTitle>
-                  <CardDescription className="text-blue-200">
-                    Real-time system health and capabilities
-                  </CardDescription>
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+                <CardHeader>
+                  <CardTitle className="text-white">Getting Started</CardHeader>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-blue-200">Manufacturer Scrapers</span>
-                      <Badge className="bg-green-500/20 text-green-300">Online</Badge>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">1</div>
+                      <div>
+                        <p className="text-white font-medium">Create Field Inspection</p>
+                        <p className="text-blue-200 text-sm">Use mobile interface to collect site data</p>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-blue-200">Wind Calculations</span>
-                      <Badge className="bg-green-500/20 text-green-300">Ready</Badge>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">2</div>
+                      <div>
+                        <p className="text-white font-medium">Generate SOW</p>
+                        <p className="text-blue-200 text-sm">Convert inspection data to professional SOW</p>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-blue-200">NOA Database</span>
-                      <Badge className="bg-green-500/20 text-green-300">Updated</Badge>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">3</div>
+                      <div>
+                        <p className="text-white font-medium">Download & Share</p>
+                        <p className="text-blue-200 text-sm">Export PDF and deliver to clients</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
 
-            {/* User Info Card */}
-            <Card className="mb-8 bg-white/10 backdrop-blur-md border-blue-400/30">
-              <CardHeader>
-                <CardTitle className="text-white">Account Information</CardTitle>
-                <CardDescription className="text-blue-200">
-                  Your account details and session information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-blue-200 text-sm font-medium">Email</Label>
-                    <p className="text-white mt-1">{user.email}</p>
-                  </div>
-                  <div>
-                    <Label className="text-blue-200 text-sm font-medium">User ID</Label>
-                    <p className="text-white mt-1 font-mono text-sm">{user.id}</p>
-                  </div>
-                </div>
+          {/* SOW Generation Tab */}
+          <TabsContent value="sow-generation" className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">SOW Generation</h2>
+              <p className="text-blue-200">Create professional scope of work documents with engineering analysis</p>
+            </div>
+
+            <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+              <CardContent className="p-8 text-center">
+                <FileText className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Advanced SOW Generation</h3>
+                <p className="text-blue-200 mb-6">
+                  Generate comprehensive scope of work documents with dynamic section mapping, 
+                  engineering calculations, and manufacturer analysis.
+                </p>
+                <Button 
+                  onClick={() => window.location.href = '/sow-generation'}
+                  className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg h-auto"
+                  size="lg"
+                >
+                  Start SOW Generation
+                </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Field Inspector Tab */}
+          <TabsContent value="field-inspector" className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Field Inspector</h2>
+              <p className="text-blue-200">Mobile-first interface for field data collection and inspection management</p>
+            </div>
+
+            <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+              <CardContent className="p-8 text-center">
+                <ClipboardCheck className="w-16 h-16 text-green-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Mobile Field Inspections</h3>
+                <p className="text-blue-200 mb-6">
+                  Collect comprehensive field data on mobile devices, capture photos, and automatically 
+                  populate SOW generation workflows with inspection data.
+                </p>
+                <Button 
+                  onClick={() => window.location.href = '/field-inspector'}
+                  className="bg-green-600 hover:bg-green-700 px-8 py-3 text-lg h-auto"
+                  size="lg"
+                >
+                  Open Field Inspector
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Field Inspector Features */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+                <CardHeader>
+                  <CardTitle className="text-white">Inspection Features</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Multi-step mobile forms</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Photo capture & upload</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Equipment inventory</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Condition assessments</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+                <CardHeader>
+                  <CardTitle className="text-white">Mobile Optimization</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Touch-optimized interface</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Auto-save functionality</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Image compression</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Offline capability</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Projects Tab */}
-          <TabsContent value="projects">
+          <TabsContent value="projects" className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Project Management</h2>
+              <p className="text-blue-200">Manage and track all your roofing projects in one place</p>
+            </div>
+
             <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-white">Your SOW Projects</CardTitle>
-                    <CardDescription className="text-blue-200">
-                      Recent scope of work projects and their status
-                    </CardDescription>
-                  </div>
-                  <Link to="/sow-generation">
-                    <Button variant="outline" className="border-blue-400 text-blue-200 hover:bg-blue-800">
-                      <Plus className="w-4 h-4 mr-2" />
-                      New Project
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {loadingProjects ? (
-                  <div className="text-center py-8">
-                    <div className="text-blue-200">Loading projects...</div>
-                  </div>
-                ) : projects.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="w-16 h-16 text-blue-400 mx-auto mb-4 opacity-50" />
-                    <div className="text-blue-200 mb-4">No SOW projects found</div>
-                    <p className="text-sm text-blue-300 mb-6">
-                      Create your first professional scope of work with enhanced manufacturer analysis
-                    </p>
-                    <Link to="/sow-generation">
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create First SOW
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {projects.map((project) => (
-                      <div
-                        key={project.id}
-                        className="p-4 bg-white/5 rounded-lg border border-blue-400/20 hover:bg-white/10 transition-colors"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-3">
-                            <FileText className="w-5 h-5 text-blue-400" />
-                            <h3 className="text-white font-semibold">{project.project_name}</h3>
-                            <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                              {project.project_type || 'SOW'}
-                            </Badge>
-                          </div>
-                          <span className="text-xs text-blue-300">
-                            {new Date(project.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-blue-200 text-sm mb-3">{project.address}</p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-blue-300">Square Footage:</span>
-                            <span className="text-white ml-2">{project.square_footage?.toLocaleString() || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="text-blue-300">Building Height:</span>
-                            <span className="text-white ml-2">{project.building_height || 'N/A'} ft</span>
-                          </div>
-                          <div>
-                            <span className="text-blue-300">Wind Analysis:</span>
-                            <Badge className="ml-2 bg-green-500/20 text-green-300 border-green-500/30">
-                              Complete
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <CardContent className="p-8 text-center">
+                <Building className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Coming Soon</h3>
+                <p className="text-blue-200 mb-6">
+                  Comprehensive project management features are being developed to help you 
+                  track inspections, SOW generation, and project completion status.
+                </p>
+                <Badge variant="outline" className="border-purple-400 text-purple-200">
+                  In Development
+                </Badge>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Backend Test Tab */}
-          <TabsContent value="backend-test">
-            <BackendConnectionTest />
           </TabsContent>
         </Tabs>
       </div>
