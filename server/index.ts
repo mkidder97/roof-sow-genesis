@@ -1,4 +1,4 @@
-// Enhanced Express Server with Complete Multi-Role Workflow Integration
+// Enhanced Express Server with Complete Multi-Role Workflow Integration & File Management
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -38,12 +38,18 @@ import {
 // Import workflow management routes
 import workflowRouter from './routes/workflow.js';
 
+// NEW: Import file management routes
+import fileManagementRouter from './routes/file-management.js';
+
 // NEW: Import complete workflow-SOW integration
 import { 
   generateWorkflowSOW, 
   WorkflowSOWInputs,
   WorkflowSOWResult 
 } from './core/workflow-sow-integration.js';
+
+// Import file management configuration
+import { STORAGE_CONFIG } from './core/file-management.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -79,8 +85,18 @@ if (!fs.existsSync(outputDir)) {
   console.log(`📁 Created output directory: ${outputDir}`);
 }
 
+// Ensure storage directory exists (for local file storage)
+const storageDir = STORAGE_CONFIG.baseDir;
+if (!fs.existsSync(storageDir)) {
+  fs.mkdirSync(storageDir, { recursive: true });
+  console.log(`📁 Created storage directory: ${storageDir}`);
+}
+
 // Static file serving for generated PDFs
 app.use('/output', express.static(outputDir));
+
+// Static file serving for stored files (if using local storage)
+app.use('/storage', express.static(storageDir));
 
 // Health check endpoint
 app.get('/health', healthCheck);
@@ -89,6 +105,11 @@ app.get('/health', healthCheck);
 // MULTI-ROLE WORKFLOW ENDPOINTS
 // ======================
 app.use('/api/workflow', workflowRouter);
+
+// ======================
+// COMPREHENSIVE FILE MANAGEMENT ENDPOINTS
+// ======================
+app.use('/api/files', fileManagementRouter);
 
 // ======================
 // COMPLETE WORKFLOW-SOW INTEGRATION ENDPOINTS
@@ -386,14 +407,22 @@ app.get('/api/engineer/pending-projects', async (req, res) => {
 // SYSTEM STATUS & DOCUMENTATION
 // ======================
 
-// Enhanced system status endpoint
+// Enhanced system status endpoint with file management
 app.get('/api/status', (req, res) => {
   res.json({
-    phase: 'Complete Multi-Role Workflow System with SOW Integration',
-    version: '7.0.0',
-    engineVersion: '7.0.0 - Complete Workflow-SOW Integration + Multi-Role Generation',
+    phase: 'Complete Multi-Role Workflow System with SOW Integration & File Management',
+    version: '8.0.0',
+    engineVersion: '8.0.0 - Complete File Management + Multi-Role Workflow-SOW Integration',
     serverStatus: 'running',
     timestamp: new Date().toISOString(),
+    fileManagement: {
+      storage_system: 'Hybrid Local + Supabase Cloud Storage ✅',
+      photo_processing: 'Advanced EXIF + GPS + Thumbnails ✅',
+      document_versioning: 'Complete version control with audit trails ✅',
+      security_scanning: 'Multi-layer security validation ✅',
+      workflow_integration: 'Stage-based file organization ✅',
+      cloud_sync: 'Automatic cloud backup and CDN delivery ✅'
+    },
     workflow: {
       database_schema: 'Complete ✅',
       role_management: 'Implemented ✅',
@@ -401,9 +430,16 @@ app.get('/api/status', (req, res) => {
       handoff_system: 'Inspector → Consultant → Engineer ✅',
       collaboration: 'Comments, activities, audit trail ✅',
       api_endpoints: 'Complete workflow management ✅',
-      sow_integration: 'COMPLETE ✅'
+      sow_integration: 'COMPLETE ✅',
+      file_integration: 'COMPLETE ✅'
     },
     features: {
+      completeFileManagement: 'Photos, documents, and files through Inspector → Consultant → Engineer workflow',
+      advancedPhotoProcessing: 'GPS extraction, EXIF analysis, automatic thumbnail generation',
+      documentVersioning: 'Complete version control with change tracking and audit trails',
+      securityValidation: 'Multi-layer security checks including content analysis and virus scanning',
+      cloudStorageIntegration: 'Seamless hybrid local + Supabase cloud storage with automatic sync',
+      workflowFileOrganization: 'Stage-based file organization with role-based access controls',
       completeWorkflowSOWIntegration: 'Inspector → Consultant → Engineer data compilation for SOW generation',
       multiRoleDataAggregation: 'Comprehensive data from all workflow stages in single SOW',
       professionalAuditTrails: 'Complete tracking of decisions and collaborators in SOW documents',
@@ -412,6 +448,19 @@ app.get('/api/status', (req, res) => {
       backwardCompatibility: 'Existing SOW generation preserved for non-workflow projects'
     },
     endpoints: {
+      fileManagement: {
+        'POST /api/files/upload': 'Upload file to project workflow stage',
+        'POST /api/files/upload-batch': 'Upload multiple files at once',
+        'GET /api/files/project/:projectId': 'Get all files for a project with filtering',
+        'GET /api/files/:fileId': 'Get specific file details',
+        'GET /api/files/:fileId/download': 'Download file',
+        'GET /api/files/:fileId/thumbnail': 'Get photo thumbnail',
+        'GET /api/files/:fileId/versions': 'Get file version history',
+        'PATCH /api/files/:fileId': 'Update file metadata',
+        'DELETE /api/files/:fileId': 'Delete file and all versions',
+        'GET /api/files/config': 'Get file management configuration',
+        'GET /api/files/stats/project/:projectId': 'Get file statistics for project'
+      },
       workflowSOW: {
         'POST /api/sow/generate-enhanced': 'Complete workflow-integrated SOW generation (with project_id)',
         'POST /api/workflow/generate-sow': 'Dedicated workflow SOW generation endpoint',
@@ -425,6 +474,26 @@ app.get('/api/status', (req, res) => {
         'POST /api/workflow/projects/:id/handoff-to-engineer': 'Consultant → Engineer handoff',
         'POST /api/workflow/projects/:id/complete': 'Engineer project completion'
       }
+    },
+    storage: {
+      configuration: {
+        baseDirectory: STORAGE_CONFIG.baseDir,
+        useCloudStorage: STORAGE_CONFIG.useCloudStorage,
+        cloudBucket: STORAGE_CONFIG.cloudBucket,
+        maxFileSizes: STORAGE_CONFIG.maxFileSize,
+        supportedTypes: Object.keys(STORAGE_CONFIG.allowedMimeTypes)
+      },
+      capabilities: [
+        'Hybrid local and cloud storage',
+        'Automatic thumbnail generation',
+        'GPS coordinate extraction',
+        'EXIF metadata preservation',
+        'File deduplication',
+        'Version control',
+        'Security scanning',
+        'Content analysis',
+        'Background processing'
+      ]
     }
   });
 });
@@ -433,14 +502,19 @@ app.get('/api/status', (req, res) => {
 app.get('/api/test/workflow-sow', (req, res) => {
   res.json({
     success: true,
-    message: 'Complete Multi-Role Workflow-SOW Integration System is operational',
-    version: '7.0.0',
+    message: 'Complete Multi-Role Workflow-SOW Integration System with File Management is operational',
+    version: '8.0.0',
     capabilities: [
       'complete-workflow-sow-integration',
       'multi-role-data-compilation',
       'professional-audit-trails',
       'workflow-aware-generation',
-      'backward-compatibility-maintained'
+      'backward-compatibility-maintained',
+      'comprehensive-file-management',
+      'advanced-photo-processing',
+      'cloud-storage-integration',
+      'document-versioning',
+      'security-validation'
     ],
     timestamp: new Date().toISOString(),
     integrationStatus: {
@@ -449,8 +523,37 @@ app.get('/api/test/workflow-sow', (req, res) => {
       roleManagement: 'Implemented ✅',
       workflowEngine: 'Operational ✅',
       sowGeneration: 'Enhanced ✅',
-      workflowSOWIntegration: 'COMPLETE ✅'
+      workflowSOWIntegration: 'COMPLETE ✅',
+      fileManagement: 'COMPLETE ✅',
+      cloudStorage: STORAGE_CONFIG.useCloudStorage ? 'Active ✅' : 'Local Only ⚠️',
+      photoProcessing: 'Advanced ✅',
+      securityScanning: 'Multi-layer ✅'
     }
+  });
+});
+
+// File management test endpoint
+app.get('/api/test/file-management', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Comprehensive File Management System is operational',
+    version: '8.0.0',
+    features: {
+      photoProcessing: 'GPS + EXIF + Thumbnails ✅',
+      documentVersioning: 'Complete audit trails ✅',
+      securityValidation: 'Multi-layer security ✅',
+      cloudIntegration: STORAGE_CONFIG.useCloudStorage ? 'Supabase Storage ✅' : 'Local Storage ⚠️',
+      workflowIntegration: 'Stage-based organization ✅',
+      roleBasedAccess: 'Inspector → Consultant → Engineer ✅'
+    },
+    configuration: {
+      storageType: STORAGE_CONFIG.useCloudStorage ? 'Cloud' : 'Local',
+      baseDirectory: STORAGE_CONFIG.baseDir,
+      maxFileSizes: STORAGE_CONFIG.maxFileSize,
+      thumbnailSizes: Object.keys(STORAGE_CONFIG.thumbnailSizes),
+      supportedFileTypes: Object.keys(STORAGE_CONFIG.allowedMimeTypes)
+    },
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -462,7 +565,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     error: err.message || 'Internal server error',
     timestamp: new Date().toISOString(),
     requestPath: req.path,
-    workflow_integration: req.path.includes('workflow') || req.body?.project_id
+    workflow_integration: req.path.includes('workflow') || req.body?.project_id,
+    file_management: req.path.includes('files')
   });
 });
 
@@ -475,17 +579,22 @@ app.use('*', (req, res) => {
     availableEndpoints: [
       'GET /health - System health check',
       'GET /api/status - Complete system status',
+      'GET /api/test/workflow-sow - Workflow-SOW integration test',
+      'GET /api/test/file-management - File management system test',
       'POST /api/workflow/projects - Create workflow project',
       'GET /api/workflow/dashboard - User dashboard',
       'POST /api/sow/generate-enhanced - Complete workflow-integrated SOW generation',
-      'POST /api/workflow/generate-sow - Dedicated workflow SOW generation'
+      'POST /api/workflow/generate-sow - Dedicated workflow SOW generation',
+      'POST /api/files/upload - Upload files to project',
+      'GET /api/files/project/:id - Get project files',
+      'GET /api/files/config - File management configuration'
     ]
   });
 });
 
 app.listen(PORT, () => {
-  console.log('🚀 Complete Multi-Role Workflow-SOW Integration Server Starting...');
-  console.log('=' .repeat(80));
+  console.log('🚀 Complete Multi-Role Workflow-SOW Integration + File Management Server Starting...');
+  console.log('=' .repeat(90));
   console.log(`📡 Server running on port ${PORT}`);
   console.log(`🔗 Base URL: http://localhost:${PORT}`);
   console.log('');
@@ -493,6 +602,17 @@ app.listen(PORT, () => {
   console.log(`   ✅ Health Check: GET /health`);
   console.log(`   📈 Full Status: GET /api/status`);
   console.log(`   🧪 Workflow-SOW Test: GET /api/test/workflow-sow`);
+  console.log(`   📁 File Management Test: GET /api/test/file-management`);
+  console.log('');
+  console.log('📁 Complete File Management System:');
+  console.log(`   📤 Upload Files: POST /api/files/upload`);
+  console.log(`   📥 Batch Upload: POST /api/files/upload-batch`);
+  console.log(`   📋 Project Files: GET /api/files/project/:projectId`);
+  console.log(`   🔍 File Details: GET /api/files/:fileId`);
+  console.log(`   💾 Download: GET /api/files/:fileId/download`);
+  console.log(`   🖼️ Thumbnails: GET /api/files/:fileId/thumbnail`);
+  console.log(`   🔄 Versions: GET /api/files/:fileId/versions`);
+  console.log(`   ⚙️ Configuration: GET /api/files/config`);
   console.log('');
   console.log('🎯 Complete Workflow-SOW Integration:');
   console.log(`   🔄 Workflow SOW: POST /api/sow/generate-enhanced (with project_id)`);
@@ -511,7 +631,15 @@ app.listen(PORT, () => {
   console.log(`   📋 Section Engine: POST /api/sow/debug-sections`);
   console.log(`   🔄 Self-Healing: POST /api/sow/debug-self-healing`);
   console.log('');
-  console.log('✨ NEW: Complete Workflow-SOW Integration Features:');
+  console.log('✨ NEW: Complete File Management Features:');
+  console.log(`   📸 Advanced Photo Processing - GPS + EXIF + Auto-Thumbnails`);
+  console.log(`   📄 Document Versioning - Complete audit trails and change tracking`);
+  console.log(`   🔒 Security Validation - Multi-layer content analysis and virus scanning`);
+  console.log(`   ☁️ Cloud Integration - ${STORAGE_CONFIG.useCloudStorage ? 'Supabase Storage Active' : 'Local Storage Only'}`);
+  console.log(`   🎯 Workflow Integration - Stage-based organization with role permissions`);
+  console.log(`   🔄 Deduplication - Intelligent duplicate detection and versioning`);
+  console.log('');
+  console.log('✨ Enhanced Workflow-SOW Integration:');
   console.log(`   🏗️ Multi-Role Data Compilation - Inspector + Consultant + Engineer → SOW`);
   console.log(`   👥 Professional Audit Trails - Complete collaborator attribution in SOW`);
   console.log(`   📊 Workflow Metadata Integration - SOW includes complete workflow history`);
@@ -519,13 +647,22 @@ app.listen(PORT, () => {
   console.log(`   📋 Professional Deliverables - Client-ready SOWs with full transparency`);
   console.log(`   🔐 Backward Compatibility - Existing SOW workflows preserved and enhanced`);
   console.log('');
+  console.log('📁 Storage Configuration:');
+  console.log(`   🗄️ Storage Type: ${STORAGE_CONFIG.useCloudStorage ? 'Cloud (Supabase)' : 'Local'}`);
+  console.log(`   📍 Base Directory: ${STORAGE_CONFIG.baseDir}`);
+  console.log(`   📏 Max File Sizes: Photo ${(STORAGE_CONFIG.maxFileSize.photo / 1024 / 1024)}MB, Doc ${(STORAGE_CONFIG.maxFileSize.document / 1024 / 1024)}MB`);
+  console.log(`   🖼️ Thumbnail Sizes: ${Object.keys(STORAGE_CONFIG.thumbnailSizes).join(', ')}`);
+  console.log('');
   console.log('📁 Output Directory:', outputDir);
+  console.log('📁 Storage Directory:', storageDir);
   console.log('🌍 CORS Enabled for Lovable and local development');
-  console.log('🗄️ Database: Supabase with complete workflow schema');
-  console.log('=' .repeat(80));
-  console.log('🎉 Complete Multi-Role Workflow-SOW Integration System fully operational!');
+  console.log('🗄️ Database: Supabase with complete workflow + file management schema');
+  console.log('=' .repeat(90));
+  console.log('🎉 Complete Multi-Role Workflow-SOW Integration + File Management System fully operational!');
   console.log('📚 The system now provides complete Inspector → Consultant → Engineer');
-  console.log('    data compilation for professional SOW generation with full audit trails!');
+  console.log('    data compilation for professional SOW generation with full audit trails');
+  console.log('    AND comprehensive file management with photo processing, versioning,');
+  console.log('    security validation, and cloud storage integration!');
 });
 
 export default app;
