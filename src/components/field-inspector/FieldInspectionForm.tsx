@@ -28,7 +28,7 @@ const FieldInspectionForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [autoSaveLoading, setAutoSaveLoading] = useState(false);
   
-  const [formData, setFormData] = useState<Partial<FieldInsp ction>>({
+  const [formData, setFormData] = useState<Partial<FieldInspection>>({
     inspector_name: user?.user_metadata?.full_name || user?.email || '',
     inspection_date: new Date().toISOString().split('T')[0],
     priority_level: 'Standard',

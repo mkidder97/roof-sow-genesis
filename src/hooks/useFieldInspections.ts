@@ -18,7 +18,7 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
     skylights: row.skylights || 0,
     photos: row.photos || [],
     sow_generated: row.sow_generated || false,
-    drainage_options: row.drainage_options ? (Array.isArray(row.drainage_options) ? row.drainage_options : []) : [],
+    drainage_options: Array.isArray(row.drainage_options) ? row.drainage_options : [],
     interior_protection_needed: row.interior_protection_needed || false,
     interior_protection_sqft: row.interior_protection_sqft || 0,
     conduit_attached: row.conduit_attached || false,
@@ -125,7 +125,7 @@ export function useFieldInspections() {
         .select()
         .single();
 
-      if error) throw error;
+      if (error) throw error;
 
       const convertedData = convertRowToInspection(data);
       setInspections(prev => 
