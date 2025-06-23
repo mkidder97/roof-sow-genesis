@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Minus, X } from 'lucide-react';
-import { FieldInspection, HVACUnit, RoofDrain, Penetration, DrainageOption } from '@/types/fieldInspection';
+import { FieldInspection, Penetration, DrainageOption } from '@/types/fieldInspection';
 
 interface EquipmentInventoryStepProps {
   data: Partial<FieldInspection>;
@@ -15,8 +15,6 @@ interface EquipmentInventoryStepProps {
 }
 
 const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, onChange }) => {
-  const [newHVAC, setNewHVAC] = useState({ type: '', count: 1, condition: 'Good' });
-  const [newDrain, setNewDrain] = useState({ type: '', count: 1, condition: 'Good' });
   const [newPenetration, setNewPenetration] = useState({ type: '', count: 1 });
   const [newDrainage, setNewDrainage] = useState({ 
     type: 'internal_gutter' as DrainageOption['type'], 
@@ -24,32 +22,8 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
     linear_feet: 0, 
     condition: 'Good' 
   });
-
-  const addHVACUnit = () => {
-    if (!newHVAC.type) return;
-    
-    const hvacUnits = [...(data.hvac_units || []), newHVAC as HVACUnit];
-    onChange({ hvac_units: hvacUnits });
-    setNewHVAC({ type: '', count: 1, condition: 'Good' });
-  };
-
-  const removeHVACUnit = (index: number) => {
-    const hvacUnits = (data.hvac_units || []).filter((_, i) => i !== index);
-    onChange({ hvac_units: hvacUnits });
-  };
-
-  const addRoofDrain = () => {
-    if (!newDrain.type) return;
-    
-    const roofDrains = [...(data.roof_drains || []), newDrain as RoofDrain];
-    onChange({ roof_drains: roofDrains });
-    setNewDrain({ type: '', count: 1, condition: 'Good' });
-  };
-
-  const removeRoofDrain = (index: number) => {
-    const roofDrains = (data.roof_drains || []).filter((_, i) => i !== index);
-    onChange({ roof_drains: roofDrains });
-  };
+  const [selectedSkylightType, setSelectedSkylightType] = useState('');
+  const [skylightCount, setSkylightCount] = useState(1);
 
   const addPenetration = () => {
     if (!newPenetration.type) return;
@@ -85,160 +59,45 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
     onChange({ drainage_options: drainageOptions });
   };
 
+  const addSkylightType = () => {
+    if (!selectedSkylightType) return;
+    
+    const skylightEntry = {
+      type: selectedSkylightType,
+      count: skylightCount
+    };
+    
+    // Store skylights as an array of objects in notes or a custom field
+    const currentSkylights = data.skylights_detailed || [];
+    const updatedSkylights = [...currentSkylights, skylightEntry];
+    
+    onChange({ 
+      skylights_detailed: updatedSkylights,
+      skylights: updatedSkylights.reduce((total, item) => total + item.count, 0)
+    });
+    
+    setSelectedSkylightType('');
+    setSkylightCount(1);
+  };
+
+  const removeSkylightType = (index: number) => {
+    const currentSkylights = data.skylights_detailed || [];
+    const updatedSkylights = currentSkylights.filter((_, i) => i !== index);
+    
+    onChange({ 
+      skylights_detailed: updatedSkylights,
+      skylights: updatedSkylights.reduce((total, item) => total + item.count, 0)
+    });
+  };
+
   const isGutterType = (type: string) => type.includes('gutter');
 
   return (
     <div className="space-y-6">
-      {/* HVAC Units */}
+      {/* Drainage System */}
       <Card className="bg-white/5 border-blue-400/20">
         <CardHeader>
-          <CardTitle className="text-white">HVAC Units</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="hvac-type" className="text-blue-200">Type</Label>
-              <Input
-                id="hvac-type"
-                value={newHVAC.type}
-                onChange={(e) => setNewHVAC(prev => ({ ...prev, type: e.target.value }))}
-                placeholder="e.g., RTU, AHU"
-                className="bg-white/10 border-blue-400/30 text-white"
-              />
-            </div>
-            <div>
-              <Label htmlFor="hvac-count" className="text-blue-200">Count</Label>
-              <Input
-                id="hvac-count"
-                type="number"
-                min="1"
-                value={newHVAC.count}
-                onChange={(e) => setNewHVAC(prev => ({ ...prev, count: parseInt(e.target.value) || 1 }))}
-                className="bg-white/10 border-blue-400/30 text-white"
-              />
-            </div>
-            <div>
-              <Label htmlFor="hvac-condition" className="text-blue-200">Condition</Label>
-              <Select 
-                value={newHVAC.condition} 
-                onValueChange={(value) => setNewHVAC(prev => ({ ...prev, condition: value }))}
-              >
-                <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Excellent">Excellent</SelectItem>
-                  <SelectItem value="Good">Good</SelectItem>
-                  <SelectItem value="Fair">Fair</SelectItem>
-                  <SelectItem value="Poor">Poor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end">
-              <Button onClick={addHVACUnit} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {data.hvac_units && data.hvac_units.length > 0 && (
-            <div className="space-y-2">
-              {data.hvac_units.map((unit, index) => (
-                <div key={index} className="flex items-center justify-between bg-white/5 rounded p-3">
-                  <span className="text-white">
-                    {unit.type} (Count: {unit.count}) - Condition: {unit.condition}
-                  </span>
-                  <Button
-                    onClick={() => removeHVACUnit(index)}
-                    variant="destructive"
-                    size="sm"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Roof Drains */}
-      <Card className="bg-white/5 border-blue-400/20">
-        <CardHeader>
-          <CardTitle className="text-white">Roof Drains</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="drain-type" className="text-blue-200">Type</Label>
-              <Input
-                id="drain-type"
-                value={newDrain.type}
-                onChange={(e) => setNewDrain(prev => ({ ...prev, type: e.target.value }))}
-                placeholder="e.g., Interior, Scupper"
-                className="bg-white/10 border-blue-400/30 text-white"
-              />
-            </div>
-            <div>
-              <Label htmlFor="drain-count" className="text-blue-200">Count</Label>
-              <Input
-                id="drain-count"
-                type="number"
-                min="1"
-                value={newDrain.count}
-                onChange={(e) => setNewDrain(prev => ({ ...prev, count: parseInt(e.target.value) || 1 }))}
-                className="bg-white/10 border-blue-400/30 text-white"
-              />
-            </div>
-            <div>
-              <Label htmlFor="drain-condition" className="text-blue-200">Condition</Label>
-              <Select 
-                value={newDrain.condition} 
-                onValueChange={(value) => setNewDrain(prev => ({ ...prev, condition: value }))}
-              >
-                <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Excellent">Excellent</SelectItem>
-                  <SelectItem value="Good">Good</SelectItem>
-                  <SelectItem value="Fair">Fair</SelectItem>
-                  <SelectItem value="Poor">Poor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end">
-              <Button onClick={addRoofDrain} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {data.roof_drains && data.roof_drains.length > 0 && (
-            <div className="space-y-2">
-              {data.roof_drains.map((drain, index) => (
-                <div key={index} className="flex items-center justify-between bg-white/5 rounded p-3">
-                  <span className="text-white">
-                    {drain.type} (Count: {drain.count}) - Condition: {drain.condition}
-                  </span>
-                  <Button
-                    onClick={() => removeRoofDrain(index)}
-                    variant="destructive"
-                    size="sm"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Drainage Options */}
-      <Card className="bg-white/5 border-blue-400/20">
-        <CardHeader>
-          <CardTitle className="text-white">Drainage Options</CardTitle>
+          <CardTitle className="text-white">Drainage System</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -342,13 +201,22 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="penetration-type" className="text-blue-200">Type</Label>
-              <Input
-                id="penetration-type"
-                value={newPenetration.type}
-                onChange={(e) => setNewPenetration(prev => ({ ...prev, type: e.target.value }))}
-                placeholder="e.g., Pipe, Conduit, Vent"
-                className="bg-white/10 border-blue-400/30 text-white"
-              />
+              <Select 
+                value={newPenetration.type} 
+                onValueChange={(value) => setNewPenetration(prev => ({ ...prev, type: value }))}
+              >
+                <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                  <SelectValue placeholder="Select penetration type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pipe">Pipe</SelectItem>
+                  <SelectItem value="Conduit">Conduit</SelectItem>
+                  <SelectItem value="Vent">Vent</SelectItem>
+                  <SelectItem value="Side Discharge Units">Side Discharge Units</SelectItem>
+                  <SelectItem value="Extra Large Rooftop Units">Extra Large Rooftop Units</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="penetration-count" className="text-blue-200">Count</Label>
@@ -444,6 +312,24 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
               onCheckedChange={(checked) => onChange({ interior_fall_protection: checked })}
             />
           </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="curbs-above-8" className="text-blue-200">Curbs Above 8"</Label>
+            <Switch
+              id="curbs-above-8"
+              checked={data.curbs_above_8 || false}
+              onCheckedChange={(checked) => onChange({ curbs_above_8: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="gas-line-penetrating" className="text-blue-200">Gas Line Penetrating Deck</Label>
+            <Switch
+              id="gas-line-penetrating"
+              checked={data.gas_line_penetrating_deck || false}
+              onCheckedChange={(checked) => onChange({ gas_line_penetrating_deck: checked })}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -469,22 +355,69 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
         </CardContent>
       </Card>
 
-      {/* Equipment Counts */}
+      {/* Skylights */}
       <Card className="bg-white/5 border-blue-400/20">
         <CardHeader>
-          <CardTitle className="text-white">Equipment Counts</CardTitle>
+          <CardTitle className="text-white">Skylights</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div>
-            <Label htmlFor="skylights" className="text-blue-200">Number of Skylights</Label>
-            <Input
-              id="skylights"
-              type="number"
-              min="0"
-              value={data.skylights || 0}
-              onChange={(e) => onChange({ skylights: parseInt(e.target.value) || 0 })}
-              className="bg-white/10 border-blue-400/30 text-white"
-            />
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="skylight-type" className="text-blue-200">Skylight Type</Label>
+              <Select 
+                value={selectedSkylightType} 
+                onValueChange={setSelectedSkylightType}
+              >
+                <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                  <SelectValue placeholder="Select skylight type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Low-Profile">Low-Profile</SelectItem>
+                  <SelectItem value="Standard">Standard</SelectItem>
+                  <SelectItem value="Spring-Loaded">Spring-Loaded</SelectItem>
+                  <SelectItem value="Melt-Outs">Melt-Outs</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="skylight-count" className="text-blue-200">Count</Label>
+              <Input
+                id="skylight-count"
+                type="number"
+                min="1"
+                value={skylightCount}
+                onChange={(e) => setSkylightCount(parseInt(e.target.value) || 1)}
+                className="bg-white/10 border-blue-400/30 text-white"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button onClick={addSkylightType} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {data.skylights_detailed && data.skylights_detailed.length > 0 && (
+            <div className="space-y-2">
+              {data.skylights_detailed.map((skylight, index) => (
+                <div key={index} className="flex items-center justify-between bg-white/5 rounded p-3">
+                  <span className="text-white">
+                    {skylight.type} (Count: {skylight.count})
+                  </span>
+                  <Button
+                    onClick={() => removeSkylightType(index)}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-sm text-blue-200">
+            Total Skylights: {data.skylights || 0}
           </div>
         </CardContent>
       </Card>
