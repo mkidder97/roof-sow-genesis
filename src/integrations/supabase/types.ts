@@ -145,7 +145,10 @@ export type Database = {
           building_height: number | null
           building_length: number | null
           building_width: number | null
+          completed: boolean | null
           completed_at: string | null
+          concerns: string | null
+          conditions: Json | null
           conduit_attached: boolean | null
           cover_board_type: string | null
           created_at: string | null
@@ -157,6 +160,7 @@ export type Database = {
           existing_membrane_condition: number | null
           existing_membrane_type: string | null
           gas_line_penetrating_deck: boolean | null
+          handoff_notes: string | null
           hvac_units: Json | null
           id: string
           inspection_date: string | null
@@ -168,14 +172,19 @@ export type Database = {
           interior_fall_protection: boolean | null
           interior_protection_needed: boolean | null
           interior_protection_sqft: number | null
+          measurements: Json | null
           notes: string | null
           number_of_stories: number | null
+          observations: Json | null
           overall_condition: number | null
           penetrations: Json | null
           photos: string[] | null
           priority_level: string | null
           project_address: string
+          project_id: string | null
           project_name: string
+          ready_for_handoff: boolean | null
+          recommendations: string | null
           roof_age_years: number | null
           roof_drains: Json | null
           roof_hatches: number | null
@@ -187,6 +196,7 @@ export type Database = {
           special_requirements: string | null
           square_footage: number | null
           status: string | null
+          takeoff_items: Json | null
           updated_at: string | null
           upgraded_lighting: boolean | null
           weather_conditions: string | null
@@ -196,7 +206,10 @@ export type Database = {
           building_height?: number | null
           building_length?: number | null
           building_width?: number | null
+          completed?: boolean | null
           completed_at?: string | null
+          concerns?: string | null
+          conditions?: Json | null
           conduit_attached?: boolean | null
           cover_board_type?: string | null
           created_at?: string | null
@@ -208,6 +221,7 @@ export type Database = {
           existing_membrane_condition?: number | null
           existing_membrane_type?: string | null
           gas_line_penetrating_deck?: boolean | null
+          handoff_notes?: string | null
           hvac_units?: Json | null
           id?: string
           inspection_date?: string | null
@@ -219,14 +233,19 @@ export type Database = {
           interior_fall_protection?: boolean | null
           interior_protection_needed?: boolean | null
           interior_protection_sqft?: number | null
+          measurements?: Json | null
           notes?: string | null
           number_of_stories?: number | null
+          observations?: Json | null
           overall_condition?: number | null
           penetrations?: Json | null
           photos?: string[] | null
           priority_level?: string | null
           project_address: string
+          project_id?: string | null
           project_name: string
+          ready_for_handoff?: boolean | null
+          recommendations?: string | null
           roof_age_years?: number | null
           roof_drains?: Json | null
           roof_hatches?: number | null
@@ -238,6 +257,7 @@ export type Database = {
           special_requirements?: string | null
           square_footage?: number | null
           status?: string | null
+          takeoff_items?: Json | null
           updated_at?: string | null
           upgraded_lighting?: boolean | null
           weather_conditions?: string | null
@@ -247,7 +267,10 @@ export type Database = {
           building_height?: number | null
           building_length?: number | null
           building_width?: number | null
+          completed?: boolean | null
           completed_at?: string | null
+          concerns?: string | null
+          conditions?: Json | null
           conduit_attached?: boolean | null
           cover_board_type?: string | null
           created_at?: string | null
@@ -259,6 +282,7 @@ export type Database = {
           existing_membrane_condition?: number | null
           existing_membrane_type?: string | null
           gas_line_penetrating_deck?: boolean | null
+          handoff_notes?: string | null
           hvac_units?: Json | null
           id?: string
           inspection_date?: string | null
@@ -270,14 +294,19 @@ export type Database = {
           interior_fall_protection?: boolean | null
           interior_protection_needed?: boolean | null
           interior_protection_sqft?: number | null
+          measurements?: Json | null
           notes?: string | null
           number_of_stories?: number | null
+          observations?: Json | null
           overall_condition?: number | null
           penetrations?: Json | null
           photos?: string[] | null
           priority_level?: string | null
           project_address?: string
+          project_id?: string | null
           project_name?: string
+          ready_for_handoff?: boolean | null
+          recommendations?: string | null
           roof_age_years?: number | null
           roof_drains?: Json | null
           roof_hatches?: number | null
@@ -289,11 +318,20 @@ export type Database = {
           special_requirements?: string | null
           square_footage?: number | null
           status?: string | null
+          takeoff_items?: Json | null
           updated_at?: string | null
           upgraded_lighting?: boolean | null
           weather_conditions?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "field_inspections_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_comments: {
         Row: {
@@ -410,11 +448,17 @@ export type Database = {
       projects: {
         Row: {
           address: string
+          assigned_consultant: string | null
+          assigned_engineer: string | null
+          assigned_inspector: string | null
           building_height: number | null
           company_name: string | null
           cover_board_thickness: number | null
           cover_board_type: string | null
           created_at: string
+          current_stage:
+            | Database["public"]["Enums"]["workflow_stage_enum"]
+            | null
           deck_type: string | null
           document_attachment: Json | null
           downspouts: number | null
@@ -444,18 +488,26 @@ export type Database = {
           roof_slope: number | null
           skylights: number | null
           square_footage: number | null
+          stage_data: Json | null
           updated_at: string
           user_id: string
           walkway_pad_requested: boolean | null
           width: number | null
+          workflow_status: Json | null
         }
         Insert: {
           address: string
+          assigned_consultant?: string | null
+          assigned_engineer?: string | null
+          assigned_inspector?: string | null
           building_height?: number | null
           company_name?: string | null
           cover_board_thickness?: number | null
           cover_board_type?: string | null
           created_at?: string
+          current_stage?:
+            | Database["public"]["Enums"]["workflow_stage_enum"]
+            | null
           deck_type?: string | null
           document_attachment?: Json | null
           downspouts?: number | null
@@ -485,18 +537,26 @@ export type Database = {
           roof_slope?: number | null
           skylights?: number | null
           square_footage?: number | null
+          stage_data?: Json | null
           updated_at?: string
           user_id: string
           walkway_pad_requested?: boolean | null
           width?: number | null
+          workflow_status?: Json | null
         }
         Update: {
           address?: string
+          assigned_consultant?: string | null
+          assigned_engineer?: string | null
+          assigned_inspector?: string | null
           building_height?: number | null
           company_name?: string | null
           cover_board_thickness?: number | null
           cover_board_type?: string | null
           created_at?: string
+          current_stage?:
+            | Database["public"]["Enums"]["workflow_stage_enum"]
+            | null
           deck_type?: string | null
           document_attachment?: Json | null
           downspouts?: number | null
@@ -526,12 +586,36 @@ export type Database = {
           roof_slope?: number | null
           skylights?: number | null
           square_footage?: number | null
+          stage_data?: Json | null
           updated_at?: string
           user_id?: string
           walkway_pad_requested?: boolean | null
           width?: number | null
+          workflow_status?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_assigned_consultant_fkey"
+            columns: ["assigned_consultant"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_assigned_engineer_fkey"
+            columns: ["assigned_engineer"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_assigned_inspector_fkey"
+            columns: ["assigned_inspector"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sow_outputs: {
         Row: {
