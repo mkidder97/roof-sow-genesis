@@ -1,81 +1,64 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useWorkflow } from '@/hooks/useWorkflow';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { 
-  FileText, 
-  CheckCircle, 
-  AlertCircle, 
-  Users, 
-  ClipboardCheck,
-  Download,
-  ArrowLeft,
-  Clock
-} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { FileText, Download, Users, Clock, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const WorkflowSOWGeneration = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { projects } = useWorkflow();
-  const { generateSOW, isGenerating, generationProgress, generationStatus } = useSOWGeneration();
-  
-  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const { projects, selectedProject, setSelectedProject } = useWorkflow();
+  const { generateSOW, isGenerating } = useSOWGeneration();
   const [engineerNotes, setEngineerNotes] = useState('');
   const [includeAuditTrail, setIncludeAuditTrail] = useState(true);
 
-  // Filter projects that are ready for SOW generation
-  const readyProjects = projects.filter(p => p.current_stage === 'engineering');
-  const selectedProject = projects.find(p => p.id === selectedProjectId);
+  // Filter projects ready for SOW generation (engineering stage or complete)
+  const engineeringProjects = projects.filter(p => 
+    p.current_stage === 'engineering' || p.current_stage === 'complete'
+  );
 
-  const handleGenerateSOW = () => {
-    if (!selectedProjectId) return;
+  const handleGenerateSOW = async () => {
+    if (!selectedProject) return;
 
-    const sowData = {
-      project_id: selectedProjectId,
+    const sowRequest = {
+      project_id: selectedProject.id,
       engineer_notes: engineerNotes,
       include_audit_trail: includeAuditTrail,
-      projectName: selectedProject?.project_name || 'Unnamed Project',
-      projectAddress: selectedProject?.address || '',
-      city: '',
-      state: '',
-      zipCode: '',
-      buildingHeight: selectedProject?.building_height || 30,
-      deckType: selectedProject?.deck_type || 'Steel',
-      membraneType: 'TPO',
-      insulationType: 'Polyisocyanurate',
-      windSpeed: 90,
-      exposureCategory: 'C',
-      buildingClassification: 'II',
+      projectName: selectedProject.project_name,
+      projectAddress: selectedProject.address,
+      city: selectedProject.address.split(',')[1]?.trim() || '',
+      state: selectedProject.address.split(',')[2]?.trim() || '',
+      zipCode: selectedProject.address.split(' ').pop() || '',
+      buildingHeight: selectedProject.building_height || 30,
+      length: selectedProject.square_footage ? Math.sqrt(selectedProject.square_footage) : 100,
+      width: selectedProject.square_footage ? Math.sqrt(selectedProject.square_footage) : 100,
+      squareFootage: selectedProject.square_footage || 10000,
+      deckType: selectedProject.deck_type || 'Steel',
+      projectType: selectedProject.project_type || 'recover',
+      exposureCategory: 'C' as const,
+      buildingClassification: 'II'
     };
 
-    generateSOW(sowData);
+    try {
+      await generateSOW(sowRequest);
+    } catch (error) {
+      console.error('SOW generation failed:', error);
+    }
   };
 
-  const getProjectSuitability = (project: any) => {
-    const hasInspection = project.stage_data?.inspection;
-    const hasConsultantReview = project.stage_data?.consultant_review;
-    const isEngineering = project.current_stage === 'engineering';
-    
-    if (isEngineering && hasInspection && hasConsultantReview) {
-      return { suitable: true, reason: 'Ready for SOW generation' };
-    } else if (!isEngineering) {
-      return { suitable: false, reason: `Currently in ${project.current_stage} stage` };
-    } else if (!hasInspection) {
-      return { suitable: false, reason: 'Missing field inspection data' };
-    } else if (!hasConsultantReview) {
-      return { suitable: false, reason: 'Missing consultant review' };
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case 'inspection': return 'bg-yellow-500';
+      case 'consultant_review': return 'bg-blue-500';
+      case 'engineering': return 'bg-purple-500';
+      case 'complete': return 'bg-green-500';
+      default: return 'bg-gray-500';
     }
-    
-    return { suitable: false, reason: 'Unknown issue' };
   };
 
   return (
@@ -92,199 +75,209 @@ const WorkflowSOWGeneration = () => {
             Back to Dashboard
           </Button>
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-white mb-2">Workflow-Integrated SOW Generation</h1>
-            <p className="text-blue-200">Generate comprehensive SOWs from multi-role workflow data</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Workflow SOW Generation</h1>
+            <p className="text-blue-200">Generate SOW documents from completed workflow projects</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Project Selection */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Select Project for SOW Generation
-                </CardTitle>
-                <CardDescription className="text-blue-200">
-                  Choose a project in the engineering stage to generate a comprehensive SOW
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="project-select" className="text-blue-200">Project</Label>
-                  <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                    <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
-                      <SelectValue placeholder="Select a project..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {readyProjects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.project_name} - {project.address}
-                        </SelectItem>
-                      ))}
-                      {readyProjects.length === 0 && (
-                        <SelectItem value="" disabled>
-                          No projects ready for SOW generation
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+          <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Select Project
+              </CardTitle>
+              <CardDescription className="text-blue-200">
+                Choose a project in engineering stage for SOW generation
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {engineeringProjects.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+                  <p className="text-blue-200">No projects ready for SOW generation</p>
+                  <p className="text-blue-300 text-sm mt-2">
+                    Projects must be in engineering stage or complete
+                  </p>
                 </div>
-
-                {selectedProject && (
-                  <div className="p-4 bg-white/5 rounded-lg space-y-3">
-                    <h4 className="font-medium text-white">Project Details</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-blue-200">Address:</span>
-                        <p className="text-white">{selectedProject.address}</p>
+              ) : (
+                <div className="space-y-3">
+                  {engineeringProjects.map((project) => (
+                    <div
+                      key={project.id}
+                      className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                        selectedProject?.id === project.id
+                          ? 'bg-blue-600/30 border-blue-400'
+                          : 'bg-white/5 border-blue-400/30 hover:bg-white/10'
+                      }`}
+                      onClick={() => setSelectedProject(project)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-white font-semibold">{project.project_name}</h3>
+                          <p className="text-blue-200 text-sm mt-1">{project.address}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge className={`${getStageColor(project.current_stage)} text-white text-xs`}>
+                              {project.current_stage.replace('_', ' ')}
+                            </Badge>
+                            {project.square_footage && (
+                              <Badge variant="outline" className="border-blue-400 text-blue-200 text-xs">
+                                {project.square_footage.toLocaleString()} sq ft
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {selectedProject?.id === project.id && (
+                          <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                        )}
                       </div>
-                      <div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* SOW Configuration */}
+          <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                SOW Configuration
+              </CardTitle>
+              <CardDescription className="text-blue-200">
+                Configure SOW generation settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedProject ? (
+                <>
+                  <div>
+                    <label className="text-blue-200 text-sm font-medium mb-2 block">
+                      Engineer Notes
+                    </label>
+                    <Textarea
+                      value={engineerNotes}
+                      onChange={(e) => setEngineerNotes(e.target.value)}
+                      placeholder="Add any additional engineering notes or specifications..."
+                      className="bg-white/20 border-blue-400/30 text-white placeholder-blue-200"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-blue-200 text-sm font-medium mb-2 block">
+                      Include Audit Trail
+                    </label>
+                    <Select 
+                      value={includeAuditTrail ? 'yes' : 'no'}
+                      onValueChange={(value) => setIncludeAuditTrail(value === 'yes')}
+                    >
+                      <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes - Include workflow history</SelectItem>
+                        <SelectItem value="no">No - SOW only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Project Summary */}
+                  <div className="bg-white/5 rounded-lg p-4 mt-6">
+                    <h4 className="text-white font-semibold mb-3">Project Summary</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-blue-200">Project:</span>
+                        <span className="text-white">{selectedProject.project_name}</span>
+                      </div>
+                      <div className="flex justify-between">
                         <span className="text-blue-200">Stage:</span>
-                        <Badge className="ml-2 bg-purple-500 text-white">
+                        <Badge className={`${getStageColor(selectedProject.current_stage)} text-white text-xs`}>
                           {selectedProject.current_stage.replace('_', ' ')}
                         </Badge>
                       </div>
-                      <div>
-                        <span className="text-blue-200">Building Height:</span>
-                        <p className="text-white">{selectedProject.building_height || 'Not specified'} ft</p>
-                      </div>
-                      <div>
-                        <span className="text-blue-200">Square Footage:</span>
-                        <p className="text-white">{selectedProject.square_footage?.toLocaleString() || 'Not specified'} sq ft</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="engineer-notes" className="text-blue-200">Engineer Notes (Optional)</Label>
-                  <Textarea
-                    id="engineer-notes"
-                    value={engineerNotes}
-                    onChange={(e) => setEngineerNotes(e.target.value)}
-                    placeholder="Add any specific engineering notes or requirements..."
-                    className="bg-white/20 border-blue-400/30 text-white placeholder-blue-200"
-                    rows={4}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="audit-trail"
-                    checked={includeAuditTrail}
-                    onChange={(e) => setIncludeAuditTrail(e.target.checked)}
-                    className="rounded border-blue-400"
-                  />
-                  <Label htmlFor="audit-trail" className="text-blue-200">
-                    Include workflow audit trail in SOW
-                  </Label>
-                </div>
-
-                <Button
-                  onClick={handleGenerateSOW}
-                  disabled={!selectedProjectId || isGenerating}
-                  className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Clock className="w-5 h-5 mr-2 animate-spin" />
-                      Generating SOW...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-5 h-5 mr-2" />
-                      Generate Workflow SOW
-                    </>
-                  )}
-                </Button>
-
-                {isGenerating && (
-                  <div className="space-y-2">
-                    <Progress value={generationProgress} className="w-full" />
-                    <p className="text-blue-200 text-sm text-center">{generationStatus}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Project Status & Features */}
-          <div className="space-y-6">
-            <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
-              <CardHeader>
-                <CardTitle className="text-white">Workflow Features</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-white text-sm">Multi-role data compilation</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-white text-sm">Field inspection integration</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-white text-sm">Consultant review data</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-white text-sm">Professional audit trail</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-white text-sm">Engineering calculations</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-white text-sm">Collaboration tracking</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Available Projects Status */}
-            <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
-              <CardHeader>
-                <CardTitle className="text-white">Project Readiness</CardTitle>
-                <CardDescription className="text-blue-200">
-                  Status of projects available for SOW generation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {projects.slice(0, 5).map((project) => {
-                    const suitability = getProjectSuitability(project);
-                    return (
-                      <div key={project.id} className="p-3 bg-white/5 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-white text-sm font-medium">
-                            {project.project_name}
-                          </span>
-                          {suitability.suitable ? (
-                            <CheckCircle className="w-4 h-4 text-green-400" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-yellow-400" />
-                          )}
+                      {selectedProject.square_footage && (
+                        <div className="flex justify-between">
+                          <span className="text-blue-200">Area:</span>
+                          <span className="text-white">{selectedProject.square_footage.toLocaleString()} sq ft</span>
                         </div>
-                        <p className="text-blue-200 text-xs">{suitability.reason}</p>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-blue-200">Type:</span>
+                        <span className="text-white">{selectedProject.project_type || 'recover'}</span>
                       </div>
-                    );
-                  })}
-                  
-                  {projects.length === 0 && (
-                    <div className="text-center text-blue-200 py-4">
-                      <ClipboardCheck className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No projects available</p>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Generate Button */}
+                  <Button
+                    onClick={handleGenerateSOW}
+                    disabled={isGenerating}
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg mt-6"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Clock className="w-5 h-5 mr-2 animate-spin" />
+                        Generating SOW...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5 mr-2" />
+                        Generate SOW
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+                  <p className="text-blue-200">Select a project to configure SOW generation</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Workflow Integration Info */}
+        <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 mt-6">
+          <CardHeader>
+            <CardTitle className="text-white">Workflow Integration Benefits</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span className="text-white">Multi-role data compilation</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span className="text-white">Complete audit trail</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span className="text-white">Quality assurance validation</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span className="text-white">Professional collaboration tracking</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span className="text-white">Engineering validation</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span className="text-white">Consultant expertise integration</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

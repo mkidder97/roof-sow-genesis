@@ -15,6 +15,10 @@ export interface WorkflowProject {
   assigned_engineer?: string;
   workflow_status: any;
   stage_data: any;
+  building_height?: number;
+  square_footage?: number;
+  deck_type?: string;
+  project_type?: string;
   created_at: string;
   updated_at: string;
 }
@@ -74,7 +78,7 @@ export function useWorkflow() {
 
       if (!profile) return [];
 
-      let stageFilter = '';
+      let stageFilter: 'inspection' | 'consultant_review' | 'engineering' | 'complete' = 'inspection';
       switch (profile.role) {
         case 'inspector':
           stageFilter = 'inspection';
@@ -112,7 +116,7 @@ export function useWorkflow() {
         .insert({
           ...projectData,
           user_id: user.id,
-          current_stage: 'inspection',
+          current_stage: 'inspection' as const,
           workflow_status: {},
           stage_data: {}
         })
