@@ -5,9 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Building, Wind, FileText, Download, Eye } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Building, Wind, FileText, Download, Eye, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import ManufacturerAnalysisPreview from '@/components/ManufacturerAnalysisPreview';
 import SOWInputForm from '@/components/SOWInputForm';
+import { useSOWGeneration, useSOWDebug } from '@/hooks/useSOWGeneration';
+import { SOWGenerationRequest } from '@/lib/api';
 
 interface ProjectData {
   projectName?: string;
@@ -26,10 +30,43 @@ const SOWGeneration = () => {
   const [activeTab, setActiveTab] = useState('input');
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
-  const [generatedSOW, setGeneratedSOW] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [debugMode, setDebugMode] = useState(false);
 
-  const handleProjectDataSubmit = (data: ProjectData) => {
+  // Backend integration hooks
+  const {
+    generateSOW,
+    isGenerating,
+    generationError,
+    generationData,
+    generationProgress,
+    generationStatus,
+    isBackendOnline,
+    healthStatus,
+    reset
+  } = useSOWGeneration({
+    onSuccess: (data) => {
+      console.log('SOW generated successfully:', data);
+      setActiveTab('download');
+    },
+    onError: (error) => {
+      console.error('SOW generation failed:', error);
+    }
+  });
+
+  const {
+    debugSOW,
+    isDebugging,
+    debugError,
+    debugData,
+    resetDebug
+  } = useSOWDebug();
+
+  const handleProjectDataSubmit = (data: ProjectData, file?: File) => {
     setProjectData(data);
+    if (file) {
+      setUploadedFile(file);
+    }
     setActiveTab('preview');
   };
 
@@ -39,40 +76,45 @@ const SOWGeneration = () => {
   };
 
   const handleGenerateSOW = async () => {
-    try {
-      const response = await fetch('/api/sow/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectData,
-          analysisResults
-        })
-      });
+    if (!projectData) return;
 
-      if (!response.ok) {
-        throw new Error('Failed to generate SOW');
-      }
+    const sowRequest: SOWGenerationRequest = {
+      projectName: projectData.projectName,
+      projectAddress: projectData.address,
+      buildingHeight: projectData.buildingHeight,
+      deckType: 'steel', // Default or from form
+      membraneType: projectData.membraneType,
+      windSpeed: projectData.windSpeed,
+      exposureCategory: projectData.exposureCategory as 'B' | 'C' | 'D',
+      takeoffFile: uploadedFile || undefined,
+    };
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      setGeneratedSOW(url);
+    if (debugMode) {
+      debugSOW(sowRequest);
+    } else {
+      generateSOW(sowRequest);
+    }
+  };
 
-      // Auto-download the PDF
+  const downloadGeneratedSOW = () => {
+    if (generationData?.data?.pdf) {
+      // Handle base64 PDF download
       const link = document.createElement('a');
-      link.href = url;
+      link.href = `data:application/pdf;base64,${generationData.data.pdf}`;
       link.download = `SOW_${projectData?.projectName || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error generating SOW:', error);
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl flex items-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          Loading...
+        </div>
       </div>
     );
   }
@@ -101,11 +143,77 @@ const SOWGeneration = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">SOW Generator</h1>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <h1 className="text-4xl font-bold text-white">SOW Generator</h1>
+            {/* Backend Status Indicator */}
+            <div className="flex items-center gap-2">
+              {isBackendOnline ? (
+                <div className="flex items-center gap-1 text-green-400">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm">Backend Online</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-red-400">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-sm">Backend Offline</span>
+                </div>
+              )}
+            </div>
+          </div>
           <p className="text-blue-200 text-lg">
             Dynamic scope of work generation with manufacturer analysis and wind calculations
           </p>
+          
+          {/* Debug Mode Toggle */}
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDebugMode(!debugMode)}
+              className={`border-blue-400 text-blue-200 hover:bg-blue-800 ${debugMode ? 'bg-blue-800' : ''}`}
+            >
+              Debug Mode: {debugMode ? 'ON' : 'OFF'}
+            </Button>
+          </div>
         </div>
+
+        {/* Backend Connection Alert */}
+        {!isBackendOnline && (
+          <Alert className="mb-6 bg-red-500/20 border-red-500/30">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-red-200">
+              Backend server is not responding. Please ensure your backend is running on http://localhost:3001
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Generation Progress */}
+        {(isGenerating || isDebugging) && (
+          <Card className="mb-6 bg-white/10 backdrop-blur-md border-blue-400/30">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-medium">
+                    {isDebugging ? 'Debug Analysis' : 'SOW Generation'} Progress
+                  </span>
+                  <span className="text-blue-200">{generationProgress}%</span>
+                </div>
+                <Progress value={generationProgress} className="w-full" />
+                <p className="text-blue-200 text-sm">{generationStatus}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error Display */}
+        {(generationError || debugError) && (
+          <Alert className="mb-6 bg-red-500/20 border-red-500/30">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-red-200">
+              {generationError?.message || debugError?.message || 'An error occurred'}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Workflow Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -136,12 +244,12 @@ const SOWGeneration = () => {
             </TabsTrigger>
             <TabsTrigger 
               value="download" 
-              disabled={!generatedSOW}
+              disabled={!generationData?.data?.pdf && !debugData}
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
               Download
-              {generatedSOW && <Badge className="ml-1">Ready</Badge>}
+              {(generationData?.data?.pdf || debugData) && <Badge className="ml-1">Ready</Badge>}
             </TabsTrigger>
           </TabsList>
 
@@ -196,7 +304,7 @@ const SOWGeneration = () => {
                     SOW Generation Ready
                   </CardTitle>
                   <CardDescription className="text-blue-200">
-                    Analysis complete. Click below to generate your final SOW PDF.
+                    Analysis complete. Click below to generate your final SOW PDF using the backend engine.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -211,7 +319,7 @@ const SOWGeneration = () => {
                     <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
                       <h3 className="text-blue-300 font-medium mb-1">Wind Speed</h3>
                       <p className="text-white text-lg">
-                        {analysisResults.windCalculation?.windSpeed || 'N/A'} mph
+                        {analysisResults.windCalculation?.windSpeed || projectData?.windSpeed || 'N/A'} mph
                       </p>
                     </div>
                     <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-4">
@@ -222,14 +330,46 @@ const SOWGeneration = () => {
                     </div>
                   </div>
 
-                  <div className="text-center">
+                  {/* File Upload Info */}
+                  {uploadedFile && (
+                    <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+                      <h3 className="text-blue-300 font-medium mb-1">Takeoff File</h3>
+                      <p className="text-white">{uploadedFile.name}</p>
+                      <p className="text-blue-200 text-sm">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                  )}
+
+                  <div className="text-center space-y-4">
                     <Button
                       onClick={handleGenerateSOW}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+                      disabled={isGenerating || isDebugging || !isBackendOnline}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg disabled:opacity-50"
                     >
-                      <FileText className="w-5 h-5 mr-2" />
-                      Generate SOW PDF
+                      {isGenerating || isDebugging ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          {debugMode ? 'Running Debug Analysis...' : 'Generating SOW...'}
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="w-5 h-5 mr-2" />
+                          {debugMode ? 'Debug SOW Generation' : 'Generate SOW PDF'}
+                        </>
+                      )}
                     </Button>
+                    
+                    {(generationData || debugData) && (
+                      <Button
+                        onClick={() => {
+                          reset();
+                          resetDebug();
+                        }}
+                        variant="outline"
+                        className="border-blue-400 text-blue-200 hover:bg-blue-800 ml-4"
+                      >
+                        Reset
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -250,33 +390,63 @@ const SOWGeneration = () => {
           >
             <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
               <CardContent className="p-8 text-center space-y-6">
-                {generatedSOW ? (
+                {(generationData?.data?.pdf || debugData) ? (
                   <>
                     <div className="text-green-400 text-6xl mb-4">✓</div>
-                    <h3 className="text-2xl font-bold text-white mb-2">SOW Generated Successfully!</h3>
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      {debugMode ? 'Debug Analysis Complete!' : 'SOW Generated Successfully!'}
+                    </h3>
                     <p className="text-blue-200 mb-6">
-                      Your professional scope of work document has been generated and downloaded.
+                      {debugMode 
+                        ? 'Your debug analysis has been completed. Review the results below.'
+                        : 'Your professional scope of work document has been generated.'
+                      }
                     </p>
+                    
+                    {/* Debug Data Display */}
+                    {debugMode && debugData && (
+                      <div className="bg-gray-800/50 rounded-lg p-4 mb-6 text-left">
+                        <h4 className="text-white font-medium mb-2">Debug Results:</h4>
+                        <pre className="text-blue-200 text-sm overflow-auto max-h-96">
+                          {JSON.stringify(debugData, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-center gap-4">
+                      {generationData?.data?.pdf && (
+                        <>
+                          <Button
+                            onClick={downloadGeneratedSOW}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download PDF
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              const pdfUrl = `data:application/pdf;base64,${generationData.data.pdf}`;
+                              window.open(pdfUrl, '_blank');
+                            }}
+                            variant="outline"
+                            className="border-blue-400 text-blue-200 hover:bg-blue-800"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Preview PDF
+                          </Button>
+                        </>
+                      )}
+                      
                       <Button
                         onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = generatedSOW;
-                          link.download = `SOW_${projectData?.projectName || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
-                          link.click();
+                          reset();
+                          resetDebug();
+                          setActiveTab('input');
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Again
-                      </Button>
-                      <Button
-                        onClick={() => window.open(generatedSOW, '_blank')}
                         variant="outline"
                         className="border-blue-400 text-blue-200 hover:bg-blue-800"
                       >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Preview PDF
+                        Generate Another SOW
                       </Button>
                     </div>
                   </>
