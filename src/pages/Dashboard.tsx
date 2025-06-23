@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -194,7 +195,7 @@ const Dashboard = () => {
 
               <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
                 <CardHeader>
-                  <CardTitle className="text-white">Getting Started</CardHeader>
+                  <CardTitle className="text-white">Getting Started</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
