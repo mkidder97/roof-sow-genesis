@@ -65,6 +65,42 @@ export interface SOWGenerationResponse {
   debug?: any;
 }
 
+// Legacy types for compatibility with existing SOWInputForm
+export interface SOWPayload {
+  projectName?: string;
+  address?: string;
+  companyName?: string;
+  squareFootage?: number;
+  buildingHeight?: number;
+  buildingDimensions?: {
+    length: number;
+    width: number;
+  };
+  projectType?: string;
+  membraneThickness?: string;
+  membraneColor?: string;
+  deckType?: string;
+  elevation?: number;
+  exposureCategory?: string;
+  roofSlope?: number;
+  documentAttachment?: {
+    filename: string;
+    type: string;
+    data: string;
+  };
+}
+
+export interface SOWResponse {
+  success: boolean;
+  outputPath?: string;
+  filename?: string;
+  generationTime?: number;
+  metadata?: {
+    engineeringSummary?: any;
+  };
+  error?: string;
+}
+
 // Utility function for making API calls with proper error handling
 export async function apiCall<T = any>(
   endpoint: string, 
@@ -120,6 +156,88 @@ export async function uploadFileToAPI(
     return await response.json();
   } catch (error) {
     console.error('File upload failed:', error);
+    throw error;
+  }
+}
+
+// Legacy API functions for compatibility with existing SOWInputForm
+export async function generateSOW(payload: SOWPayload): Promise<SOWResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.generateSOW, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Transform response to match expected format
+    return {
+      success: data.success,
+      outputPath: data.data?.pdf ? `data:application/pdf;base64,${data.data.pdf}` : undefined,
+      filename: `SOW_${payload.projectName || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`,
+      generationTime: data.generationTime || 0,
+      metadata: {
+        engineeringSummary: data.data?.engineeringSummary
+      },
+      error: data.error
+    };
+  } catch (error) {
+    console.error('SOW generation failed:', error);
+    throw error;
+  }
+}
+
+export async function generateSOWWithDebug(payload: SOWPayload): Promise<SOWResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.debugSOW, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Transform response to match expected format
+    return {
+      success: data.success,
+      outputPath: data.data?.pdf ? `data:application/pdf;base64,${data.data.pdf}` : undefined,
+      filename: `SOW_DEBUG_${payload.projectName || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`,
+      generationTime: data.generationTime || 0,
+      metadata: {
+        engineeringSummary: data.data?.engineeringSummary
+      },
+      error: data.error
+    };
+  } catch (error) {
+    console.error('SOW debug generation failed:', error);
+    throw error;
+  }
+}
+
+export async function checkHealth(): Promise<any> {
+  try {
+    const response = await fetch(API_ENDPOINTS.health);
+    
+    if (!response.ok) {
+      throw new Error(`Backend health check failed: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Health check failed:', error);
     throw error;
   }
 }
