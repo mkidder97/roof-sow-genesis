@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Plus, Minus, X } from 'lucide-react';
 import { FieldInspection, HVACUnit, RoofDrain, Penetration, DrainageOption } from '@/types/fieldInspection';
 
@@ -389,24 +389,102 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
         </CardContent>
       </Card>
 
-      {/* Skylights */}
+      {/* Interior Protection & Conditions */}
       <Card className="bg-white/5 border-blue-400/20">
         <CardHeader>
-          <CardTitle className="text-white">Other Features</CardTitle>
+          <CardTitle className="text-white">Interior Protection & Conditions</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="interior-protection" className="text-blue-200">Interior Protection Needed</Label>
+            <Switch
+              id="interior-protection"
+              checked={data.interior_protection_needed || false}
+              onCheckedChange={(checked) => onChange({ interior_protection_needed: checked })}
+            />
+          </div>
+
+          {data.interior_protection_needed && (
             <div>
-              <Label htmlFor="skylights" className="text-blue-200">Number of Skylights</Label>
+              <Label htmlFor="protection-sqft" className="text-blue-200">Interior Protection Sq Ft</Label>
               <Input
-                id="skylights"
+                id="protection-sqft"
                 type="number"
                 min="0"
-                value={data.skylights || 0}
-                onChange={(e) => onChange({ skylights: parseInt(e.target.value) || 0 })}
+                value={data.interior_protection_sqft || 0}
+                onChange={(e) => onChange({ interior_protection_sqft: parseInt(e.target.value) || 0 })}
                 className="bg-white/10 border-blue-400/30 text-white"
               />
             </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="conduit-attached" className="text-blue-200">Conduit Attached to Underside of Deck</Label>
+            <Switch
+              id="conduit-attached"
+              checked={data.conduit_attached || false}
+              onCheckedChange={(checked) => onChange({ conduit_attached: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="upgraded-lighting" className="text-blue-200">Upgraded Lighting</Label>
+            <Switch
+              id="upgraded-lighting"
+              checked={data.upgraded_lighting || false}
+              onCheckedChange={(checked) => onChange({ upgraded_lighting: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="interior-fall-protection" className="text-blue-200">Interior Fall Protection (if skylights)</Label>
+            <Switch
+              id="interior-fall-protection"
+              checked={data.interior_fall_protection || false}
+              onCheckedChange={(checked) => onChange({ interior_fall_protection: checked })}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Access Method */}
+      <Card className="bg-white/5 border-blue-400/20">
+        <CardHeader>
+          <CardTitle className="text-white">Access Method *</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select 
+            value={data.access_method || 'internal_hatch'} 
+            onValueChange={(value: 'internal_hatch' | 'external_ladder' | 'extension_ladder') => onChange({ access_method: value })}
+          >
+            <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="internal_hatch">Internal Hatch</SelectItem>
+              <SelectItem value="external_ladder">External Ladder</SelectItem>
+              <SelectItem value="extension_ladder">Extension Ladder</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Equipment Counts */}
+      <Card className="bg-white/5 border-blue-400/20">
+        <CardHeader>
+          <CardTitle className="text-white">Equipment Counts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <Label htmlFor="skylights" className="text-blue-200">Number of Skylights</Label>
+            <Input
+              id="skylights"
+              type="number"
+              min="0"
+              value={data.skylights || 0}
+              onChange={(e) => onChange({ skylights: parseInt(e.target.value) || 0 })}
+              className="bg-white/10 border-blue-400/30 text-white"
+            />
           </div>
         </CardContent>
       </Card>
