@@ -26,22 +26,18 @@ const WorkflowSOWGeneration = () => {
     if (!selectedProject) return;
 
     const sowRequest = {
-      project_id: selectedProject.id,
-      engineer_notes: engineerNotes,
-      include_audit_trail: includeAuditTrail,
       projectName: selectedProject.project_name,
       projectAddress: selectedProject.address,
       city: selectedProject.address.split(',')[1]?.trim() || '',
       state: selectedProject.address.split(',')[2]?.trim() || '',
       zipCode: selectedProject.address.split(' ').pop() || '',
       buildingHeight: selectedProject.building_height || 30,
-      length: selectedProject.square_footage ? Math.sqrt(selectedProject.square_footage) : 100,
-      width: selectedProject.square_footage ? Math.sqrt(selectedProject.square_footage) : 100,
-      squareFootage: selectedProject.square_footage || 10000,
       deckType: selectedProject.deck_type || 'Steel',
-      projectType: selectedProject.project_type || 'recover',
+      membraneType: selectedProject.membrane_thickness || 'TPO',
+      insulationType: selectedProject.insulation_type || 'Polyiso',
+      windSpeed: 120,
       exposureCategory: 'C' as const,
-      buildingClassification: 'II'
+      buildingClassification: 'II' as const
     };
 
     try {
