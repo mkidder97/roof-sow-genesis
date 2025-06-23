@@ -1,7 +1,7 @@
 {
   "name": "roof-sow-backend",
-  "version": "8.0.0",
-  "description": "Enhanced SOW Generator Backend with Complete File Management System, Multi-Role Workflow, Section Engine, Self-Healing & Live Scraping",
+  "version": "9.0.0",
+  "description": "Enhanced SOW Generator Backend with Real-Time Collaboration, Complete File Management, Multi-Role Workflow, Section Engine, Self-Healing & Live Scraping",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -19,7 +19,9 @@
     "scrape:carlisle": "tsx scrapers/carlisle-real-scraper.js",
     "scrape:approvals": "tsx scrapers/automated-approvals-service.js",
     "files:cleanup": "tsx core/file-management.js --cleanup",
-    "files:stats": "tsx core/file-management.js --stats"
+    "files:stats": "tsx core/file-management.js --stats",
+    "realtime:test": "tsx core/realtime-server.js --test",
+    "notifications:test": "tsx core/notification-system.js --test"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -34,7 +36,13 @@
     "exifreader": "^4.21.0",
     "uuid": "^9.0.1",
     "mime-types": "^2.1.35",
-    "file-type": "^19.0.0"
+    "file-type": "^19.0.0",
+    "socket.io": "^4.7.5",
+    "nodemailer": "^6.9.8",
+    "@types/nodemailer": "^6.4.14",
+    "jsonwebtoken": "^9.0.2",
+    "rate-limiter-flexible": "^4.0.1",
+    "joi": "^17.11.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
@@ -44,6 +52,7 @@
     "@types/pdfkit": "^0.12.9",
     "@types/uuid": "^9.0.7",
     "@types/mime-types": "^2.1.4",
+    "@types/jsonwebtoken": "^9.0.5",
     "tsx": "^3.12.7",
     "typescript": "^5.1.6"
   },
