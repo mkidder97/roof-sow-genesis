@@ -1,5 +1,5 @@
 
-// TypeScript definitions for Supabase database schema
+// TypeScript definitions for Supabase database schema with File Management
 export type Json =
   | string
   | number
@@ -644,6 +644,122 @@ export interface Database {
           created_at?: string | null
         }
       }
+      // NEW: File Management Tables
+      project_files: {
+        Row: {
+          id: string
+          project_id: string
+          user_id: string
+          user_role: 'inspector' | 'consultant' | 'engineer' | 'admin'
+          original_name: string
+          filename: string
+          mimetype: string
+          size: number
+          file_type: 'photo' | 'document' | 'sow' | 'report'
+          stage: 'inspection' | 'consultant_review' | 'engineering' | 'complete'
+          upload_path: string
+          cloud_path: string | null
+          thumbnail_path: string | null
+          cloud_thumbnail_path: string | null
+          metadata: Json
+          security_checks: Json
+          version: number
+          parent_file_id: string | null
+          tags: string[]
+          description: string | null
+          is_cloud_stored: boolean
+          uploaded_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          user_id: string
+          user_role: 'inspector' | 'consultant' | 'engineer' | 'admin'
+          original_name: string
+          filename: string
+          mimetype: string
+          size: number
+          file_type: 'photo' | 'document' | 'sow' | 'report'
+          stage: 'inspection' | 'consultant_review' | 'engineering' | 'complete'
+          upload_path: string
+          cloud_path?: string | null
+          thumbnail_path?: string | null
+          cloud_thumbnail_path?: string | null
+          metadata: Json
+          security_checks: Json
+          version?: number
+          parent_file_id?: string | null
+          tags?: string[]
+          description?: string | null
+          is_cloud_stored?: boolean
+          uploaded_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          user_id?: string
+          user_role?: 'inspector' | 'consultant' | 'engineer' | 'admin'
+          original_name?: string
+          filename?: string
+          mimetype?: string
+          size?: number
+          file_type?: 'photo' | 'document' | 'sow' | 'report'
+          stage?: 'inspection' | 'consultant_review' | 'engineering' | 'complete'
+          upload_path?: string
+          cloud_path?: string | null
+          thumbnail_path?: string | null
+          cloud_thumbnail_path?: string | null
+          metadata?: Json
+          security_checks?: Json
+          version?: number
+          parent_file_id?: string | null
+          tags?: string[]
+          description?: string | null
+          is_cloud_stored?: boolean
+          uploaded_at?: string
+          updated_at?: string | null
+        }
+      }
+      file_versions: {
+        Row: {
+          id: string
+          file_id: string
+          version: number
+          filename: string
+          upload_path: string
+          cloud_path: string | null
+          metadata: Json
+          changes: string[]
+          uploaded_by: string
+          uploaded_at: string
+        }
+        Insert: {
+          id?: string
+          file_id: string
+          version: number
+          filename: string
+          upload_path: string
+          cloud_path?: string | null
+          metadata: Json
+          changes: string[]
+          uploaded_by: string
+          uploaded_at?: string
+        }
+        Update: {
+          id?: string
+          file_id?: string
+          version?: number
+          filename?: string
+          upload_path?: string
+          cloud_path?: string | null
+          metadata?: Json
+          changes?: string[]
+          uploaded_by?: string
+          uploaded_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -654,6 +770,7 @@ export interface Database {
     Enums: {
       user_role_enum: 'inspector' | 'consultant' | 'engineer' | 'admin'
       workflow_stage_enum: 'inspection' | 'consultant_review' | 'engineering' | 'complete'
+      file_type_enum: 'photo' | 'document' | 'sow' | 'report'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -698,9 +815,19 @@ export type ProjectComment = Database['public']['Tables']['project_comments']['R
 export type ProjectCommentInsert = Database['public']['Tables']['project_comments']['Insert']
 export type ProjectCommentUpdate = Database['public']['Tables']['project_comments']['Update']
 
+// NEW: File Management Types
+export type ProjectFile = Database['public']['Tables']['project_files']['Row']
+export type ProjectFileInsert = Database['public']['Tables']['project_files']['Insert']
+export type ProjectFileUpdate = Database['public']['Tables']['project_files']['Update']
+
+export type FileVersion = Database['public']['Tables']['file_versions']['Row']
+export type FileVersionInsert = Database['public']['Tables']['file_versions']['Insert']
+export type FileVersionUpdate = Database['public']['Tables']['file_versions']['Update']
+
 // Workflow-specific types
 export type UserRole = Database['public']['Enums']['user_role_enum']
 export type WorkflowStage = Database['public']['Enums']['workflow_stage_enum']
+export type FileType = Database['public']['Enums']['file_type_enum']
 
 // Additional types for the application
 export interface ProjectWithSOWs extends Project {
@@ -717,6 +844,7 @@ export interface ProjectWithWorkflow extends Project {
   project_handoffs?: ProjectHandoff[]
   workflow_activities?: WorkflowActivity[]
   project_comments?: ProjectComment[]
+  project_files?: ProjectFile[]
   assigned_inspector_profile?: UserProfile
   assigned_consultant_profile?: UserProfile
   assigned_engineer_profile?: UserProfile
@@ -730,4 +858,73 @@ export interface ConsultantReviewWithDetails extends ConsultantReview {
   project?: Project
   field_inspection?: FieldInspection
   consultant_profile?: UserProfile
+}
+
+// NEW: File Management Types with Relations
+export interface ProjectFileWithVersions extends ProjectFile {
+  file_versions?: FileVersion[]
+}
+
+export interface ProjectFileWithProject extends ProjectFile {
+  project?: Project
+  uploaded_by_profile?: UserProfile
+}
+
+export interface FileVersionWithFile extends FileVersion {
+  project_file?: ProjectFile
+  uploaded_by_profile?: UserProfile
+}
+
+// File Management Metadata Types
+export interface FileMetadata {
+  checksum: string
+  encoding?: string
+  fileTypeDetected?: string
+  // Photo-specific
+  exifData?: Json
+  gpsCoordinates?: {
+    latitude: number
+    longitude: number
+    altitude?: number
+    accuracy?: number
+    timestamp?: string
+  }
+  capturedAt?: string
+  cameraInfo?: {
+    make?: string
+    model?: string
+    lens?: string
+    settings?: Json
+  }
+  imageInfo?: {
+    width: number
+    height: number
+    channels: number
+    colorSpace: string
+    hasAlpha: boolean
+    compression?: string
+  }
+  // Document-specific
+  documentInfo?: {
+    pageCount?: number
+    textContent?: string
+    documentType?: string
+    lastModified?: string
+    author?: string
+    title?: string
+  }
+  // Processing info
+  thumbnailGenerated?: boolean
+  compressionApplied?: boolean
+  virusScanResult?: 'clean' | 'infected' | 'pending' | 'skipped'
+  processingTime?: number
+  cloudSyncStatus?: 'pending' | 'synced' | 'failed'
+}
+
+export interface SecurityCheck {
+  checkType: 'virus_scan' | 'file_type_validation' | 'size_check' | 'content_analysis' | 'mime_validation'
+  status: 'passed' | 'failed' | 'warning' | 'skipped'
+  message: string
+  timestamp: string
+  details?: Json
 }
