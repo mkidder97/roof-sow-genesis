@@ -1,49 +1,94 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import SOWGeneration from "./pages/SOWGeneration";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+} from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster"
+import Home from "./pages/Home";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Services from "./pages/Services";
+import Gallery from "./pages/Gallery";
+import Testimonials from "./pages/Testimonials";
+import Team from "./pages/Team";
+import Pricing from "./pages/Pricing";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import FAQ from "./pages/FAQ";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
-
-// Import Field Inspector Components
+import ComingSoon from "./pages/ComingSoon";
+import Maintenance from "./pages/Maintenance";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import Dashboard from "./pages/Dashboard";
+import FieldInspector from "./pages/FieldInspector";
 import InspectorDashboard from "./components/field-inspector/InspectorDashboard";
 import FieldInspectionForm from "./components/field-inspector/FieldInspectionForm";
-import InspectionDetailsPage from "./pages/InspectionDetailsPage";
+import FieldInspectionView from "./components/field-inspector/FieldInspectionView";
+import SOWGeneration from "./pages/SOWGeneration";
+import { AuthProvider } from "./contexts/AuthContext";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import MultiRoleDashboard from '@/components/workflow/MultiRoleDashboard';
+import CreateProject from '@/components/workflow/CreateProject';
+import WorkflowSOWGeneration from '@/components/workflow/WorkflowSOWGeneration';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Router>
         <AuthProvider>
+          <Toaster />
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/testimonials" element={<Testimonials />} />
+            <Route path="/team" element={<Team />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:id" element={<BlogPost />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="*" element={<NotFound />} />
+            <Route path="/coming-soon" element={<ComingSoon />} />
+            <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/auth" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/dashboard" element={<Dashboard />} />
+
+            {/* Field Inspector Routes */}
+            <Route path="/field-inspector" element={<FieldInspector />} />
+            <Route path="/field-inspector/dashboard" element={<InspectorDashboard />} />
+            <Route path="/field-inspection/new" element={<FieldInspectionForm />} />
+            <Route path="/field-inspection/:id" element={<FieldInspectionView />} />
+
+            {/* SOW Generation Route */}
             <Route path="/sow-generation" element={<SOWGeneration />} />
             
-            {/* Field Inspector Routes */}
-            <Route path="/field-inspector" element={<InspectorDashboard />} />
-            <Route path="/field-inspection/new" element={<FieldInspectionForm />} />
-            <Route path="/field-inspection/:id" element={<InspectionDetailsPage />} />
-            <Route path="/field-inspection/:id/edit" element={<FieldInspectionForm />} />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            {/* Workflow Routes */}
+            <Route path="/workflow" element={<MultiRoleDashboard />} />
+            <Route path="/workflow/create-project" element={<CreateProject />} />
+            <Route path="/workflow/sow-generation" element={<WorkflowSOWGeneration />} />
           </Routes>
         </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </Router>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

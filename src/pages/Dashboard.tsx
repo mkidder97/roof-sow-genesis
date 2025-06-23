@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +13,8 @@ import {
   CheckCircle, 
   AlertCircle,
   ClipboardCheck,
-  Loader2
+  Loader2,
+  Users
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -49,7 +49,9 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 bg-white/10 backdrop-blur-md">
+          {/* Add workflow tab in TabsList */}
+          <TabsList className="grid w-full grid-cols-5 mb-8 bg-white/10 backdrop-blur-md">
+            {/* Existing tabs */}
             <TabsTrigger 
               value="overview" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -78,9 +80,16 @@ const Dashboard = () => {
               <Building className="w-4 h-4" />
               Projects
             </TabsTrigger>
+            <TabsTrigger 
+              value="workflow" 
+              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              <Users className="w-4 h-4" />
+              Workflow
+            </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
+          {/* Existing TabsContent */}
           <TabsContent value="overview" className="space-y-6">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">Dashboard Overview</h2>
@@ -353,6 +362,87 @@ const Dashboard = () => {
                 </Badge>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Add Workflow Tab */}
+          <TabsContent value="workflow" className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Multi-Role Workflow</h2>
+              <p className="text-blue-200">Complete project lifecycle from inspection to SOW generation</p>
+            </div>
+
+            <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+              <CardContent className="p-8 text-center">
+                <Users className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Multi-Role Project Management</h3>
+                <p className="text-blue-200 mb-6">
+                  Comprehensive workflow system supporting Inspector → Consultant → Engineer collaboration 
+                  with integrated SOW generation from multi-role data compilation.
+                </p>
+                <Button 
+                  onClick={() => window.location.href = '/workflow'}
+                  className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg h-auto"
+                  size="lg"
+                >
+                  Open Workflow Dashboard
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Workflow Features */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+                <CardHeader>
+                  <CardTitle className="text-white">Workflow Features</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Multi-role dashboards</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Project lifecycle management</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Role-based task assignment</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Handoff validation system</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+                <CardHeader>
+                  <CardTitle className="text-white">SOW Integration</CardHeader>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Workflow-aware SOW generation</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Multi-role data compilation</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Professional audit trails</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-white">Collaboration tracking</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
