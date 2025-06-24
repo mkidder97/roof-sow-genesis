@@ -2,15 +2,9 @@
 // Complete workflow management API for multi-role SOW system
 
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../core/supabase-client.js';
 
 const router = express.Router();
-
-// Initialize Supabase client - using service key for full access to workflow tables
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY! || process.env.SUPABASE_ANON_KEY!
-);
 
 // Types matching Lovable's schema implementation
 interface UserProfile {
@@ -62,6 +56,9 @@ const authenticateUser = async (req: WorkflowRequest, res: express.Response, nex
     }
 
     const token = authHeader.substring(7);
+    
+    // Get Supabase client lazily
+    const supabase = getSupabaseClient();
     
     // Verify the JWT token
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -124,6 +121,8 @@ router.post('/projects', authenticateUser, async (req: WorkflowRequest, res) => 
         details: 'Provide a name for the project'
       });
     }
+
+    const supabase = getSupabaseClient();
 
     const projectData = {
       name,
@@ -208,6 +207,8 @@ router.get('/projects', authenticateUser, async (req: WorkflowRequest, res) => {
   try {
     const { stage, status, limit = 50 } = req.query;
     const userRole = req.user!.profile.role;
+    
+    const supabase = getSupabaseClient();
     
     let query = supabase
       .from('projects')
@@ -295,6 +296,7 @@ router.get('/projects', authenticateUser, async (req: WorkflowRequest, res) => {
 router.get('/projects/:id', authenticateUser, async (req: WorkflowRequest, res) => {
   try {
     const { id } = req.params;
+    const supabase = getSupabaseClient();
 
     const { data: project, error } = await supabase
       .from('projects')
@@ -372,451 +374,12 @@ router.get('/projects/:id', authenticateUser, async (req: WorkflowRequest, res) 
   }
 });
 
-// ======================
-// WORKFLOW HANDOFFS
-// ======================
-
-// Handoff project to consultant
-router.post('/projects/:id/handoff-to-consultant', authenticateUser, async (req: WorkflowRequest, res) => {
-  try {
-    const { id } = req.params;
-    const { consultant_id, notes, inspection_summary } = req.body;
-
-    if (!consultant_id) {
-      return res.status(400).json({ 
-        error: 'Consultant ID is required',
-        details: 'Specify which consultant to handoff to'
-      });
-    }
-
-    // Verify current user is the assigned inspector and project is in inspection stage
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('assigned_inspector, current_stage, name, workflow_status')
-      .eq('id', id)
-      .single();
-
-    if (projectError || !project) {
-      return res.status(404).json({ 
-        error: 'Project not found',
-        details: projectError?.message || 'Project does not exist'
-      });
-    }
-
-    if (project.assigned_inspector !== req.user!.id && req.user!.profile.role !== 'admin') {
-      return res.status(403).json({ 
-        error: 'Access denied',
-        details: 'Only the assigned inspector can handoff to consultant'
-      });
-    }
-
-    if (project.current_stage !== 'inspection') {
-      return res.status(400).json({ 
-        error: 'Invalid stage transition',
-        details: `Project is in ${project.current_stage} stage, expected inspection`
-      });
-    }
-
-    // Verify inspection is completed
-    const { data: inspection } = await supabase
-      .from('field_inspections')
-      .select('completed, ready_for_handoff')
-      .eq('project_id', id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (!inspection?.completed || !inspection?.ready_for_handoff) {
-      return res.status(400).json({ 
-        error: 'Inspection not ready for handoff',
-        details: 'Complete the inspection and mark it ready for handoff first'
-      });
-    }
-
-    // Update project stage and assignment
-    const { error: updateError } = await supabase
-      .from('projects')
-      .update({
-        current_stage: 'consultant_review',
-        assigned_consultant: consultant_id,
-        workflow_status: {
-          ...project.workflow_status,
-          handoff_to_consultant_at: new Date().toISOString(),
-          handoff_to_consultant_by: req.user!.id,
-          stage_history: [
-            ...(project.workflow_status?.stage_history || []),
-            {
-              stage: 'consultant_review',
-              entered_at: new Date().toISOString(),
-              entered_by: req.user!.id,
-              handoff_notes: notes
-            }
-          ]
-        },
-        stage_data: {
-          ...project.stage_data,
-          consultant_review: {
-            status: 'pending',
-            assigned_to: consultant_id,
-            inspection_summary,
-            handoff_date: new Date().toISOString()
-          }
-        }
-      })
-      .eq('id', id);
-
-    if (updateError) {
-      console.error('Project update error:', updateError);
-      return res.status(400).json({ 
-        error: 'Failed to update project',
-        details: updateError.message 
-      });
-    }
-
-    // Create handoff record
-    await supabase
-      .from('project_handoffs')
-      .insert({
-        project_id: id,
-        from_user_id: req.user!.id,
-        to_user_id: consultant_id,
-        from_stage: 'inspection',
-        to_stage: 'consultant_review',
-        handoff_data: { inspection_summary },
-        notes,
-        completed: true,
-        completed_at: new Date().toISOString()
-      });
-
-    // Log activity
-    await supabase
-      .from('workflow_activities')
-      .insert({
-        project_id: id,
-        user_id: req.user!.id,
-        activity_type: 'handoff_to_consultant',
-        stage_from: 'inspection',
-        stage_to: 'consultant_review',
-        notes: `Project handed off to consultant: ${notes}`,
-        metadata: {
-          consultant_id,
-          inspection_summary
-        }
-      });
-
-    res.json({ 
-      success: true, 
-      message: 'Project successfully handed off to consultant',
-      next_stage: 'consultant_review'
-    });
-  } catch (error) {
-    console.error('Handoff to consultant error:', error);
-    res.status(500).json({ 
-      error: 'Failed to handoff to consultant',
-      details: 'Internal server error'
-    });
-  }
-});
-
-// Handoff project to engineer
-router.post('/projects/:id/handoff-to-engineer', authenticateUser, async (req: WorkflowRequest, res) => {
-  try {
-    const { id } = req.params;
-    const { engineer_id, notes, client_requirements, scope_modifications } = req.body;
-
-    if (!engineer_id) {
-      return res.status(400).json({ 
-        error: 'Engineer ID is required',
-        details: 'Specify which engineer to handoff to'
-      });
-    }
-
-    // Verify current user is the assigned consultant and project is in consultant_review stage
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('assigned_consultant, current_stage, name, workflow_status, stage_data')
-      .eq('id', id)
-      .single();
-
-    if (projectError || !project) {
-      return res.status(404).json({ 
-        error: 'Project not found',
-        details: projectError?.message || 'Project does not exist'
-      });
-    }
-
-    if (project.assigned_consultant !== req.user!.id && req.user!.profile.role !== 'admin') {
-      return res.status(403).json({ 
-        error: 'Access denied',
-        details: 'Only the assigned consultant can handoff to engineer'
-      });
-    }
-
-    if (project.current_stage !== 'consultant_review') {
-      return res.status(400).json({ 
-        error: 'Invalid stage transition',
-        details: `Project is in ${project.current_stage} stage, expected consultant_review`
-      });
-    }
-
-    // Verify consultant review is completed
-    const { data: review } = await supabase
-      .from('consultant_reviews')
-      .select('review_completed')
-      .eq('project_id', id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (!review?.review_completed) {
-      return res.status(400).json({ 
-        error: 'Consultant review not completed',
-        details: 'Complete the consultant review before handing off to engineer'
-      });
-    }
-
-    // Update project stage and assignment
-    const { error: updateError } = await supabase
-      .from('projects')
-      .update({
-        current_stage: 'engineering',
-        assigned_engineer: engineer_id,
-        workflow_status: {
-          ...project.workflow_status,
-          handoff_to_engineer_at: new Date().toISOString(),
-          handoff_to_engineer_by: req.user!.id,
-          stage_history: [
-            ...(project.workflow_status?.stage_history || []),
-            {
-              stage: 'engineering',
-              entered_at: new Date().toISOString(),
-              entered_by: req.user!.id,
-              handoff_notes: notes
-            }
-          ]
-        },
-        stage_data: {
-          ...project.stage_data,
-          engineering: {
-            status: 'pending',
-            assigned_to: engineer_id,
-            client_requirements,
-            scope_modifications,
-            handoff_date: new Date().toISOString()
-          }
-        }
-      })
-      .eq('id', id);
-
-    if (updateError) {
-      console.error('Project update error:', updateError);
-      return res.status(400).json({ 
-        error: 'Failed to update project',
-        details: updateError.message 
-      });
-    }
-
-    // Create handoff record
-    await supabase
-      .from('project_handoffs')
-      .insert({
-        project_id: id,
-        from_user_id: req.user!.id,
-        to_user_id: engineer_id,
-        from_stage: 'consultant_review',
-        to_stage: 'engineering',
-        handoff_data: { client_requirements, scope_modifications },
-        notes,
-        completed: true,
-        completed_at: new Date().toISOString()
-      });
-
-    // Log activity
-    await supabase
-      .from('workflow_activities')
-      .insert({
-        project_id: id,
-        user_id: req.user!.id,
-        activity_type: 'handoff_to_engineer',
-        stage_from: 'consultant_review',
-        stage_to: 'engineering',
-        notes: `Project handed off to engineer: ${notes}`,
-        metadata: {
-          engineer_id,
-          client_requirements,
-          scope_modifications
-        }
-      });
-
-    res.json({ 
-      success: true, 
-      message: 'Project successfully handed off to engineer',
-      next_stage: 'engineering'
-    });
-  } catch (error) {
-    console.error('Handoff to engineer error:', error);
-    res.status(500).json({ 
-      error: 'Failed to handoff to engineer',
-      details: 'Internal server error'
-    });
-  }
-});
-
-// Complete project (engineer)
-router.post('/projects/:id/complete', authenticateUser, async (req: WorkflowRequest, res) => {
-  try {
-    const { id } = req.params;
-    const { notes, sow_data, pdf_path } = req.body;
-
-    // Verify current user is the assigned engineer
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('assigned_engineer, current_stage, name, workflow_status, stage_data')
-      .eq('id', id)
-      .single();
-
-    if (projectError || !project) {
-      return res.status(404).json({ 
-        error: 'Project not found',
-        details: projectError?.message || 'Project does not exist'
-      });
-    }
-
-    if (project.assigned_engineer !== req.user!.id && req.user!.profile.role !== 'admin') {
-      return res.status(403).json({ 
-        error: 'Access denied',
-        details: 'Only the assigned engineer can complete the project'
-      });
-    }
-
-    if (project.current_stage !== 'engineering') {
-      return res.status(400).json({ 
-        error: 'Invalid stage transition',
-        details: `Project is in ${project.current_stage} stage, expected engineering`
-      });
-    }
-
-    // Update project to complete
-    const { error: updateError } = await supabase
-      .from('projects')
-      .update({
-        current_stage: 'complete',
-        workflow_status: {
-          ...project.workflow_status,
-          completed_at: new Date().toISOString(),
-          completed_by: req.user!.id,
-          stage_history: [
-            ...(project.workflow_status?.stage_history || []),
-            {
-              stage: 'complete',
-              entered_at: new Date().toISOString(),
-              entered_by: req.user!.id,
-              completion_notes: notes
-            }
-          ]
-        },
-        stage_data: {
-          ...project.stage_data,
-          complete: {
-            completed_by: req.user!.id,
-            completed_at: new Date().toISOString(),
-            sow_data,
-            pdf_path,
-            notes
-          }
-        }
-      })
-      .eq('id', id);
-
-    if (updateError) {
-      console.error('Project completion error:', updateError);
-      return res.status(400).json({ 
-        error: 'Failed to complete project',
-        details: updateError.message 
-      });
-    }
-
-    // Log completion activity
-    await supabase
-      .from('workflow_activities')
-      .insert({
-        project_id: id,
-        user_id: req.user!.id,
-        activity_type: 'project_completed',
-        stage_from: 'engineering',
-        stage_to: 'complete',
-        notes: `Project completed: ${notes}`,
-        metadata: {
-          sow_generated: !!sow_data,
-          pdf_generated: !!pdf_path
-        }
-      });
-
-    res.json({ 
-      success: true, 
-      message: 'Project completed successfully',
-      final_stage: 'complete'
-    });
-  } catch (error) {
-    console.error('Project completion error:', error);
-    res.status(500).json({ 
-      error: 'Failed to complete project',
-      details: 'Internal server error'
-    });
-  }
-});
-
-// ======================
-// USER MANAGEMENT
-// ======================
-
-// Get users by role for assignment
-router.get('/users', authenticateUser, async (req: WorkflowRequest, res) => {
-  try {
-    const { role } = req.query;
-
-    let query = supabase
-      .from('user_profiles')
-      .select('id, full_name, email, role, phone');
-
-    if (role) {
-      query = query.eq('role', role);
-    }
-
-    // Filter by company if user belongs to one
-    if (req.user!.profile.company_id) {
-      query = query.eq('company_id', req.user!.profile.company_id);
-    }
-
-    const { data: users, error } = await query.order('full_name');
-
-    if (error) {
-      console.error('Users fetch error:', error);
-      return res.status(400).json({ 
-        error: 'Failed to fetch users',
-        details: error.message 
-      });
-    }
-
-    res.json({ 
-      success: true, 
-      users,
-      total: users.length
-    });
-  } catch (error) {
-    console.error('Users fetch error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch users',
-      details: 'Internal server error'
-    });
-  }
-});
-
 // Get user dashboard data
 router.get('/dashboard', authenticateUser, async (req: WorkflowRequest, res) => {
   try {
     const userId = req.user!.id;
     const userRole = req.user!.profile.role;
+    const supabase = getSupabaseClient();
 
     // Get projects assigned to user
     let projectsQuery = supabase
@@ -888,70 +451,6 @@ router.get('/dashboard', authenticateUser, async (req: WorkflowRequest, res) => 
     console.error('Dashboard fetch error:', error);
     res.status(500).json({ 
       error: 'Failed to fetch dashboard data',
-      details: 'Internal server error'
-    });
-  }
-});
-
-// ======================
-// COMMENTS & COLLABORATION
-// ======================
-
-// Add comment to project
-router.post('/projects/:id/comments', authenticateUser, async (req: WorkflowRequest, res) => {
-  try {
-    const { id } = req.params;
-    const { comment, comment_type = 'general' } = req.body;
-
-    if (!comment?.trim()) {
-      return res.status(400).json({ 
-        error: 'Comment content is required',
-        details: 'Provide comment text'
-      });
-    }
-
-    // Get current project stage
-    const { data: project } = await supabase
-      .from('projects')
-      .select('current_stage')
-      .eq('id', id)
-      .single();
-
-    const { data: newComment, error } = await supabase
-      .from('project_comments')
-      .insert({
-        project_id: id,
-        user_id: req.user!.id,
-        comment: comment.trim(),
-        comment_type,
-        stage: project?.current_stage,
-        metadata: {
-          user_role: req.user!.profile.role
-        }
-      })
-      .select(`
-        *,
-        user:user_id(full_name, role)
-      `)
-      .single();
-
-    if (error) {
-      console.error('Comment creation error:', error);
-      return res.status(400).json({ 
-        error: 'Failed to add comment',
-        details: error.message 
-      });
-    }
-
-    res.json({ 
-      success: true, 
-      comment: newComment,
-      message: 'Comment added successfully'
-    });
-  } catch (error) {
-    console.error('Comment creation error:', error);
-    res.status(500).json({ 
-      error: 'Failed to add comment',
       details: 'Internal server error'
     });
   }
