@@ -1,7 +1,7 @@
 {
   "name": "roof-sow-backend",
-  "version": "10.0.0",
-  "description": "Enhanced SOW Generator Backend with COMPLETE Real-Time Collaboration, Live WebSocket Integration, Push Notifications, Activity Feeds, Status Synchronization, Multi-Role Workflow, File Management, Section Engine & Self-Healing",
+  "version": "10.1.0",
+  "description": "Enhanced SOW Generator Backend with COMPLETE Real-Time Collaboration, Live WebSocket Integration, Push Notifications, Activity Feeds, Status Synchronization, Multi-Role Workflow, File Management, Section Engine & Self-Healing + PDF Parsing",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -25,7 +25,9 @@
     "files:stats": "tsx core/file-management.js --stats",
     "realtime:test": "tsx core/realtime-server.js --test",
     "notifications:test": "tsx core/notification-system.js --test",
-    "collaboration:test": "tsx routes/realtime-collaboration.js --test"
+    "collaboration:test": "tsx routes/realtime-collaboration.js --test",
+    "test:pdf": "tsx core/takeoff-engine.ts --test-pdf",
+    "test:ocr": "tsx core/takeoff-engine.ts --test-ocr"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -46,7 +48,12 @@
     "@types/nodemailer": "^6.4.14",
     "jsonwebtoken": "^9.0.2",
     "rate-limiter-flexible": "^4.0.1",
-    "joi": "^17.11.0"
+    "joi": "^17.11.0",
+    "pdf-parse": "^1.1.1",
+    "tesseract.js": "^5.0.4",
+    "xlsx": "^0.18.5",
+    "papaparse": "^5.4.1",
+    "canvas": "^2.11.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
@@ -57,6 +64,7 @@
     "@types/uuid": "^9.0.7",
     "@types/mime-types": "^2.1.4",
     "@types/jsonwebtoken": "^9.0.5",
+    "@types/papaparse": "^5.3.14",
     "tsx": "^3.12.7",
     "typescript": "^5.1.6"
   },
