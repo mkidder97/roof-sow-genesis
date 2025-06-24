@@ -902,5 +902,3 @@ function checkForPlaceholders(sections: ContentSection[]): { hasPlaceholders: bo
 function countWords(content: string): number {
   return content.trim().split(/\s+/).length;
 }
-
-export { populateSOWContent };
