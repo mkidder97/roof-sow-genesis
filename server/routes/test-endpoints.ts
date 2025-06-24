@@ -156,8 +156,3 @@ export function testSOWMappings(req: Request, res: Response) {
     });
   }
 }
-
-export {
-  testSectionMapping,
-  testSOWMappings
-};
