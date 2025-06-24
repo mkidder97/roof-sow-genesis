@@ -1,14 +1,27 @@
 {
   "mcpVersion": "2024-11-05",
   "name": "roof-sow-pdf-healing-agent",
-  "version": "1.0.0",
-  "description": "Self-healing PDF agent for SOW generation with automatic issue detection and code fixes",
+  "version": "2.0.0",
+  "description": "Enhanced self-healing PDF agent with template formatting optimization for SOW generation",
   "tools": [
     {
       "name": "analyze-pdf-output",
       "description": "Puppeteer-based tool that analyzes PDF layout and compares against input JSON",
       "path": "./mcp-tools/analyze-pdf-output",
       "entrypoint": "index.ts"
+    },
+    {
+      "name": "pdf-formatting-optimizer",
+      "description": "Advanced PDF formatting optimizer for exact template compliance",
+      "path": "./mcp-tools/pdf-formatting-optimizer",
+      "entrypoint": "index.ts",
+      "capabilities": [
+        "template_compliance_analysis",
+        "formatting_validation",
+        "character_by_character_matching",
+        "highlighting_verification",
+        "font_consistency_checking"
+      ]
     },
     {
       "name": "propose-fix-snippet",
@@ -37,8 +50,29 @@
   ],
   "workflows": [
     {
+      "name": "enhanced-pdf-formatting-cycle",
+      "description": "Complete enhanced PDF formatting cycle with template compliance",
+      "steps": [
+        "analyze-pdf-output",
+        "pdf-formatting-optimizer",
+        "propose-fix-snippet",
+        "write-fix-module",
+        "log-fix-history",
+        "trigger-regeneration"
+      ]
+    },
+    {
+      "name": "template-compliance-validation",
+      "description": "Focused template compliance validation workflow",
+      "steps": [
+        "pdf-formatting-optimizer",
+        "propose-fix-snippet",
+        "write-fix-module"
+      ]
+    },
+    {
       "name": "self-healing-pdf-cycle",
-      "description": "Complete self-healing cycle from analysis to regeneration",
+      "description": "Original self-healing cycle from analysis to regeneration",
       "steps": [
         "analyze-pdf-output",
         "propose-fix-snippet",
@@ -48,10 +82,31 @@
       ]
     }
   ],
+  "templates": {
+    "supported_templates": [
+      "tearoff-tpo-ma-insul-steel",
+      "tearoff-tpo-ma-insul-lwc-steel", 
+      "tearoff-tpo-adhered-insul-adhered-gypsum",
+      "recover-tpo-rhino-iso-eps-flute-fill-ssr"
+    ],
+    "formatting_standards": {
+      "revision_date": "2/6/25",
+      "highlighting": {
+        "yellow": "#FFFF00",
+        "green_removal_required": true
+      },
+      "fonts": {
+        "header": "Times New Roman, 16pt, Bold",
+        "body": "Times New Roman, 11pt",
+        "notes": "Times New Roman, 9pt, Italic"
+      }
+    }
+  },
   "dependencies": {
     "puppeteer": "^21.0.0",
     "pdf-parse": "^1.1.1",
     "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "@modelcontextprotocol/sdk": "^0.5.0"
   }
 }
