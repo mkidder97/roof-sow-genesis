@@ -2,7 +2,7 @@
 // Handles photo uploads, document management, and versioning
 
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../core/supabase-client.js';
 import path from 'path';
 import fs from 'fs/promises';
 import {
@@ -17,12 +17,6 @@ import {
 } from '../core/file-management.js';
 
 const router = express.Router();
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY! || process.env.SUPABASE_ANON_KEY!
-);
 
 // Configure multer for file uploads
 const upload = configureFileUpload();
@@ -51,6 +45,9 @@ const authenticateUser = async (req: FileRequest, res: express.Response, next: e
     }
 
     const token = authHeader.substring(7);
+    
+    // Get Supabase client lazily
+    const supabase = getSupabaseClient();
     
     // Verify the JWT token
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -143,6 +140,8 @@ router.post('/upload', authenticateUser, upload.single('file'), async (req: File
       });
     }
 
+    const supabase = getSupabaseClient();
+
     // Check user access to project
     const { data: project, error: projectError } = await supabase
       .from('projects')
@@ -231,95 +230,6 @@ router.post('/upload', authenticateUser, upload.single('file'), async (req: File
   }
 });
 
-// Upload multiple files at once
-router.post('/upload-batch', authenticateUser, upload.array('files', 10), async (req: FileRequest, res) => {
-  try {
-    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'No files provided',
-        details: 'Include files in multipart form data with key "files"'
-      });
-    }
-
-    const { project_id, stage, file_type, description } = req.body;
-
-    // Validate required fields
-    if (!project_id || !stage || !file_type) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-        details: 'project_id, stage, and file_type are required'
-      });
-    }
-
-    console.log(`📁 Processing batch upload: ${req.files.length} files`);
-
-    const results = [];
-    const errors = [];
-
-    // Process each file
-    for (let i = 0; i < req.files.length; i++) {
-      const file = req.files[i];
-      
-      try {
-        const uploadRequest: FileUploadRequest = {
-          projectId: project_id,
-          userId: req.user!.id,
-          userRole: req.user!.profile.role,
-          stage,
-          fileType: file_type,
-          description: description ? `${description} (${i + 1}/${req.files.length})` : undefined,
-          tags: []
-        };
-
-        const processedFile = await uploadWorkflowFile(file, uploadRequest);
-        
-        results.push({
-          success: true,
-          file: {
-            id: processedFile.id,
-            filename: processedFile.filename,
-            originalName: processedFile.originalName,
-            size: processedFile.size,
-            hasGPS: !!processedFile.metadata.gpsCoordinates
-          }
-        });
-
-      } catch (error) {
-        console.error(`❌ Failed to process file ${file.originalname}:`, error);
-        errors.push({
-          filename: file.originalname,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
-    }
-
-    res.json({
-      success: errors.length === 0,
-      message: `Processed ${results.length} of ${req.files.length} files successfully`,
-      results,
-      errors,
-      summary: {
-        total: req.files.length,
-        successful: results.length,
-        failed: errors.length
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Batch upload error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Batch upload failed'
-    });
-  }
-});
-
-// ======================
-// FILE RETRIEVAL ENDPOINTS
-// ======================
-
 // Get files for a project
 router.get('/project/:projectId', authenticateUser, async (req: FileRequest, res) => {
   try {
@@ -331,6 +241,8 @@ router.get('/project/:projectId', authenticateUser, async (req: FileRequest, res
       limit = '50', 
       offset = '0' 
     } = req.query;
+
+    const supabase = getSupabaseClient();
 
     // Check user access to project
     const { data: project, error: projectError } = await supabase
@@ -412,321 +324,6 @@ router.get('/project/:projectId', authenticateUser, async (req: FileRequest, res
   }
 });
 
-// Get specific file details
-router.get('/:fileId', authenticateUser, async (req: FileRequest, res) => {
-  try {
-    const { fileId } = req.params;
-
-    const { data: file, error } = await supabase
-      .from('project_files')
-      .select('*')
-      .eq('id', fileId)
-      .single();
-
-    if (error || !file) {
-      return res.status(404).json({
-        success: false,
-        error: 'File not found'
-      });
-    }
-
-    // Check project access
-    const { data: project } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', file.project_id)
-      .single();
-
-    if (!project) {
-      return res.status(404).json({
-        success: false,
-        error: 'Associated project not found'
-      });
-    }
-
-    // Verify access
-    const hasAccess = 
-      project.user_id === req.user!.id ||
-      project.assigned_inspector === req.user!.id ||
-      project.assigned_consultant === req.user!.id ||
-      project.assigned_engineer === req.user!.id ||
-      req.user!.profile.role === 'admin';
-
-    if (!hasAccess) {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied'
-      });
-    }
-
-    res.json({
-      success: true,
-      file: {
-        id: file.id,
-        originalName: file.original_name,
-        filename: file.filename,
-        mimetype: file.mimetype,
-        size: file.size,
-        fileType: file.file_type,
-        stage: file.stage,
-        version: file.version,
-        uploadedAt: file.uploaded_at,
-        uploadedBy: file.user_id,
-        userRole: file.user_role,
-        tags: file.tags,
-        description: file.description,
-        metadata: file.metadata,
-        securityChecks: file.security_checks,
-        hasThumbnail: !!file.thumbnail_path
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Get file details error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get file details'
-    });
-  }
-});
-
-// Get file versions
-router.get('/:fileId/versions', authenticateUser, async (req: FileRequest, res) => {
-  try {
-    const { fileId } = req.params;
-
-    // Check file access (simplified - could be more granular)
-    const { data: file } = await supabase
-      .from('project_files')
-      .select('project_id')
-      .eq('id', fileId)
-      .single();
-
-    if (!file) {
-      return res.status(404).json({
-        success: false,
-        error: 'File not found'
-      });
-    }
-
-    const versions = await getFileVersions(fileId);
-
-    res.json({
-      success: true,
-      fileId,
-      versions: versions.map(version => ({
-        id: version.id,
-        version: version.version,
-        filename: version.filename,
-        changes: version.changes,
-        uploadedBy: version.uploadedBy,
-        uploadedAt: version.uploadedAt,
-        metadata: version.metadata
-      }))
-    });
-
-  } catch (error) {
-    console.error('❌ Get file versions error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get file versions'
-    });
-  }
-});
-
-// ======================
-// FILE DOWNLOAD ENDPOINTS
-// ======================
-
-// Download file
-router.get('/:fileId/download', authenticateUser, async (req: FileRequest, res) => {
-  try {
-    const { fileId } = req.params;
-
-    const { data: file, error } = await supabase
-      .from('project_files')
-      .select('*')
-      .eq('id', fileId)
-      .single();
-
-    if (error || !file) {
-      return res.status(404).json({
-        success: false,
-        error: 'File not found'
-      });
-    }
-
-    // Check access (simplified)
-    // TODO: Add proper project access check
-
-    try {
-      await fs.access(file.upload_path);
-    } catch {
-      return res.status(404).json({
-        success: false,
-        error: 'File not found on disk'
-      });
-    }
-
-    res.setHeader('Content-Disposition', `attachment; filename="${file.original_name}"`);
-    res.setHeader('Content-Type', file.mimetype);
-    
-    res.sendFile(path.resolve(file.upload_path));
-
-  } catch (error) {
-    console.error('❌ File download error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'File download failed'
-    });
-  }
-});
-
-// Get thumbnail
-router.get('/:fileId/thumbnail', authenticateUser, async (req: FileRequest, res) => {
-  try {
-    const { fileId } = req.params;
-    const { size = 'medium' } = req.query;
-
-    const { data: file, error } = await supabase
-      .from('project_files')
-      .select('*')
-      .eq('id', fileId)
-      .single();
-
-    if (error || !file) {
-      return res.status(404).json({
-        success: false,
-        error: 'File not found'
-      });
-    }
-
-    if (!file.thumbnail_path) {
-      return res.status(404).json({
-        success: false,
-        error: 'Thumbnail not available'
-      });
-    }
-
-    // Construct thumbnail path based on size
-    const thumbnailDir = path.dirname(file.thumbnail_path);
-    const baseFilename = path.parse(file.filename).name;
-    const thumbnailPath = path.join(thumbnailDir, `${baseFilename}_${size}.webp`);
-
-    try {
-      await fs.access(thumbnailPath);
-    } catch {
-      return res.status(404).json({
-        success: false,
-        error: 'Thumbnail not found on disk'
-      });
-    }
-
-    res.setHeader('Content-Type', 'image/webp');
-    res.sendFile(path.resolve(thumbnailPath));
-
-  } catch (error) {
-    console.error('❌ Thumbnail error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Thumbnail retrieval failed'
-    });
-  }
-});
-
-// ======================
-// FILE MANAGEMENT ENDPOINTS
-// ======================
-
-// Delete file
-router.delete('/:fileId', authenticateUser, async (req: FileRequest, res) => {
-  try {
-    const { fileId } = req.params;
-
-    await deleteFile(fileId, req.user!.id, req.user!.profile.role);
-
-    res.json({
-      success: true,
-      message: 'File deleted successfully',
-      fileId
-    });
-
-  } catch (error) {
-    console.error('❌ File deletion error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'File deletion failed'
-    });
-  }
-});
-
-// Update file metadata
-router.patch('/:fileId', authenticateUser, async (req: FileRequest, res) => {
-  try {
-    const { fileId } = req.params;
-    const { description, tags } = req.body;
-
-    // Get current file
-    const { data: file, error } = await supabase
-      .from('project_files')
-      .select('*')
-      .eq('id', fileId)
-      .single();
-
-    if (error || !file) {
-      return res.status(404).json({
-        success: false,
-        error: 'File not found'
-      });
-    }
-
-    // Check permissions
-    if (file.user_id !== req.user!.id && req.user!.profile.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Permission denied'
-      });
-    }
-
-    // Update file metadata
-    const updates: any = {};
-    if (description !== undefined) updates.description = description;
-    if (tags !== undefined) {
-      updates.tags = Array.isArray(tags) ? tags : tags.split(',').map((t: string) => t.trim());
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'No updates provided'
-      });
-    }
-
-    const { error: updateError } = await supabase
-      .from('project_files')
-      .update(updates)
-      .eq('id', fileId);
-
-    if (updateError) {
-      throw new Error(`Failed to update file: ${updateError.message}`);
-    }
-
-    res.json({
-      success: true,
-      message: 'File updated successfully',
-      fileId,
-      updates
-    });
-
-  } catch (error) {
-    console.error('❌ File update error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'File update failed'
-    });
-  }
-});
-
 // ======================
 // UTILITY ENDPOINTS
 // ======================
@@ -743,58 +340,6 @@ router.get('/config', (req, res) => {
       supportedFileTypes: ['photo', 'document', 'sow', 'report']
     }
   });
-});
-
-// Get storage statistics
-router.get('/stats/project/:projectId', authenticateUser, async (req: FileRequest, res) => {
-  try {
-    const { projectId } = req.params;
-
-    // Get file statistics
-    const { data: files } = await supabase
-      .from('project_files')
-      .select('file_type, size, stage')
-      .eq('project_id', projectId);
-
-    if (!files) {
-      return res.json({
-        success: true,
-        projectId,
-        stats: {
-          totalFiles: 0,
-          totalSize: 0,
-          byType: {},
-          byStage: {}
-        }
-      });
-    }
-
-    const stats = {
-      totalFiles: files.length,
-      totalSize: files.reduce((sum, file) => sum + file.size, 0),
-      byType: files.reduce((acc, file) => {
-        acc[file.file_type] = (acc[file.file_type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      byStage: files.reduce((acc, file) => {
-        acc[file.stage] = (acc[file.stage] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>)
-    };
-
-    res.json({
-      success: true,
-      projectId,
-      stats
-    });
-
-  } catch (error) {
-    console.error('❌ File stats error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get file statistics'
-    });
-  }
 });
 
 export default router;
