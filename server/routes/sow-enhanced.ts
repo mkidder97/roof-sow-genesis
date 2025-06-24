@@ -1,5 +1,5 @@
-// Enhanced SOW Routes - Phase 3 Implementation
-// Section Engine & Self-Healing Integration
+// Enhanced SOW Routes - Phase 3 Implementation with REAL PDF Parsing
+// Section Engine & Self-Healing Integration + Enhanced Takeoff Data Extraction
 import { Request, Response } from 'express';
 import { 
   generateSOWWithEngineering, 
@@ -7,18 +7,19 @@ import {
   validateSOWInputs, 
   SOWGeneratorInputs
 } from '../core/sow-generator';
-import { parseTakeoffFile, TakeoffFile } from '../core/takeoff-engine';
+import { parseTakeoffFile, TakeoffFile, ExtractionResult } from '../core/takeoff-engine';
 
 /**
- * PHASE 3: Debug endpoint with Section Analysis & Self-Healing + File Upload Support
- * Returns complete engineeringSummary with section analysis and processes uploaded files
+ * PHASE 3: Debug endpoint with Section Analysis & Self-Healing + REAL File Upload Support
+ * Returns complete engineeringSummary with section analysis and processes uploaded files with real parsing
  */
 export async function debugSOWEnhanced(req: Request, res: Response) {
   try {
-    console.log('🧪 Enhanced Debug SOW - Phase 3 Section Engine & Self-Healing with File Support');
+    console.log('🧪 Enhanced Debug SOW - Phase 3 Section Engine & Self-Healing with REAL PDF PARSING');
     
     // **FIXED: Handle both FormData and JSON requests**
     let enhancedInputs: any = {};
+    let extractionResult: ExtractionResult | null = null;
     
     // Parse project data from FormData or body
     if (req.body && req.body.data) {
@@ -35,9 +36,9 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
       enhancedInputs = req.body || {};
     }
 
-    // Handle file upload and processing
+    // Handle file upload and REAL processing
     if (req.file) {
-      console.log('🗂️ Processing uploaded file:', req.file.originalname);
+      console.log('🗂️ Processing uploaded file with REAL parsing:', req.file.originalname);
       console.log('📁 File details:', {
         filename: req.file.originalname,
         mimetype: req.file.mimetype,
@@ -51,39 +52,47 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
       };
       
       try {
-        console.log('📋 Extracting takeoff data from uploaded file...');
-        const extractedData = await parseTakeoffFile(takeoffFile);
-        console.log('✅ Extracted takeoff data:', extractedData);
+        console.log('📋 REAL PDF/File parsing starting...');
+        extractionResult = await parseTakeoffFile(takeoffFile);
+        console.log('✅ REAL extraction complete:', {
+          method: extractionResult.method,
+          confidence: extractionResult.confidence,
+          fieldsExtracted: extractionResult.extractedFields.length,
+          warnings: extractionResult.warnings.length
+        });
         
-        // **ENHANCED: Override inputs with extracted data**
+        // **ENHANCED: Override inputs with REAL extracted data**
         enhancedInputs = {
           ...enhancedInputs,
           // Override with extracted data
-          squareFootage: extractedData.roofArea || enhancedInputs.squareFootage,
-          numberOfDrains: extractedData.drainCount || enhancedInputs.numberOfDrains,
-          numberOfPenetrations: extractedData.penetrationCount || enhancedInputs.numberOfPenetrations,
-          flashingLinearFeet: extractedData.flashingLinearFeet || enhancedInputs.flashingLinearFeet,
-          hvacUnits: extractedData.hvacUnits || enhancedInputs.hvacUnits,
-          skylights: extractedData.skylights || enhancedInputs.skylights,
-          roofHatches: extractedData.roofHatches || enhancedInputs.roofHatches,
-          scuppers: extractedData.scuppers || enhancedInputs.scuppers,
-          expansionJoints: extractedData.expansionJoints || enhancedInputs.expansionJoints,
+          squareFootage: extractionResult.data.roofArea || enhancedInputs.squareFootage,
+          numberOfDrains: extractionResult.data.drainCount || enhancedInputs.numberOfDrains,
+          numberOfPenetrations: extractionResult.data.penetrationCount || enhancedInputs.numberOfPenetrations,
+          flashingLinearFeet: extractionResult.data.flashingLinearFeet || enhancedInputs.flashingLinearFeet,
+          hvacUnits: extractionResult.data.hvacUnits || enhancedInputs.hvacUnits,
+          skylights: extractionResult.data.skylights || enhancedInputs.skylights,
+          roofHatches: extractionResult.data.roofHatches || enhancedInputs.roofHatches,
+          scuppers: extractionResult.data.scuppers || enhancedInputs.scuppers,
+          expansionJoints: extractionResult.data.expansionJoints || enhancedInputs.expansionJoints,
           
-          // Store raw takeoff data for analysis
-          takeoffItems: extractedData,
+          // Store complete extraction result for analysis
+          takeoffItems: extractionResult.data,
+          extractionResult: extractionResult,
           fileProcessed: true,
           uploadedFileName: req.file.originalname
         };
         
-        console.log('🔄 Enhanced inputs with file data:', {
-          roofArea: extractedData.roofArea,
-          drains: extractedData.drainCount,
-          penetrations: extractedData.penetrationCount,
+        console.log('🔄 Enhanced inputs with REAL extracted data:', {
+          method: extractionResult.method,
+          confidence: extractionResult.confidence,
+          roofArea: extractionResult.data.roofArea,
+          drains: extractionResult.data.drainCount,
+          penetrations: extractionResult.data.penetrationCount,
           originalFilename: req.file.originalname
         });
         
       } catch (error) {
-        console.log('⚠️ Takeoff parsing failed, using provided inputs:', error);
+        console.log('⚠️ REAL parsing failed, using provided inputs:', error);
         enhancedInputs.fileProcessingError = error instanceof Error ? error.message : 'Unknown parsing error';
         enhancedInputs.fileProcessed = false;
         enhancedInputs.uploadedFileName = req.file.originalname;
@@ -114,7 +123,7 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
       });
     }
     
-    // Phase 3: Enhanced Engineering Summary Response with Section Analysis + File Processing
+    // Phase 3: Enhanced Engineering Summary Response with Section Analysis + REAL File Processing
     const enhancedResponse = {
       success: true,
       debugMode: true,
@@ -178,21 +187,44 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
         }
       },
       
-      // **NEW: File Processing Summary**
-      fileProcessingSummary: enhancedInputs.fileProcessed ? {
+      // **ENHANCED: REAL File Processing Summary**
+      fileProcessingSummary: extractionResult ? {
         filename: enhancedInputs.uploadedFileName,
-        extractedData: enhancedInputs.takeoffItems,
-        dataOverrides: {
-          roofArea: enhancedInputs.takeoffItems?.roofArea,
-          drainCount: enhancedInputs.takeoffItems?.drainCount,
-          penetrationCount: enhancedInputs.takeoffItems?.penetrationCount,
-          flashingLinearFeet: enhancedInputs.takeoffItems?.flashingLinearFeet
+        extractionMethod: extractionResult.method,
+        confidence: extractionResult.confidence,
+        extractedFields: extractionResult.extractedFields,
+        warnings: extractionResult.warnings,
+        extractedData: {
+          roofArea: extractionResult.data.roofArea,
+          drainCount: extractionResult.data.drainCount,
+          penetrationCount: extractionResult.data.penetrationCount,
+          flashingLinearFeet: extractionResult.data.flashingLinearFeet,
+          hvacUnits: extractionResult.data.hvacUnits,
+          skylights: extractionResult.data.skylights,
+          roofHatches: extractionResult.data.roofHatches,
+          scuppers: extractionResult.data.scuppers,
+          expansionJoints: extractionResult.data.expansionJoints
         },
-        processingSuccess: true
+        processingSuccess: true,
+        rawTextSample: extractionResult.rawText?.substring(0, 500) || null
       } : enhancedInputs.fileProcessingError ? {
         filename: req.file?.originalname || 'unknown',
         processingSuccess: false,
-        error: enhancedInputs.fileProcessingError
+        error: enhancedInputs.fileProcessingError,
+        extractionMethod: 'none'
+      } : null,
+      
+      // **NEW: Frontend Compatible takeoffData Field**
+      takeoffData: extractionResult ? {
+        squareFootage: extractionResult.data.roofArea,
+        buildingHeight: null, // Will be added in future enhancement
+        drainCount: extractionResult.data.drainCount,
+        penetrationCount: extractionResult.data.penetrationCount,
+        projectAddress: null, // Will be added in future enhancement
+        confidence: extractionResult.confidence,
+        extractionMethod: extractionResult.method,
+        fieldsExtracted: extractionResult.extractedFields,
+        warnings: extractionResult.warnings
       } : null,
       
       // Enhanced debug information
@@ -207,17 +239,23 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
         sectionsExcluded: result.engineeringSummary!.sectionAnalysis.excludedSections.length,
         selfHealingActions: result.engineeringSummary!.selfHealingReport.totalActions,
         fileUploadSupported: true,
-        fileProcessed: enhancedInputs.fileProcessed || false
+        fileProcessed: enhancedInputs.fileProcessed || false,
+        realPdfParsingEnabled: true,
+        extractionConfidence: extractionResult?.confidence || 0
       }
     };
     
-    console.log('✅ Enhanced debug SOW completed');
+    console.log('✅ Enhanced debug SOW completed with REAL PDF parsing');
     console.log(`📊 Template: ${enhancedResponse.engineeringSummary.templateSelection.templateName}`);
     console.log(`💨 Wind: ${enhancedResponse.engineeringSummary.windAnalysis.windSpeed}mph`);
     console.log(`🏭 System: ${enhancedResponse.engineeringSummary.systemSelection.selectedSystem}`);
     console.log(`📋 Sections: ${enhancedResponse.metadata.sectionsIncluded} included, ${enhancedResponse.metadata.sectionsExcluded} excluded`);
     console.log(`🔧 Self-healing: ${enhancedResponse.metadata.selfHealingActions} actions`);
     console.log(`📁 File processed: ${enhancedResponse.metadata.fileProcessed ? 'Yes' : 'No'}`);
+    if (extractionResult) {
+      console.log(`🎯 Extraction: ${extractionResult.method} (${(extractionResult.confidence * 100).toFixed(1)}% confidence)`);
+      console.log(`📝 Fields: ${extractionResult.extractedFields.join(', ')}`);
+    }
     
     res.json(enhancedResponse);
     
@@ -227,7 +265,57 @@ export async function debugSOWEnhanced(req: Request, res: Response) {
       success: false,
       debugMode: true,
       error: error instanceof Error ? error.message : 'Enhanced debug endpoint error',
-      fileProcessed: false
+      fileProcessed: false,
+      realPdfParsingEnabled: true
+    });
+  }
+}
+
+/**
+ * NEW: Test PDF parsing endpoint
+ */
+export async function testPDFParsing(req: Request, res: Response) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded for testing'
+      });
+    }
+
+    console.log('🧪 Testing PDF parsing on uploaded file...');
+    
+    const takeoffFile: TakeoffFile = {
+      filename: req.file.originalname,
+      buffer: req.file.buffer,
+      mimetype: req.file.mimetype
+    };
+
+    const extractionResult = await parseTakeoffFile(takeoffFile);
+
+    res.json({
+      success: true,
+      testMode: true,
+      filename: req.file.originalname,
+      fileSize: req.file.size,
+      mimetype: req.file.mimetype,
+      extractionResult: {
+        method: extractionResult.method,
+        confidence: extractionResult.confidence,
+        extractedFields: extractionResult.extractedFields,
+        warnings: extractionResult.warnings,
+        data: extractionResult.data,
+        rawTextSample: extractionResult.rawText?.substring(0, 1000) || null
+      },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ PDF parsing test failed:', error);
+    res.status(500).json({
+      success: false,
+      testMode: true,
+      error: error instanceof Error ? error.message : 'PDF parsing test failed'
     });
   }
 }
@@ -458,7 +546,7 @@ export async function getTemplateMap(req: Request, res: Response) {
       success: true,
       templateMap: TEMPLATE_MAP,
       supportedTemplates: Object.keys(TEMPLATE_MAP),
-      version: '4.0.0 - Section Engine & Template System'
+      version: '4.1.0 - Section Engine & Real PDF Parsing'
     });
   } catch (error) {
     res.status(500).json({
