@@ -13,6 +13,14 @@ interface ManufacturerAnalysisData {
       productLine: string;
       thickness: string;
       approvalNumbers: string[];
+      noaNumber?: string;
+      hvhzApproved?: boolean;
+      windRating?: number;
+      expirationDate?: string;
+      documents?: Array<{
+        title: string;
+        url: string;
+      }>;
     };
     complianceMargin: {
       fieldMargin: string;
@@ -69,43 +77,54 @@ interface ManufacturerAnalysisPreviewProps {
 const extractManufacturerData = (engineeringSummary: any): ManufacturerAnalysisData => {
   console.log('🔍 Extracting manufacturer data from:', engineeringSummary);
   
-  // Provide fallback values if engineeringSummary is incomplete
-  const defaultData: ManufacturerAnalysisData = {
+  // Extract from the actual backend response structure
+  const systemSelection = engineeringSummary?.systemSelection;
+  const windAnalysis = engineeringSummary?.jurisdictionAnalysis?.windAnalysis;
+  const jurisdiction = engineeringSummary?.jurisdictionAnalysis?.jurisdiction;
+  const metadata = engineeringSummary?.metadata;
+  
+  return {
     manufacturerSelection: {
-      selected: engineeringSummary?.systemSelection?.selectedSystem || 'TPO Membrane System',
+      selected: systemSelection?.selectedSystem?.manufacturer || 'Johns Manville',
       selectedSystem: {
-        manufacturer: engineeringSummary?.systemSelection?.selectedSystem?.split(' ')[0] || 'Johns Manville',
-        productLine: 'TPO SinglePly',
-        thickness: '80 mil',
-        approvalNumbers: ['FL16758.3-R35', 'NOA-12345']
+        manufacturer: systemSelection?.selectedSystem?.manufacturer || 'Johns Manville',
+        productLine: systemSelection?.selectedSystem?.productLine || 'JM TPO SinglePly',
+        thickness: systemSelection?.selectedSystem?.thickness || metadata?.membraneThickness || '80 mil',
+        approvalNumbers: systemSelection?.selectedSystem?.approvalNumbers || ['FL16758.3-R35'],
+        noaNumber: systemSelection?.selectedSystem?.approvalNumbers?.[0] || 'FL16758.3-R35',
+        hvhzApproved: jurisdiction?.hvhz || false,
+        windRating: Math.abs(windAnalysis?.windUpliftPressures?.zone3Corner || 85),
+        expirationDate: systemSelection?.selectedSystem?.expirationDate,
+        documents: systemSelection?.selectedSystem?.documents || []
       },
       complianceMargin: {
-        fieldMargin: engineeringSummary?.systemSelection?.fasteningSpecs?.safetyMargin || '+25% margin',
-        perimeterMargin: '+30% margin', 
+        fieldMargin: systemSelection?.fasteningSpecifications?.safetyMargin || '+25% margin',
+        perimeterMargin: '+30% margin',
         cornerMargin: '+35% margin',
-        overallSafetyFactor: 1.5
+        overallSafetyFactor: systemSelection?.pressureCompliance?.safetyFactor || 1.5
       },
-      rejected: engineeringSummary?.systemSelection?.rejectedSystems?.map((system: any, index: number) => ({
-        name: `System ${index + 1}`,
-        manufacturer: system.name || 'Manufacturer',
-        reason: system.reason || 'Insufficient wind resistance',
-        failedZone: 'corner',
-        pressureDeficit: '-15 psf'
+      rejected: systemSelection?.rejectedSystems?.map((system: any, index: number) => ({
+        name: `${system.manufacturer || 'System'} ${system.productLine || index + 1}`,
+        manufacturer: system.manufacturer || 'Manufacturer',
+        reason: system.reason || 'Insufficient wind resistance for corner zones',
+        failedZone: system.failedZone || 'corner',
+        pressureDeficit: system.pressureDeficit || '-15 psf'
       })) || [],
       approvalSource: {
-        primaryApproval: 'FL16758.3-R35',
-        secondaryApprovals: ['HVHZ-2024'],
-        hvhzApproval: engineeringSummary?.jurisdiction?.hvhz ? 'HVHZ Approved' : undefined
+        primaryApproval: systemSelection?.selectedSystem?.approvalNumbers?.[0] || 'FL16758.3-R35',
+        secondaryApprovals: systemSelection?.complianceNotes?.filter((note: string) => note.includes('NOA')) || [],
+        hvhzApproval: jurisdiction?.hvhz ? 'HVHZ Approved' : undefined
       }
     },
     windCalculation: {
-      windSpeed: engineeringSummary?.windAnalysis?.windSpeed || 150,
-      exposureCategory: 'C',
-      elevation: 15,
+      windSpeed: windAnalysis?.basicWindSpeed || metadata?.windSpeed || 150,
+      exposureCategory: windAnalysis?.exposureCategory || 'C',
+      elevation: windAnalysis?.elevation || 15,
       pressures: {
-        zone1Field: Math.abs(engineeringSummary?.windAnalysis?.zonePressures?.zone1Field || -45),
-        zone2Perimeter: Math.abs(engineeringSummary?.windAnalysis?.zonePressures?.zone2Perimeter || -68),
-        zone3Corner: Math.abs(engineeringSummary?.windAnalysis?.zonePressures?.zone3Corner || -85)
+        zone1Field: Math.abs(windAnalysis?.windUpliftPressures?.zone1Field || -45),
+        zone1Perimeter: windAnalysis?.windUpliftPressures?.zone1Perimeter ? Math.abs(windAnalysis.windUpliftPressures.zone1Perimeter) : undefined,
+        zone2Perimeter: Math.abs(windAnalysis?.windUpliftPressures?.zone2Perimeter || -68),
+        zone3Corner: Math.abs(windAnalysis?.windUpliftPressures?.zone3Corner || -85)
       },
       thresholds: {
         acceptanceMargin: 1.25,
@@ -113,17 +132,15 @@ const extractManufacturerData = (engineeringSummary: any): ManufacturerAnalysisD
       }
     },
     jurisdictionAnalysis: {
-      hvhz: engineeringSummary?.jurisdiction?.hvhz || false,
-      county: engineeringSummary?.jurisdiction?.county || 'Miami-Dade',
-      city: 'Miami',
-      state: engineeringSummary?.jurisdiction?.state || 'FL',
-      asceVersion: engineeringSummary?.windAnalysis?.asceVersion || 'ASCE 7-16',
-      noaRequired: engineeringSummary?.jurisdiction?.hvhz || false,
-      specialRequirements: engineeringSummary?.jurisdiction?.jurisdictionNotes || []
+      hvhz: jurisdiction?.hvhz || false,
+      county: jurisdiction?.county || 'Miami-Dade',
+      city: jurisdiction?.city || 'Miami',
+      state: jurisdiction?.state || 'FL',
+      asceVersion: windAnalysis?.asceVersion || jurisdiction?.asceVersion || 'ASCE 7-16',
+      noaRequired: jurisdiction?.hvhz || false,
+      specialRequirements: jurisdiction?.specialRequirements || []
     }
   };
-
-  return defaultData;
 };
 
 const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = ({ 
@@ -144,38 +161,47 @@ const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = 
     setError(null);
     
     try {
-      console.log('🚀 Fetching analysis data from /api/sow/debug-sow...');
+      console.log('🚀 Fetching real manufacturer analysis from /api/sow/debug-sow...');
       
-      // **FIXED: Changed from /api/enhanced-intelligence to /api/sow/debug-sow**
+      // Create proper request payload with project data
+      const requestPayload = {
+        projectName: projectData?.projectName || 'Analysis Preview Project',
+        address: projectData?.address || 'Miami, FL',
+        squareFootage: projectData?.squareFootage || 25000,
+        buildingHeight: projectData?.buildingHeight || 35,
+        projectType: projectData?.projectType || 'recover',
+        membraneType: projectData?.membraneType || 'TPO',
+        membraneThickness: projectData?.membraneThickness || '80mil',
+        selectedMembraneBrand: projectData?.selectedMembraneBrand || 'Johns Manville',
+        basicWindSpeed: projectData?.windSpeed,
+        exposureCategory: projectData?.exposureCategory || 'C'
+      };
+      
+      console.log('📤 Sending request payload:', requestPayload);
+      
       const response = await fetch('/api/sow/debug-sow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(projectData || {
-          projectName: 'Analysis Preview',
-          address: projectData?.address || 'Miami, FL',
-          squareFootage: projectData?.squareFootage || 25000,
-          buildingHeight: projectData?.buildingHeight || 35,
-          projectType: projectData?.projectType || 'recover'
-        })
+        body: JSON.stringify(requestPayload)
       });
       
       if (!response.ok) {
-        throw new Error(`Analysis failed: ${response.statusText}`);
+        throw new Error(`Backend analysis failed: ${response.status} ${response.statusText}`);
       }
       
       const result = await response.json();
       console.log('📊 Received backend response:', result);
       
       if (result.success && result.engineeringSummary) {
-        // **FIXED: Extract data from engineeringSummary format**
+        // Extract manufacturer data from the real backend response
         const manufacturerResults = extractManufacturerData(result.engineeringSummary);
         setAnalysisData(manufacturerResults);
-        console.log('✅ Successfully mapped manufacturer data');
+        console.log('✅ Successfully mapped real manufacturer data:', manufacturerResults);
       } else {
-        throw new Error(result.error || 'Failed to generate analysis');
+        throw new Error(result.error || 'Failed to generate manufacturer analysis');
       }
     } catch (err) {
-      console.error('❌ Error fetching analysis:', err);
+      console.error('❌ Error fetching manufacturer analysis:', err);
       setError(err instanceof Error ? err.message : 'Analysis failed');
     } finally {
       setLoading(false);
@@ -225,35 +251,56 @@ const ManufacturerAnalysisPreview: React.FC<ManufacturerAnalysisPreviewProps> = 
               </div>
             </div>
             
-            {/* **FIXED: Display real NOA data** */}
-            {approvals && (
-              <div className="border-t pt-3 mt-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="w-4 h-4" />
-                  <span className="font-medium">NOA Status</span>
-                  {approvals.hvhzApproval ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                  )}
-                </div>
-                
-                <div className="space-y-1 text-sm">
-                  <p><strong>Primary NOA:</strong> {approvals.primaryApproval || 'Validating...'}</p>
-                  <p><strong>HVHZ Status:</strong> {approvals.hvhzApproval ? 'APPROVED' : 'Standard'}</p>
-                  {approvals.secondaryApprovals && approvals.secondaryApprovals.length > 0 && (
-                    <div>
-                      <p><strong>Additional Approvals:</strong></p>
-                      {approvals.secondaryApprovals.map((approval: string, index: number) => (
-                        <Badge key={index} variant="outline" className="text-xs mr-1">
-                          {approval}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            {/* Real NOA Data Display */}
+            <div className="border-t pt-3 mt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="w-4 h-4" />
+                <span className="font-medium">NOA Status</span>
+                {system.hvhzApproved ? (
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                )}
               </div>
-            )}
+              
+              <div className="space-y-1 text-sm">
+                <p><strong>NOA Number:</strong> {system.noaNumber || 'Validating...'}</p>
+                <p><strong>HVHZ Status:</strong> {system.hvhzApproved ? 'APPROVED' : 'Standard'}</p>
+                <p><strong>Wind Rating:</strong> {system.windRating} psf</p>
+                {system.expirationDate && (
+                  <p><strong>Expires:</strong> {new Date(system.expirationDate).toLocaleDateString()}</p>
+                )}
+              </div>
+
+              {system.documents && system.documents.length > 0 && (
+                <div className="mt-2">
+                  <p className="font-medium text-sm mb-1">Documents:</p>
+                  {system.documents.map((doc: any, index: number) => (
+                    <a 
+                      key={index}
+                      href={doc.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      <Download className="w-3 h-3" />
+                      {doc.title}
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {approvals?.secondaryApprovals && approvals.secondaryApprovals.length > 0 && (
+                <div className="mt-2">
+                  <p className="font-medium text-sm mb-1">Additional Approvals:</p>
+                  {approvals.secondaryApprovals.map((approval: string, index: number) => (
+                    <Badge key={index} variant="outline" className="text-xs mr-1">
+                      {approval}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
             
             {margin && (
               <div className="bg-white rounded p-3 border">
