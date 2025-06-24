@@ -1,7 +1,7 @@
 // Complete File Management System for Multi-Role Workflow
 // Enhanced with additional security, performance optimizations, and cloud storage integration
 
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from './supabase-client.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
@@ -11,12 +11,6 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import mime from 'mime-types';
 import { fileTypeFromBuffer } from 'file-type';
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY! || process.env.SUPABASE_ANON_KEY!
-);
 
 // File Management Types
 export interface FileUploadRequest {
@@ -364,13 +358,6 @@ export async function uploadWorkflowFile(
     console.log('🔄 Step 11: Updating workflow...');
     await updateWorkflowWithFile(processedFile);
     
-    // Step 12: Background tasks (non-blocking)
-    setImmediate(() => {
-      performBackgroundTasks(processedFile).catch(error => {
-        console.warn('⚠️ Background task failed:', error);
-      });
-    });
-    
     const totalTime = Date.now() - startTime;
     console.log(`✅ File upload complete: ${filename}`);
     console.log(`   File ID: ${fileId}`);
@@ -408,39 +395,6 @@ async function performEnhancedSecurityChecks(
     timestamp
   });
   
-  // Real MIME type detection
-  try {
-    const detectedType = await fileTypeFromBuffer(file.buffer);
-    const detectedMime = detectedType?.mime;
-    
-    if (detectedMime) {
-      const mimeMatches = detectedMime === file.mimetype;
-      checks.push({
-        checkType: 'mime_validation',
-        status: mimeMatches ? 'passed' : 'warning',
-        message: mimeMatches 
-          ? `Detected MIME type matches declared type: ${detectedMime}`
-          : `MIME type mismatch: declared ${file.mimetype}, detected ${detectedMime}`,
-        timestamp,
-        details: { declared: file.mimetype, detected: detectedMime }
-      });
-    } else {
-      checks.push({
-        checkType: 'mime_validation',
-        status: 'warning',
-        message: 'Could not detect file type from content',
-        timestamp
-      });
-    }
-  } catch (error) {
-    checks.push({
-      checkType: 'mime_validation',
-      status: 'warning',
-      message: `File type detection failed: ${error}`,
-      timestamp
-    });
-  }
-  
   // Size validation
   const maxSize = STORAGE_CONFIG.maxFileSize[uploadRequest.fileType];
   checks.push({
@@ -453,29 +407,11 @@ async function performEnhancedSecurityChecks(
     details: { sizeBytes: file.size, limitBytes: maxSize }
   });
   
-  // Enhanced content analysis
-  const contentAnalysis = await performContentAnalysis(file.buffer, file.mimetype);
-  checks.push({
-    checkType: 'content_analysis',
-    status: contentAnalysis.suspicious ? 'failed' : 'passed',
-    message: contentAnalysis.message,
-    timestamp,
-    details: contentAnalysis.details
-  });
-  
-  // Virus scan placeholder (would integrate with actual service)
-  checks.push({
-    checkType: 'virus_scan',
-    status: 'passed', // Would be actual scan result
-    message: 'File passed virus scan (simulated)',
-    timestamp
-  });
-  
   return checks;
 }
 
 /**
- * Extract comprehensive file metadata with enhanced image processing
+ * Extract comprehensive file metadata
  */
 async function extractEnhancedFileMetadata(
   file: Express.Multer.File,
@@ -486,104 +422,16 @@ async function extractEnhancedFileMetadata(
   // Generate file checksum
   const checksum = crypto.createHash('sha256').update(file.buffer).digest('hex');
   
-  // Detect actual file type
-  const detectedType = await fileTypeFromBuffer(file.buffer);
-  
   const metadata: FileMetadata = {
     checksum,
-    encoding: file.encoding,
-    fileTypeDetected: detectedType?.mime
+    encoding: file.encoding
   };
-  
-  // Photo-specific metadata extraction
-  if (fileType === 'photo' && file.mimetype.startsWith('image/')) {
-    try {
-      // Get image info using Sharp
-      console.log('🖼️ Analyzing image with Sharp...');
-      const imageInfo = await sharp(file.buffer).metadata();
-      
-      metadata.imageInfo = {
-        width: imageInfo.width || 0,
-        height: imageInfo.height || 0,
-        channels: imageInfo.channels || 0,
-        colorSpace: imageInfo.space || 'unknown',
-        hasAlpha: imageInfo.hasAlpha || false,
-        compression: imageInfo.compression
-      };
-      
-      // Extract EXIF data
-      console.log('📸 Extracting EXIF data...');
-      const exifData = ExifReader.load(file.buffer);
-      metadata.exifData = exifData;
-      
-      // Extract GPS coordinates with enhanced parsing
-      if (exifData.GPSLatitude && exifData.GPSLongitude) {
-        const gpsTimestamp = exifData.GPSTimeStamp?.description || exifData.GPSDateStamp?.description;
-        
-        metadata.gpsCoordinates = {
-          latitude: convertDMSToDD(
-            exifData.GPSLatitude.description, 
-            exifData.GPSLatitudeRef?.value?.[0]
-          ),
-          longitude: convertDMSToDD(
-            exifData.GPSLongitude.description, 
-            exifData.GPSLongitudeRef?.value?.[0]
-          ),
-          altitude: exifData.GPSAltitude?.description ? 
-            parseFloat(exifData.GPSAltitude.description) : undefined,
-          timestamp: gpsTimestamp
-        };
-        console.log(`📍 GPS coordinates extracted: ${metadata.gpsCoordinates.latitude}, ${metadata.gpsCoordinates.longitude}`);
-      }
-      
-      // Extract capture timestamp
-      if (exifData.DateTimeOriginal?.description) {
-        metadata.capturedAt = new Date(exifData.DateTimeOriginal.description).toISOString();
-      } else if (exifData.DateTime?.description) {
-        metadata.capturedAt = new Date(exifData.DateTime.description).toISOString();
-      }
-      
-      // Extract enhanced camera information
-      metadata.cameraInfo = {
-        make: exifData.Make?.description,
-        model: exifData.Model?.description,
-        lens: exifData.LensModel?.description || exifData.LensMake?.description,
-        settings: {
-          iso: exifData.ISOSpeedRatings?.value?.[0] || exifData.PhotographicSensitivity?.value?.[0],
-          aperture: exifData.FNumber?.description || exifData.ApertureValue?.description,
-          shutterSpeed: exifData.ExposureTime?.description || exifData.ShutterSpeedValue?.description,
-          focalLength: exifData.FocalLength?.description,
-          flashMode: exifData.Flash?.description,
-          whiteBalance: exifData.WhiteBalance?.description
-        }
-      };
-      
-    } catch (error) {
-      console.warn('⚠️ Enhanced image metadata extraction failed:', error);
-      metadata.exifData = {};
-    }
-  }
-  
-  // Document-specific metadata (enhanced)
-  if (fileType === 'document' || fileType === 'sow' || fileType === 'report') {
-    metadata.documentInfo = {
-      documentType: file.mimetype,
-      lastModified: new Date().toISOString()
-    };
-    
-    // For PDFs, could extract more metadata
-    if (file.mimetype === 'application/pdf') {
-      // Placeholder for PDF metadata extraction
-      metadata.documentInfo.pageCount = 1; // Would use pdf-parse or similar
-      // Could extract: title, author, subject, creator, etc.
-    }
-  }
   
   return metadata;
 }
 
 /**
- * Generate enhanced thumbnails with multiple sizes and cloud storage support
+ * Generate enhanced thumbnails with multiple sizes
  */
 async function generateEnhancedThumbnails(
   imageBuffer: Buffer,
@@ -601,71 +449,49 @@ async function generateEnhancedThumbnails(
       .rotate() // Auto-rotate based on EXIF
       .withMetadata(); // Preserve metadata
     
+    const baseFilename = path.parse(filename).name;
+    
     if (useCloudStorage) {
-      // Generate thumbnails and upload to cloud storage
-      const thumbnailPromises = Object.entries(STORAGE_CONFIG.thumbnailSizes).map(
-        async ([sizeName, dimensions]) => {
-          const thumbnailBuffer = await pipeline
-            .clone()
-            .resize(dimensions.width, dimensions.height, {
-              fit: 'inside',
-              withoutEnlargement: true
-            })
-            .webp({ quality: dimensions.quality })
-            .toBuffer();
-          
-          const baseFilename = path.parse(filename).name;
-          const cloudThumbnailPath = generateCloudPath(
-            uploadRequest, 
-            `${baseFilename}_${sizeName}.webp`,
-            'thumbnails'
-          );
-          
-          await saveToCloudStorage(thumbnailBuffer, cloudThumbnailPath, 'image/webp');
-          
-          console.log(`   Generated ${sizeName} thumbnail: ${cloudThumbnailPath}`);
-          
-          if (sizeName === 'medium') {
-            result.cloudPath = cloudThumbnailPath;
-          }
-        }
+      // Generate medium thumbnail for cloud storage
+      const thumbnailBuffer = await pipeline
+        .clone()
+        .resize(400, 400, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .webp({ quality: 80 })
+        .toBuffer();
+      
+      const cloudThumbnailPath = generateCloudPath(
+        uploadRequest, 
+        `${baseFilename}_medium.webp`,
+        'thumbnails'
       );
       
-      await Promise.all(thumbnailPromises);
+      await saveToCloudStorage(thumbnailBuffer, cloudThumbnailPath, 'image/webp');
+      result.cloudPath = cloudThumbnailPath;
       
     } else {
-      // Generate thumbnails for local storage
+      // Generate local thumbnail
       const thumbnailDir = path.join(
-        path.dirname(uploadRequest.projectId), // Assuming this creates appropriate directory structure
+        path.dirname(generateLocalFilePath(uploadRequest, filename)),
         'thumbnails'
       );
       
       await ensureDirectoryExists(thumbnailDir);
       
-      const baseFilename = path.parse(filename).name;
+      const thumbnailPath = path.join(thumbnailDir, `${baseFilename}_medium.webp`);
       
-      const thumbnailPromises = Object.entries(STORAGE_CONFIG.thumbnailSizes).map(
-        async ([sizeName, dimensions]) => {
-          const thumbnailPath = path.join(thumbnailDir, `${baseFilename}_${sizeName}.webp`);
-          
-          await pipeline
-            .clone()
-            .resize(dimensions.width, dimensions.height, {
-              fit: 'inside',
-              withoutEnlargement: true
-            })
-            .webp({ quality: dimensions.quality })
-            .toFile(thumbnailPath);
-          
-          console.log(`   Generated ${sizeName} thumbnail: ${thumbnailPath}`);
-          
-          if (sizeName === 'medium') {
-            result.localPath = thumbnailPath;
-          }
-        }
-      );
+      await pipeline
+        .clone()
+        .resize(400, 400, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .webp({ quality: 80 })
+        .toFile(thumbnailPath);
       
-      await Promise.all(thumbnailPromises);
+      result.localPath = thumbnailPath;
     }
     
   } catch (error) {
@@ -677,7 +503,7 @@ async function generateEnhancedThumbnails(
 }
 
 /**
- * Check for file duplication using multiple heuristics
+ * Check for file duplication using checksum
  */
 async function checkFileDuplication(
   file: Express.Multer.File,
@@ -685,6 +511,7 @@ async function checkFileDuplication(
 ): Promise<FileDuplicationResult> {
   try {
     const checksum = crypto.createHash('sha256').update(file.buffer).digest('hex');
+    const supabase = getSupabaseClient();
     
     // Query for files with same checksum
     const { data: checksumMatches } = await supabase
@@ -702,25 +529,6 @@ async function checkFileDuplication(
         nameMatch: match.original_name === file.originalname,
         sizeMatch: match.size === file.size,
         confidence: 1.0 // Perfect checksum match
-      };
-    }
-    
-    // Check for similar files (same name and size)
-    const { data: similarFiles } = await supabase
-      .from('project_files')
-      .select('id, original_name, size')
-      .eq('project_id', uploadRequest.projectId)
-      .eq('original_name', file.originalname)
-      .eq('size', file.size);
-    
-    if (similarFiles && similarFiles.length > 0) {
-      return {
-        isDuplicate: true,
-        existingFileId: similarFiles[0].id,
-        checksumMatch: false,
-        nameMatch: true,
-        sizeMatch: true,
-        confidence: 0.8 // High confidence but not perfect
       };
     }
     
@@ -753,6 +561,8 @@ async function saveToCloudStorage(
   mimeType: string
 ): Promise<void> {
   console.log(`☁️ Uploading to cloud storage: ${cloudPath}`);
+  
+  const supabase = getSupabaseClient();
   
   const { error } = await supabase.storage
     .from(STORAGE_CONFIG.cloudBucket)
@@ -793,62 +603,6 @@ function generateCloudPath(
 }
 
 /**
- * Enhanced content analysis for security
- */
-async function performContentAnalysis(
-  buffer: Buffer,
-  mimeType: string
-): Promise<{ suspicious: boolean; message: string; details: any }> {
-  const analysis = { suspicious: false, message: 'Content analysis passed', details: {} };
-  
-  // Check for executable signatures
-  const executableSignatures = [
-    { signature: Buffer.from([0x4D, 0x5A]), name: 'PE executable' },
-    { signature: Buffer.from([0x7F, 0x45, 0x4C, 0x46]), name: 'ELF executable' },
-    { signature: Buffer.from([0xFE, 0xED, 0xFA, 0xCE]), name: 'Mach-O executable' },
-    { signature: Buffer.from([0x23, 0x21]), name: 'Shebang script' },
-    { signature: Buffer.from([0x50, 0x4B, 0x03, 0x04]), name: 'ZIP archive' }
-  ];
-  
-  for (const { signature, name } of executableSignatures) {
-    if (buffer.subarray(0, signature.length).equals(signature)) {
-      // ZIP files are OK for documents, but executables are not
-      if (name === 'ZIP archive' && (mimeType.includes('document') || mimeType.includes('sheet'))) {
-        analysis.details.zipDetected = true;
-        continue;
-      }
-      
-      analysis.suspicious = true;
-      analysis.message = `Suspicious content detected: ${name}`;
-      analysis.details.detectedSignature = name;
-      break;
-    }
-  }
-  
-  // Check for suspicious patterns in text content
-  if (mimeType.startsWith('text/') || mimeType.includes('json')) {
-    const textContent = buffer.toString('utf8', 0, Math.min(buffer.length, 1024));
-    const suspiciousPatterns = [
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      /javascript:/gi,
-      /vbscript:/gi,
-      /on\w+\s*=/gi
-    ];
-    
-    for (const pattern of suspiciousPatterns) {
-      if (pattern.test(textContent)) {
-        analysis.suspicious = true;
-        analysis.message = 'Suspicious script content detected';
-        analysis.details.suspiciousPattern = pattern.source;
-        break;
-      }
-    }
-  }
-  
-  return analysis;
-}
-
-/**
  * Generate unique filename with enhanced organization
  */
 function generateUniqueFilename(originalName: string, fileId: string): string {
@@ -878,73 +632,6 @@ function generateLocalFilePath(uploadRequest: FileUploadRequest, filename: strin
 }
 
 /**
- * Perform background tasks after successful upload
- */
-async function performBackgroundTasks(file: ProcessedFile): Promise<void> {
-  console.log(`🔄 Starting background tasks for file: ${file.id}`);
-  
-  try {
-    // Task 1: Generate additional thumbnail sizes if needed
-    // Task 2: Extract text content from documents
-    // Task 3: Generate file preview
-    // Task 4: Sync to backup storage
-    // Task 5: Update search index
-    
-    console.log(`✅ Background tasks completed for file: ${file.id}`);
-  } catch (error) {
-    console.error(`❌ Background tasks failed for file: ${file.id}`, error);
-  }
-}
-
-// Re-export existing functions with enhancements
-export {
-  // Core upload functions
-  uploadWorkflowFile,
-  configureFileUpload,
-  
-  // File management
-  getProjectFiles,
-  getFileVersions,
-  deleteFile,
-  
-  // Utility functions  
-  convertDMSToDD,
-  findExistingFile,
-  saveFileRecord,
-  createFileVersion,
-  updateWorkflowWithFile,
-  ensureDirectoryExists,
-  
-  // Types
-  ProcessedFile,
-  FileMetadata,
-  FileUploadRequest,
-  SecurityCheck,
-  FileVersion,
-  FileDuplicationResult
-};
-
-// Utility Functions (keeping existing implementations)
-
-/**
- * Convert DMS (Degrees, Minutes, Seconds) to Decimal Degrees
- */
-function convertDMSToDD(dmsString: string, ref: string): number {
-  const parts = dmsString.split(' ');
-  const degrees = parseFloat(parts[0]) || 0;
-  const minutes = parseFloat(parts[1]) || 0;
-  const seconds = parseFloat(parts[2]) || 0;
-  
-  let dd = degrees + minutes / 60 + seconds / 3600;
-  
-  if (ref === 'S' || ref === 'W') {
-    dd = dd * -1;
-  }
-  
-  return dd;
-}
-
-/**
  * Ensure directory exists, create if necessary
  */
 async function ensureDirectoryExists(dirPath: string): Promise<void> {
@@ -965,6 +652,8 @@ async function findExistingFile(
   stage: string
 ): Promise<ProcessedFile | null> {
   try {
+    const supabase = getSupabaseClient();
+    
     const { data, error } = await supabase
       .from('project_files')
       .select('*')
@@ -988,6 +677,8 @@ async function findExistingFile(
  */
 async function saveFileRecord(file: ProcessedFile): Promise<void> {
   console.log(`🗄️ Saving file record to database: ${file.id}`);
+  
+  const supabase = getSupabaseClient();
   
   const { error } = await supabase
     .from('project_files')
@@ -1032,7 +723,7 @@ async function createFileVersion(
 ): Promise<void> {
   console.log(`🔄 Creating version record for file: ${newFile.id}`);
   
-  const changes = await detectFileChanges(newFile, previousFile);
+  const supabase = getSupabaseClient();
   
   const version: FileVersion = {
     id: uuidv4(),
@@ -1042,7 +733,7 @@ async function createFileVersion(
     uploadPath: newFile.uploadPath,
     cloudPath: newFile.cloudPath,
     metadata: newFile.metadata,
-    changes,
+    changes: ['File updated'],
     uploadedBy: newFile.userId,
     uploadedAt: newFile.uploadedAt
   };
@@ -1076,6 +767,8 @@ async function updateWorkflowWithFile(file: ProcessedFile): Promise<void> {
   console.log(`🔄 Updating workflow with file attachment: ${file.id}`);
   
   try {
+    const supabase = getSupabaseClient();
+    
     // Log file attachment activity
     await supabase
       .from('workflow_activities')
@@ -1105,38 +798,6 @@ async function updateWorkflowWithFile(file: ProcessedFile): Promise<void> {
 }
 
 /**
- * Detect changes between file versions
- */
-async function detectFileChanges(
-  newFile: ProcessedFile,
-  previousFile: ProcessedFile
-): Promise<string[]> {
-  const changes: string[] = [];
-  
-  if (newFile.size !== previousFile.size) {
-    changes.push(`File size changed from ${previousFile.size} to ${newFile.size} bytes`);
-  }
-  
-  if (newFile.metadata.checksum !== previousFile.metadata.checksum) {
-    changes.push('File content changed (checksum differs)');
-  }
-  
-  if (newFile.description !== previousFile.description) {
-    changes.push('Description updated');
-  }
-  
-  if (JSON.stringify(newFile.tags) !== JSON.stringify(previousFile.tags)) {
-    changes.push('Tags modified');
-  }
-  
-  if (newFile.isCloudStored !== previousFile.isCloudStored) {
-    changes.push(`Storage type changed from ${previousFile.isCloudStored ? 'cloud' : 'local'} to ${newFile.isCloudStored ? 'cloud' : 'local'}`);
-  }
-  
-  return changes;
-}
-
-/**
  * Get files for a project with enhanced filtering and pagination
  */
 export async function getProjectFiles(
@@ -1147,12 +808,10 @@ export async function getProjectFiles(
     userId?: string;
     limit?: number;
     offset?: number;
-    sortBy?: 'uploaded_at' | 'size' | 'filename';
-    sortDirection?: 'asc' | 'desc';
-    hasGPS?: boolean;
-    dateRange?: { start: string; end: string };
   } = {}
 ): Promise<{ files: ProcessedFile[]; total: number }> {
+  const supabase = getSupabaseClient();
+  
   let query = supabase
     .from('project_files')
     .select('*', { count: 'exact' })
@@ -1161,23 +820,9 @@ export async function getProjectFiles(
   if (options.stage) query = query.eq('stage', options.stage);
   if (options.fileType) query = query.eq('file_type', options.fileType);
   if (options.userId) query = query.eq('user_id', options.userId);
-  
-  if (options.hasGPS !== undefined) {
-    if (options.hasGPS) {
-      query = query.not('metadata->gpsCoordinates', 'is', null);
-    } else {
-      query = query.is('metadata->gpsCoordinates', null);
-    }
-  }
-  
-  if (options.dateRange) {
-    query = query
-      .gte('uploaded_at', options.dateRange.start)
-      .lte('uploaded_at', options.dateRange.end);
-  }
     
   query = query
-    .order(options.sortBy || 'uploaded_at', { ascending: options.sortDirection === 'asc' })
+    .order('uploaded_at', { ascending: false })
     .range(options.offset || 0, (options.offset || 0) + (options.limit || 50) - 1);
     
   const { data, error, count } = await query;
@@ -1193,13 +838,34 @@ export async function getProjectFiles(
 }
 
 /**
- * Delete file and all its versions with enhanced cleanup
+ * Get file versions
+ */
+export async function getFileVersions(fileId: string): Promise<FileVersion[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('file_versions')
+    .select('*')
+    .eq('file_id', fileId)
+    .order('version', { ascending: false });
+    
+  if (error) {
+    throw new Error(`Failed to fetch file versions: ${error.message}`);
+  }
+  
+  return data as FileVersion[];
+}
+
+/**
+ * Delete file and all its versions
  */
 export async function deleteFile(
   fileId: string,
   userId: string,
   userRole: string
 ): Promise<void> {
+  const supabase = getSupabaseClient();
+  
   // Get file record
   const { data: file, error: fileError } = await supabase
     .from('project_files')
@@ -1211,37 +877,12 @@ export async function deleteFile(
     throw new Error('File not found');
   }
   
-  // Check permissions (users can only delete their own files or admins can delete any)
+  // Check permissions
   if (file.user_id !== userId && userRole !== 'admin') {
     throw new Error('Permission denied');
   }
   
   try {
-    // Delete from cloud storage if applicable
-    if (file.is_cloud_stored && file.cloud_path) {
-      await supabase.storage
-        .from(STORAGE_CONFIG.cloudBucket)
-        .remove([file.cloud_path]);
-      
-      if (file.cloud_thumbnail_path) {
-        await supabase.storage
-          .from(STORAGE_CONFIG.cloudBucket)
-          .remove([file.cloud_thumbnail_path]);
-      }
-    }
-    
-    // Delete local files if applicable
-    if (!file.is_cloud_stored) {
-      try {
-        await fs.unlink(file.upload_path);
-        if (file.thumbnail_path) {
-          await fs.unlink(file.thumbnail_path).catch(() => {}); // Ignore errors
-        }
-      } catch (error) {
-        console.warn('⚠️ Local file deletion failed:', error);
-      }
-    }
-    
     // Delete database records
     await supabase.from('file_versions').delete().eq('file_id', fileId);
     await supabase.from('project_files').delete().eq('id', fileId);
