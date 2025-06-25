@@ -24,7 +24,12 @@ const RoleBasedNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Debug: log user data to see what's available
+  console.log('User data:', user);
+  console.log('User metadata:', user?.user_metadata);
+  
   const userRole = user?.user_metadata?.role || 'inspector';
+  console.log('Detected user role:', userRole);
 
   const navigationItems: NavigationItem[] = [
     {
