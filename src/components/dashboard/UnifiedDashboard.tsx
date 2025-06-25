@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFieldInspections } from '@/hooks/useFieldInspections';
@@ -56,6 +55,33 @@ const UnifiedDashboard = () => {
         return sowDate >= weekAgo;
       }).length,
       totalProcessed: sowGenerated.length + readyForSOW.length
+    };
+
+    const handleGenerateSOW = (inspection: any) => {
+      // Convert field inspection data to SOW format
+      const sowData = {
+        projectName: inspection.project_name,
+        address: inspection.project_address,
+        customerName: inspection.customer_name,
+        customerPhone: inspection.customer_phone,
+        buildingHeight: inspection.building_height,
+        squareFootage: inspection.square_footage,
+        membraneType: inspection.existing_membrane_type || 'TPO',
+        projectType: 'recover', // Default for now
+        windSpeed: 120, // Default for now
+        exposureCategory: 'C', // Default for now
+        numberOfDrains: inspection.drainage_options ? 
+          JSON.parse(inspection.drainage_options).reduce((sum: number, drain: any) => sum + (drain.count || 0), 0) : 0,
+        numberOfPenetrations: inspection.penetrations ? 
+          JSON.parse(inspection.penetrations).reduce((sum: number, pen: any) => sum + (pen.count || 0), 0) : 0,
+      };
+
+      navigate('/sow-generation', { 
+        state: { 
+          fromInspection: true, 
+          inspectionData: sowData 
+        } 
+      });
     };
 
     return (
@@ -151,14 +177,7 @@ const UnifiedDashboard = () => {
                           Review Details
                         </Button>
                         <Button
-                          onClick={() => {
-                            navigate('/sow-generation', { 
-                              state: { 
-                                fromInspection: true, 
-                                inspectionData: inspection 
-                              } 
-                            });
-                          }}
+                          onClick={() => handleGenerateSOW(inspection)}
                           className="bg-green-600 hover:bg-green-700"
                           size="sm"
                         >
