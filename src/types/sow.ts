@@ -144,11 +144,18 @@ export interface Notes {
 }
 
 export interface Environmental {
+  city?: string;
+  state?: string;
+  zip?: string;
+  jurisdiction?: string;
+  elevation?: number;
   windSpeed?: number;
   exposureCategory?: 'B' | 'C' | 'D';
   buildingClassification?: 'I' | 'II' | 'III' | 'IV';
   seismicZone?: string;
   climateZone?: string;
+  asceVersion?: string;
+  hvhzZone?: boolean;
 }
 
 // Dashboard metrics interface

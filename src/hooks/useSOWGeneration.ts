@@ -102,7 +102,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
         const result = await generateSOWAPI(apiData as any);
         
         setGenerationProgress(100);
-        setGenerationStatus('SOW generation complete!');
+        setGenerationStatus('SOW generation completed!');
 
         // Update database with completion
         const completedAt = new Date().toISOString();
