@@ -1,23 +1,36 @@
 
-import React from 'react';
+import React, { memo, Suspense, lazy } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Badge } from '@/components/ui/badge';
-import EngineerDashboard from './EngineerDashboard';
-import InspectorDashboard from './InspectorDashboard';
+import { DashboardSkeleton } from '@/components/ui/loading-skeleton';
+import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
 
-const UnifiedDashboard = () => {
+// Lazy load optimized dashboard components for better performance
+const OptimizedEngineerDashboard = lazy(() => import('./OptimizedEngineerDashboard'));
+const OptimizedInspectorDashboard = lazy(() => import('./OptimizedInspectorDashboard'));
+
+const UnifiedDashboard = memo(() => {
   const { user } = useAuth();
+  
+  // Enable global keyboard shortcuts
+  useGlobalShortcuts();
 
-  // Get user role from user metadata or default to 'inspector'
-  const userRole = user?.user_metadata?.role || 'inspector';
+  const renderDashboard = () => {
+    switch (user?.user_metadata?.role || 'inspector') {
+      case 'engineer':
+        return <OptimizedEngineerDashboard />;
+      case 'inspector':
+      default:
+        return <OptimizedInspectorDashboard />;
+    }
+  };
 
-  // Render role-specific dashboard
-  if (userRole === 'engineer') {
-    return <EngineerDashboard />;
-  }
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      {renderDashboard()}
+    </Suspense>
+  );
+});
 
-  // Default to inspector dashboard
-  return <InspectorDashboard />;
-};
+UnifiedDashboard.displayName = 'UnifiedDashboard';
 
 export default UnifiedDashboard;
