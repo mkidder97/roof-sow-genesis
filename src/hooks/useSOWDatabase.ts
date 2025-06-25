@@ -116,7 +116,7 @@ export function useUpdateInspectionSOWStatus() {
   return useMutation({
     mutationFn: async ({ inspectionId, sowGenerated }: { inspectionId: string; sowGenerated: boolean }) => {
       const result = await updateInspectionSOWStatus(inspectionId, sowGenerated);
-      if (result.error) throw new result.error);
+      if (result.error) throw new Error(result.error);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['field-inspections'] });
