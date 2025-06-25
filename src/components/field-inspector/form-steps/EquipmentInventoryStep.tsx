@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,22 +60,37 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
   };
 
   const addSkylightType = () => {
-    if (!selectedSkylightType) return;
+    if (!selectedSkylightType) {
+      console.log('No skylight type selected');
+      return;
+    }
+    
+    console.log('Adding skylight:', { type: selectedSkylightType, count: skylightCount });
     
     const skylightEntry = {
       type: selectedSkylightType,
       count: skylightCount
     };
     
-    // Store skylights as an array of objects in notes or a custom field
+    // Ensure skylights_detailed is initialized as an array
     const currentSkylights = data.skylights_detailed || [];
     const updatedSkylights = [...currentSkylights, skylightEntry];
     
+    console.log('Current skylights:', currentSkylights);
+    console.log('Updated skylights:', updatedSkylights);
+    
+    // Calculate total skylights
+    const totalSkylights = updatedSkylights.reduce((total, item) => total + item.count, 0);
+    
+    console.log('Total skylights:', totalSkylights);
+    
+    // Update the form data
     onChange({ 
       skylights_detailed: updatedSkylights,
-      skylights: updatedSkylights.reduce((total, item) => total + item.count, 0)
+      skylights: totalSkylights
     });
     
+    // Reset form
     setSelectedSkylightType('');
     setSkylightCount(1);
   };
@@ -83,9 +99,11 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
     const currentSkylights = data.skylights_detailed || [];
     const updatedSkylights = currentSkylights.filter((_, i) => i !== index);
     
+    const totalSkylights = updatedSkylights.reduce((total, item) => total + item.count, 0);
+    
     onChange({ 
       skylights_detailed: updatedSkylights,
-      skylights: updatedSkylights.reduce((total, item) => total + item.count, 0)
+      skylights: totalSkylights
     });
   };
 
@@ -256,6 +274,77 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
         </CardContent>
       </Card>
 
+      {/* Skylights */}
+      <Card className="bg-white/5 border-blue-400/20">
+        <CardHeader>
+          <CardTitle className="text-white">Skylights</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="skylight-type" className="text-blue-200">Skylight Type</Label>
+              <Select 
+                value={selectedSkylightType} 
+                onValueChange={setSelectedSkylightType}
+              >
+                <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                  <SelectValue placeholder="Select skylight type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Low-Profile">Low-Profile</SelectItem>
+                  <SelectItem value="Standard">Standard</SelectItem>
+                  <SelectItem value="Spring-Loaded">Spring-Loaded</SelectItem>
+                  <SelectItem value="Melt-Outs">Melt-Outs</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="skylight-count" className="text-blue-200">Count</Label>
+              <Input
+                id="skylight-count"
+                type="number"
+                min="1"
+                value={skylightCount}
+                onChange={(e) => setSkylightCount(parseInt(e.target.value) || 1)}
+                className="bg-white/10 border-blue-400/30 text-white"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button 
+                onClick={addSkylightType} 
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={!selectedSkylightType}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {data.skylights_detailed && data.skylights_detailed.length > 0 && (
+            <div className="space-y-2">
+              {data.skylights_detailed.map((skylight, index) => (
+                <div key={index} className="flex items-center justify-between bg-white/5 rounded p-3">
+                  <span className="text-white">
+                    {skylight.type} (Count: {skylight.count})
+                  </span>
+                  <Button
+                    onClick={() => removeSkylightType(index)}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-sm text-blue-200">
+            Total Skylights: {data.skylights || 0}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Interior Protection & Conditions */}
       <Card className="bg-white/5 border-blue-400/20">
         <CardHeader>
@@ -351,73 +440,6 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, o
               <SelectItem value="extension_ladder">Extension Ladder</SelectItem>
             </SelectContent>
           </Select>
-        </CardContent>
-      </Card>
-
-      {/* Skylights */}
-      <Card className="bg-white/5 border-blue-400/20">
-        <CardHeader>
-          <CardTitle className="text-white">Skylights</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="skylight-type" className="text-blue-200">Skylight Type</Label>
-              <Select 
-                value={selectedSkylightType} 
-                onValueChange={setSelectedSkylightType}
-              >
-                <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                  <SelectValue placeholder="Select skylight type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Low-Profile">Low-Profile</SelectItem>
-                  <SelectItem value="Standard">Standard</SelectItem>
-                  <SelectItem value="Spring-Loaded">Spring-Loaded</SelectItem>
-                  <SelectItem value="Melt-Outs">Melt-Outs</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="skylight-count" className="text-blue-200">Count</Label>
-              <Input
-                id="skylight-count"
-                type="number"
-                min="1"
-                value={skylightCount}
-                onChange={(e) => setSkylightCount(parseInt(e.target.value) || 1)}
-                className="bg-white/10 border-blue-400/30 text-white"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button onClick={addSkylightType} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {data.skylights_detailed && data.skylights_detailed.length > 0 && (
-            <div className="space-y-2">
-              {data.skylights_detailed.map((skylight, index) => (
-                <div key={index} className="flex items-center justify-between bg-white/5 rounded p-3">
-                  <span className="text-white">
-                    {skylight.type} (Count: {skylight.count})
-                  </span>
-                  <Button
-                    onClick={() => removeSkylightType(index)}
-                    variant="destructive"
-                    size="sm"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="text-sm text-blue-200">
-            Total Skylights: {data.skylights || 0}
-          </div>
         </CardContent>
       </Card>
     </div>
