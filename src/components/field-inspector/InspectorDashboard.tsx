@@ -8,8 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Filter, ClipboardCheck, Calendar, MapPin, User, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, ClipboardCheck, Calendar, MapPin, User, Loader2, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
+import Breadcrumb from '@/components/navigation/Breadcrumb';
 
 const InspectorDashboard = () => {
   const { user } = useAuth();
@@ -59,10 +61,13 @@ const InspectorDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-xl flex items-center gap-2">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          Loading inspections...
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
+        <RoleBasedNavigation />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-white text-xl flex items-center gap-2">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            Loading inspections...
+          </div>
         </div>
       </div>
     );
@@ -70,6 +75,9 @@ const InspectorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
+      <RoleBasedNavigation />
+      <Breadcrumb />
+      
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="text-center mb-8">
@@ -105,8 +113,8 @@ const InspectorDashboard = () => {
           </Card>
         </div>
 
-        {/* New Inspection Button */}
-        <div className="flex justify-center mb-6">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
           <Button
             onClick={() => navigate('/field-inspection/new')}
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg h-auto"
@@ -115,6 +123,19 @@ const InspectorDashboard = () => {
             <Plus className="w-5 h-5 mr-2" />
             New Inspection
           </Button>
+          
+          {/* Ready for SOW Badge */}
+          {inspections.filter(i => i.status === 'Completed' && !i.sow_generated).length > 0 && (
+            <Button
+              onClick={() => navigate('/dashboard', { state: { tab: 'ready-sow' } })}
+              variant="outline"
+              className="border-green-400 text-green-200 hover:bg-green-600 px-8 py-3 text-lg h-auto"
+              size="lg"
+            >
+              <FileText className="w-5 h-5 mr-2" />
+              {inspections.filter(i => i.status === 'Completed' && !i.sow_generated).length} Ready for SOW
+            </Button>
+          )}
         </div>
 
         {/* Search and Filter */}
