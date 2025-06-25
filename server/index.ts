@@ -1,5 +1,5 @@
 // Enhanced Express Server with Complete Multi-Role Workflow Integration & File Management
-// NOW INCLUDES: Advanced Section-Input Mapping System
+// NOW INCLUDES: Advanced Section-Input Mapping System + Draft Management
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -51,6 +51,16 @@ import workflowRouter from './routes/workflow.js';
 // Import file management routes
 import fileManagementRouter from './routes/file-management.js';
 
+// Import draft management routes
+import { 
+  saveDraft, 
+  loadDraft, 
+  listDrafts, 
+  deleteDraft, 
+  calculateSquareFootageEndpoint,
+  draftSystemHealth 
+} from './routes/draft-management.js';
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -100,6 +110,16 @@ app.get('/api/test/section-mapping', testSectionMapping);
 
 // Test endpoint for SOW mappings overview (WORKING)
 app.get('/api/sow/mappings', testSOWMappings);
+
+// ======================
+// DRAFT MANAGEMENT ENDPOINTS (NEW)
+// ======================
+app.post('/api/drafts/save', saveDraft);
+app.get('/api/drafts/:draftId', loadDraft);
+app.get('/api/drafts/list', listDrafts);
+app.delete('/api/drafts/:draftId', deleteDraft);
+app.post('/api/drafts/calculate-sqft', calculateSquareFootageEndpoint);
+app.get('/api/drafts/health', draftSystemHealth);
 
 // ======================
 // MULTI-ROLE WORKFLOW ENDPOINTS
@@ -160,14 +180,21 @@ app.get('/api/jurisdiction/health', jurisdictionHealth);
 // SYSTEM STATUS & DOCUMENTATION
 // ======================
 
-// Enhanced system status endpoint with section mapping
+// Enhanced system status endpoint with section mapping and draft management
 app.get('/api/status', (req, res) => {
   res.json({
-    phase: 'Complete Multi-Role Workflow System with SOW Integration, File Management & Section-Input Mapping',
-    version: '9.0.0-mapping-engine',
-    engineVersion: '9.0.0 - Section-Input Mapping + Enhanced Integration + Multi-Role Workflow-SOW Integration',
+    phase: 'Complete Multi-Role Workflow System with SOW Integration, File Management, Section-Input Mapping & Draft Management',
+    version: '9.1.0-draft-management',
+    engineVersion: '9.1.0 - Draft Management + Section-Input Mapping + Enhanced Integration + Multi-Role Workflow-SOW Integration',
     serverStatus: 'running',
     timestamp: new Date().toISOString(),
+    draftManagement: {
+      draft_persistence: 'In-memory draft storage with validation ✅',
+      auto_calculation: 'Real-time square footage calculation ✅',
+      user_isolation: 'Per-user draft management ✅',
+      data_validation: 'Comprehensive input validation ✅',
+      error_recovery: 'Graceful error handling and recovery ✅'
+    },
     sectionInputMapping: {
       mapping_engine: 'Advanced section-to-input mapping with validation ✅',
       input_validation: 'Comprehensive validation with fallbacks ✅',
@@ -195,6 +222,14 @@ app.get('/api/status', (req, res) => {
       file_integration: 'COMPLETE ✅'
     },
     endpoints: {
+      draftManagement: {
+        'POST /api/drafts/save': 'Save inspection draft with auto-calculation',
+        'GET /api/drafts/:draftId': 'Load specific draft',
+        'GET /api/drafts/list': 'List user drafts',
+        'DELETE /api/drafts/:draftId': 'Delete draft',
+        'POST /api/drafts/calculate-sqft': 'Calculate square footage utility',
+        'GET /api/drafts/health': 'Draft system health check'
+      },
       sectionInputMapping: {
         'GET /api/test/section-mapping': 'Section mapping system test (WORKING)',
         'GET /api/sow/mappings': 'SOW mappings overview (WORKING)'
@@ -222,7 +257,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     requestPath: req.path,
     workflow_integration: req.path.includes('workflow') || req.body?.project_id,
     file_management: req.path.includes('files'),
-    section_mapping: req.path.includes('mapping')
+    section_mapping: req.path.includes('mapping'),
+    draft_management: req.path.includes('drafts')
   });
 });
 
@@ -237,18 +273,18 @@ app.use('*', (req, res) => {
       'GET /api/status - Complete system status',
       'GET /api/test/section-mapping - Section mapping test',
       'GET /api/sow/mappings - SOW mappings overview',
+      'POST /api/drafts/save - Save inspection draft',
+      'GET /api/drafts/list - List user drafts',
+      'POST /api/drafts/calculate-sqft - Calculate square footage',
       'POST /api/workflow/projects - Create workflow project',
-      'GET /api/test/workflow-sow - Workflow-SOW integration test',
-      'GET /api/test/file-management - File management system test',
       'POST /api/files/upload - Upload files to project',
-      'GET /api/files/project/:id - Get project files',
-      'GET /api/files/config - File management configuration'
+      'GET /api/files/project/:id - Get project files'
     ]
   });
 });
 
 app.listen(PORT, () => {
-  console.log('🚀 Enhanced Multi-Role Workflow-SOW Integration + File Management + Section Mapping Server Starting...');
+  console.log('🚀 Enhanced Multi-Role Workflow-SOW Integration + File Management + Section Mapping + Draft Management Server Starting...');
   console.log('=' .repeat(100));
   console.log(`📡 Server running on port ${PORT}`);
   console.log(`🔗 Base URL: http://localhost:${PORT}`);
@@ -259,7 +295,15 @@ app.listen(PORT, () => {
   console.log(`   🗺️ Section Mapping Test: GET /api/test/section-mapping`);
   console.log(`   📋 SOW Mappings: GET /api/sow/mappings`);
   console.log('');
-  console.log('🗺️ NEW: Section-Input Mapping System:');
+  console.log('💾 NEW: Draft Management System:');
+  console.log(`   💾 Save Draft: POST /api/drafts/save`);
+  console.log(`   📖 Load Draft: GET /api/drafts/:draftId`);
+  console.log(`   📋 List Drafts: GET /api/drafts/list`);
+  console.log(`   🗑️ Delete Draft: DELETE /api/drafts/:draftId`);
+  console.log(`   🧮 Calculate Sq Ft: POST /api/drafts/calculate-sqft`);
+  console.log(`   ❤️ Health Check: GET /api/drafts/health`);
+  console.log('');
+  console.log('🗺️ Section-Input Mapping System:');
   console.log(`   🧪 Test Section Mapping: GET /api/test/section-mapping`);
   console.log(`   📋 View SOW Mappings: GET /api/sow/mappings`);
   console.log('');
@@ -270,7 +314,6 @@ app.listen(PORT, () => {
   console.log(`   📤 Upload Files: POST /api/files/upload`);
   console.log(`   📋 Project Files: GET /api/files/project/:projectId`);
   console.log(`   ⚙️ Configuration: GET /api/files/config`);
-  console.log(`   🧪 File Management Test: GET /api/test/file-management`);
   console.log('');
   console.log('🔧 Enhanced SOW Generation:');
   console.log(`   🎨 Standard Enhanced: POST /api/sow/debug-sow`);
@@ -278,6 +321,7 @@ app.listen(PORT, () => {
   console.log(`   🔄 Self-Healing: POST /api/sow/debug-self-healing`);
   console.log('');
   console.log('✨ Key System Achievements:');
+  console.log(`   ✅ Draft management with auto-calculation and validation`);
   console.log(`   ✅ Working test endpoints for section mapping validation`);
   console.log(`   ✅ Comprehensive workflow and file management systems`);
   console.log(`   ✅ CSV integration structure for SOW section mapping`);
@@ -288,16 +332,16 @@ app.listen(PORT, () => {
   console.log('🌍 CORS Enabled for Lovable and local development');
   console.log('🗄️ Database: Supabase with complete workflow + file management schema');
   console.log('=' .repeat(100));
-  console.log('🎉 Enhanced Multi-Role Workflow-SOW Integration + File Management + Section Mapping System OPERATIONAL!');
+  console.log('🎉 Enhanced Multi-Role Workflow-SOW Integration + File Management + Section Mapping + Draft Management System OPERATIONAL!');
   console.log('');
-  console.log('📚 SIMPLIFIED AND WORKING: Section-Input Mapping System');
-  console.log('    🧪 Working test endpoints for immediate validation');
-  console.log('    📋 CSV structure analysis and mapping overview');
-  console.log('    🔍 System status verification and health checks');
-  console.log('    ⚡ Fast, reliable endpoints without complex dependencies');
+  console.log('💾 NEW FEATURES:');
+  console.log('    💾 Draft persistence for inspection forms');
+  console.log('    🧮 Accurate square footage auto-calculation');
+  console.log('    👤 Per-user draft isolation and management');
+  console.log('    🛡️ Comprehensive input validation and error recovery');
   console.log('');
   console.log('🧪 Ready for immediate testing!');
-  console.log('🚀 System fully operational with working section mapping test endpoints!');
+  console.log('🚀 System fully operational with working draft management + section mapping!');
 });
 
 export default app;
