@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, FileText, ClipboardCheck, Info } from 'lucide-react';
-import SOWInputForm from '@/components/SOWInputForm';
+import { SOWInputForm } from '@/components/SOWInputForm';
 import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
 import Breadcrumb from '@/components/navigation/Breadcrumb';
 
