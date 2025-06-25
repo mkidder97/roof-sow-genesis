@@ -33,7 +33,7 @@ export const WorkflowSOWGeneration: React.FC<WorkflowSOWGenerationProps> = ({
   const handleGenerateSOW = () => {
     if (!inspectionData) return;
 
-    // Transform inspection data to SOW request format - Fix: Use flat structure
+    // Transform inspection data to SOW request format - Fixed to use flat structure
     const sowRequest: SOWGenerationRequest = {
       projectName: inspectionData.projectName || inspectionData.project_name || '',
       projectAddress: inspectionData.projectAddress || inspectionData.project_address || '',

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { 
@@ -43,12 +42,16 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
       setGenerationProgress(10);
       setGenerationStatus('Initializing SOW generation...');
 
-      // Create database record first
-      const templateType = (data as any).projectType || 'commercial';  // Fix: handle legacy field access
+      // Create database record first - Fixed to handle flat structure
+      const templateType = 'commercial'; // Default template type
+      
+      // Separate file handling from JSON data - Fixed takeoffFile handling
+      const { takeoffFile, ...jsonData } = data;
+      
       const dbRecord = await createSOWMutation.mutateAsync({
         inspectionId: data.inspectionId,
         templateType,
-        inputData: data
+        inputData: jsonData // Store without File object
       });
 
       if (!dbRecord) {
@@ -66,7 +69,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
           updates: { generation_status: 'processing' }
         });
 
-        if (data.takeoffFile) {
+        if (takeoffFile) {
           setGenerationStatus('Processing takeoff file...');
           setGenerationProgress(50);
         }
@@ -74,7 +77,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
         setGenerationProgress(70);
         setGenerationStatus('Generating SOW document...');
 
-        // Call the API to generate SOW
+        // Call the API to generate SOW - Fixed to use flat structure
         const result = await generateSOWAPI(data);
         
         setGenerationProgress(100);
@@ -91,7 +94,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
             generation_completed_at: completedAt,
             generation_duration_seconds: generationTime,
             output_file_path: result.downloadUrl,
-            file_size_bytes: result.metadata?.fileSize // Fix: proper property access
+            file_size_bytes: result.metadata?.fileSize // Fixed property access
           }
         });
 
@@ -153,7 +156,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
     queryFn: () => getSOWStatusAPI(sowId),
     enabled: !!sowId,
     refetchInterval: (query) => {
-      // Poll every 2 seconds if still processing - Fix: proper data access
+      // Fixed query property access
       const data = query.state.data;
       return data?.generationStatus === 'processing' ? 2000 : false;
     },
@@ -236,7 +239,6 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
   };
 }
 
-// Hook for debug mode (existing functionality)
 export function useSOWDebug() {
   const debugMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -256,7 +258,6 @@ export function useSOWDebug() {
   };
 }
 
-// Hook for engine-specific debugging (existing functionality)
 export function useEngineDebug() {
   const engineDebugMutation = useMutation({
     mutationFn: async (data: { engine: string } & any) => {
@@ -276,7 +277,6 @@ export function useEngineDebug() {
   };
 }
 
-// Hook for template operations (existing functionality)
 export function useTemplateOperations() {
   const { data: templateMap, isLoading: isTemplateMapLoading } = useQuery({
     queryKey: ['template-map'],
@@ -303,33 +303,25 @@ export function useTemplateOperations() {
   };
 }
 
-// NEW: Hook for SOW workflow integration with field inspections
+// Hook for SOW workflow integration with field inspections - Fixed to use flat structure
 export function useSOWWorkflow() {
   const generateFromInspectionMutation = useMutation({
     mutationFn: async (data: { inspectionData: any; inspectionId: string }) => {
-      // Transform inspection data to SOW format
+      // Transform inspection data to SOW format - Fixed to use flat structure
       const sowRequest: SOWGenerationRequest = {
-        projectData: {
-          projectName: data.inspectionData.projectName || '',
-          address: data.inspectionData.address || '',
-          customerName: data.inspectionData.customerName,
-          customerPhone: data.inspectionData.customerPhone,
-          buildingHeight: data.inspectionData.buildingHeight,
-          squareFootage: data.inspectionData.squareFootage,
-          numberOfDrains: data.inspectionData.numberOfDrains,
-          numberOfPenetrations: data.inspectionData.numberOfPenetrations,
-          membraneType: data.inspectionData.membraneType,
-          windSpeed: data.inspectionData.windSpeed,
-          exposureCategory: data.inspectionData.exposureCategory,
-          projectType: data.inspectionData.projectType,
-          city: data.inspectionData.city,
-          state: data.inspectionData.state,
-          zipCode: data.inspectionData.zipCode,
-          deckType: data.inspectionData.deckType,
-          insulationType: data.inspectionData.insulationType,
-          buildingClassification: data.inspectionData.buildingClassification,
-          notes: data.inspectionData.notes,
-        },
+        projectName: data.inspectionData.projectName || '',
+        projectAddress: data.inspectionData.address || '',
+        city: data.inspectionData.city,
+        state: data.inspectionData.state,
+        zipCode: data.inspectionData.zipCode,
+        buildingHeight: data.inspectionData.buildingHeight,
+        deckType: data.inspectionData.deckType,
+        membraneType: data.inspectionData.membraneType,
+        insulationType: data.inspectionData.insulationType,
+        windSpeed: data.inspectionData.windSpeed,
+        exposureCategory: data.inspectionData.exposureCategory,
+        buildingClassification: data.inspectionData.buildingClassification,
+        notes: data.inspectionData.notes,
         inspectionId: data.inspectionId,
       };
 
@@ -346,7 +338,7 @@ export function useSOWWorkflow() {
   };
 }
 
-// NEW: Hook for real-time SOW status monitoring
+// Hook for real-time SOW status monitoring
 export function useSOWStatusMonitor(sowId: string | null) {
   const [isMonitoring, setIsMonitoring] = useState(false);
 
@@ -354,13 +346,14 @@ export function useSOWStatusMonitor(sowId: string | null) {
     queryKey: ['sow-status-monitor', sowId],
     queryFn: () => getSOWStatusAPI(sowId!),
     enabled: !!sowId && isMonitoring,
-    refetchInterval: (data) => {
-      // Poll every 2 seconds if still processing
+    refetchInterval: (query) => {
+      // Fixed query property access
+      const data = query.state.data;
       if (data?.generationStatus === 'processing') {
         return 2000;
       }
       // Stop monitoring when complete or failed
-      if (data?.generationStatus === 'complete' || data?.generationStatus === 'failed') {
+      if (data?.generationStatus === 'completed' || data?.generationStatus === 'failed') {
         setIsMonitoring(false);
         return false;
       }

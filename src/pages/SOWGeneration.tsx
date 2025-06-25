@@ -76,7 +76,7 @@ const SOWGeneration = () => {
     console.log('SOW generation requested with validated data:', data);
     
     try {
-      // Make the real API call with properly typed data - Fix: pass data directly (no wrapper needed)
+      // Make the real API call with properly typed data
       generateSOW(data);
     } catch (error: any) {
       console.error('SOW submission error:', error);
@@ -124,11 +124,11 @@ const SOWGeneration = () => {
           variant: "destructive",
         });
       }
-    } else if (generationData?.file_url) { // Fix: use correct property name
+    } else if (generationData?.downloadUrl) {
       // Handle direct file URL download
       try {
         const link = document.createElement('a');
-        link.href = generationData.file_url;
+        link.href = generationData.downloadUrl;
         link.download = `SOW_${inspectionData?.projectName || inspectionData?.project_name || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
         link.click();
         

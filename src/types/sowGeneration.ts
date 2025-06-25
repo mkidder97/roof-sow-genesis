@@ -4,7 +4,7 @@ import { z } from 'zod';
 // Fixed Generation Status Type
 export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
-// Zod schemas for runtime validation - Fixed to match actual usage
+// Zod schemas for runtime validation - Fixed to match actual flat usage
 export const SOWGenerationRequestSchema = z.object({
   projectName: z.string().min(1, 'Project name is required'),
   projectAddress: z.string().min(1, 'Project address is required'),
@@ -66,10 +66,10 @@ export const SOWResponseSchema = z.object({
   success: z.boolean(),
   sowId: z.string().optional(),
   downloadUrl: z.string().optional(),
+  file_url: z.string().optional(), // Added missing property
   generationStatus: z.enum(['pending', 'processing', 'completed', 'failed', 'cancelled']).optional(),
   error: z.string().optional(),
   estimatedCompletionTime: z.number().optional(),
-  file_url: z.string().optional(),
   data: z.object({
     sow: z.string().optional(),
     pdf: z.string().optional(),
@@ -81,11 +81,11 @@ export const SOWResponseSchema = z.object({
     generationTime: z.number().optional(),
     fileProcessed: z.boolean().optional(),
     extractionConfidence: z.number().optional(),
-    fileSize: z.number().optional(),
+    fileSize: z.number().optional(), // Added missing property
   }).optional(),
 });
 
-// TypeScript interfaces derived from Zod schemas - Fixed to match actual usage
+// TypeScript interfaces derived from Zod schemas - Fixed to use flat structure
 export type SOWGenerationRequest = z.infer<typeof SOWGenerationRequestSchema>;
 export type FieldInspectionData = z.infer<typeof FieldInspectionDataSchema>;
 export type SOWGenerationError = z.infer<typeof SOWGenerationErrorSchema>;
