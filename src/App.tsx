@@ -30,7 +30,7 @@ import Dashboard from "./pages/Dashboard";
 import FieldInspector from "./pages/FieldInspector";
 import InspectorDashboard from "./components/field-inspector/InspectorDashboard";
 import FieldInspectionForm from "./components/field-inspector/FieldInspectionForm";
-import FieldInspectionView from "./components/field-inspector/FieldInspectionView";
+import InspectionDetailsPage from "./pages/InspectionDetailsPage";
 import SOWGeneration from "./pages/SOWGeneration";
 import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -74,7 +74,8 @@ function App() {
             <Route path="/field-inspector" element={<FieldInspector />} />
             <Route path="/field-inspector/dashboard" element={<InspectorDashboard />} />
             <Route path="/field-inspection/new" element={<FieldInspectionForm />} />
-            <Route path="/field-inspection/:id" element={<FieldInspectionView />} />
+            <Route path="/field-inspection/:id" element={<InspectionDetailsPage />} />
+            <Route path="/field-inspection/:id/edit" element={<FieldInspectionForm />} />
 
             {/* SOW Generation Route */}
             <Route path="/sow-generation" element={<SOWGeneration />} />
