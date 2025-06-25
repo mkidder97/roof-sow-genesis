@@ -8,9 +8,7 @@ import {
   deleteSOWAPI,
   checkHealth,
   apiCall,
-  API_ENDPOINTS,
-  SOWGenerationRequest,
-  SOWGenerationResponse 
+  API_ENDPOINTS
 } from '@/lib/api';
 import { 
   useCreateSOWGeneration, 
@@ -18,11 +16,13 @@ import {
   useSOWGeneration as useSOWGenerationDB,
   useUpdateInspectionSOWStatus 
 } from '@/hooks/useSOWDatabase';
-
-export interface UseSOWGenerationProps {
-  onSuccess?: (data: SOWGenerationResponse) => void;
-  onError?: (error: Error) => void;
-}
+import {
+  SOWGenerationRequest,
+  SOWGenerationResponse,
+  UseSOWGenerationProps,
+  SOWGenerationRecord,
+  FieldInspectionData
+} from '@/types/sow';
 
 export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps = {}) {
   const [generationProgress, setGenerationProgress] = useState(0);
@@ -42,16 +42,16 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
       setGenerationProgress(10);
       setGenerationStatus('Initializing SOW generation...');
 
-      // Create database record first - Fixed to handle flat structure
-      const templateType = 'commercial'; // Default template type
+      // Create database record first
+      const templateType = 'commercial';
       
-      // Separate file handling from JSON data - Fixed takeoffFile handling
+      // Separate file handling from JSON data
       const { takeoffFile, ...jsonData } = data;
       
       const dbRecord = await createSOWMutation.mutateAsync({
         inspectionId: data.inspectionId,
         templateType,
-        inputData: jsonData // Store without File object
+        inputData: jsonData
       });
 
       if (!dbRecord) {
@@ -77,7 +77,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
         setGenerationProgress(70);
         setGenerationStatus('Generating SOW document...');
 
-        // Call the API to generate SOW - Fixed to use flat structure
+        // Call the API to generate SOW
         const result = await generateSOWAPI(data);
         
         setGenerationProgress(100);
@@ -94,7 +94,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
             generation_completed_at: completedAt,
             generation_duration_seconds: generationTime,
             output_file_path: result.downloadUrl,
-            file_size_bytes: result.metadata?.fileSize // Fixed property access
+            file_size_bytes: result.metadata?.fileSize
           }
         });
 
@@ -156,7 +156,6 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
     queryFn: () => getSOWStatusAPI(sowId),
     enabled: !!sowId,
     refetchInterval: (query) => {
-      // Fixed query property access
       const data = query.state.data;
       return data?.generationStatus === 'processing' ? 2000 : false;
     },
@@ -173,7 +172,6 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
   const deleteSOWMutation = useMutation({
     mutationFn: deleteSOWAPI,
     onSuccess: () => {
-      // Refetch the list after successful deletion
       refetchList();
     },
   });
@@ -182,7 +180,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
   const { data: healthStatus, isLoading: isHealthLoading } = useQuery({
     queryKey: ['backend-health'],
     queryFn: () => checkHealth(),
-    refetchInterval: 30000, // Check every 30 seconds
+    refetchInterval: 30000,
     retry: 3,
   });
 
@@ -190,7 +188,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
   const { data: backendStatus, isLoading: isStatusLoading } = useQuery({
     queryKey: ['backend-status'],
     queryFn: () => apiCall(API_ENDPOINTS.status),
-    refetchInterval: 60000, // Check every minute
+    refetchInterval: 60000,
   });
 
   return {
@@ -201,7 +199,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
     generationData: generateSOWMutation.data,
     generationProgress,
     generationStatus,
-    currentSOW, // Real-time SOW status from database
+    currentSOW,
     
     // SOW download
     downloadSOW: downloadSOWMutation.mutate,
@@ -303,24 +301,24 @@ export function useTemplateOperations() {
   };
 }
 
-// Hook for SOW workflow integration with field inspections - Fixed to use flat structure
+// Hook for SOW workflow integration with field inspections
 export function useSOWWorkflow() {
   const generateFromInspectionMutation = useMutation({
-    mutationFn: async (data: { inspectionData: any; inspectionId: string }) => {
-      // Transform inspection data to SOW format - Fixed to use flat structure
+    mutationFn: async (data: { inspectionData: FieldInspectionData; inspectionId: string }) => {
+      // Transform inspection data to SOW format
       const sowRequest: SOWGenerationRequest = {
-        projectName: data.inspectionData.projectName || '',
-        projectAddress: data.inspectionData.address || '',
+        projectName: data.inspectionData.projectName || data.inspectionData.project_name || '',
+        projectAddress: data.inspectionData.projectAddress || data.inspectionData.project_address || '',
         city: data.inspectionData.city,
         state: data.inspectionData.state,
-        zipCode: data.inspectionData.zipCode,
-        buildingHeight: data.inspectionData.buildingHeight,
-        deckType: data.inspectionData.deckType,
-        membraneType: data.inspectionData.membraneType,
-        insulationType: data.inspectionData.insulationType,
-        windSpeed: data.inspectionData.windSpeed,
-        exposureCategory: data.inspectionData.exposureCategory,
-        buildingClassification: data.inspectionData.buildingClassification,
+        zipCode: data.inspectionData.zipCode || data.inspectionData.zip_code,
+        buildingHeight: data.inspectionData.buildingHeight || data.inspectionData.building_height,
+        deckType: (data.inspectionData.deckType || data.inspectionData.deck_type) as any,
+        membraneType: (data.inspectionData.membraneType || data.inspectionData.membrane_type) as any,
+        insulationType: (data.inspectionData.insulationType || data.inspectionData.insulation_type) as any,
+        windSpeed: data.inspectionData.windSpeed || data.inspectionData.wind_speed,
+        exposureCategory: (data.inspectionData.exposureCategory || data.inspectionData.exposure_category) as any,
+        buildingClassification: (data.inspectionData.buildingClassification || data.inspectionData.building_classification) as any,
         notes: data.inspectionData.notes,
         inspectionId: data.inspectionId,
       };
@@ -347,12 +345,10 @@ export function useSOWStatusMonitor(sowId: string | null) {
     queryFn: () => getSOWStatusAPI(sowId!),
     enabled: !!sowId && isMonitoring,
     refetchInterval: (query) => {
-      // Fixed query property access
       const data = query.state.data;
       if (data?.generationStatus === 'processing') {
         return 2000;
       }
-      // Stop monitoring when complete or failed
       if (data?.generationStatus === 'completed' || data?.generationStatus === 'failed') {
         setIsMonitoring(false);
         return false;

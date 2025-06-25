@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { SOWGenerationRequest } from '@/types/sowGeneration';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Loader2 } from 'lucide-react';
+import { SOWGenerationRequest, FieldInspectionData, transformInspectionToSOWRequest } from '@/types/sow';
 
 interface WorkflowSOWGenerationProps {
-  inspectionData?: any;
+  inspectionData?: FieldInspectionData;
   onSOWGenerated?: (sowId: string) => void;
 }
 
@@ -33,23 +33,14 @@ export const WorkflowSOWGeneration: React.FC<WorkflowSOWGenerationProps> = ({
   const handleGenerateSOW = () => {
     if (!inspectionData) return;
 
-    // Transform inspection data to SOW request format - Fixed to use flat structure
-    const sowRequest: SOWGenerationRequest = {
-      projectName: inspectionData.projectName || inspectionData.project_name || '',
-      projectAddress: inspectionData.projectAddress || inspectionData.project_address || '',
-      city: inspectionData.city || '',
-      state: inspectionData.state || '',
-      zipCode: inspectionData.zipCode || inspectionData.zip_code || '',
-      buildingHeight: inspectionData.buildingHeight || inspectionData.building_height || 0,
-      deckType: inspectionData.deckType || inspectionData.deck_type || 'concrete',
-      membraneType: inspectionData.membraneType || inspectionData.membrane_type || 'tpo',
-      insulationType: inspectionData.insulationType || inspectionData.insulation_type || 'polyiso',
-      windSpeed: inspectionData.windSpeed || inspectionData.wind_speed || 120,
-      exposureCategory: inspectionData.exposureCategory || inspectionData.exposure_category || 'C',
-      buildingClassification: inspectionData.buildingClassification || inspectionData.building_classification || 'II',
-      notes: inspectionData.notes || '',
-      inspectionId: inspectionData.id
-    };
+    // Transform inspection data to SOW request format
+    const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest(inspectionData);
+
+    // Ensure required fields are present
+    if (!sowRequest.projectName || !sowRequest.projectAddress) {
+      console.error('Missing required fields for SOW generation');
+      return;
+    }
 
     generateSOW(sowRequest);
   };

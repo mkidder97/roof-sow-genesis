@@ -1,31 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { SOWGenerationRequest, SOWGenerationResponse, GenerationStatus } from "@/types/sowGeneration";
-
-export interface SOWGenerationRecord {
-  id: string;
-  inspection_id?: string;
-  user_id: string;
-  template_type: string;
-  generation_status: GenerationStatus;
-  input_data: any;
-  output_file_path?: string;
-  file_size_bytes?: number;
-  generation_started_at: string;
-  generation_completed_at?: string;
-  generation_duration_seconds?: number;
-  error_message?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DashboardMetrics {
-  totalInspections: number;
-  totalSOWsGenerated: number;
-  pendingSOWs: number;
-  avgGenerationTime: number;
-  recentGenerations: SOWGenerationRecord[];
-}
+import { SOWGenerationRequest, SOWGenerationRecord, DashboardMetrics, GenerationStatus } from "@/types/sow";
 
 // Create new SOW generation record
 export async function createSOWGeneration(data: {
@@ -43,7 +17,7 @@ export async function createSOWGeneration(data: {
         inspection_id: data.inspectionId,
         template_type: data.templateType,
         generation_status: 'pending' as GenerationStatus,
-        input_data: jsonData, // Store without File object
+        input_data: jsonData,
         generation_started_at: new Date().toISOString()
       })
       .select()

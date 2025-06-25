@@ -7,11 +7,9 @@ import {
   getSOWHistory, 
   getDashboardMetrics,
   updateInspectionSOWStatus,
-  getSOWTemplates,
-  SOWGenerationRecord,
-  DashboardMetrics
+  getSOWTemplates
 } from '@/lib/sowDatabase';
-import { SOWGenerationRequest } from '@/types/sowGeneration';
+import { SOWGenerationRequest, SOWGenerationRecord, DashboardMetrics } from '@/types/sow';
 
 // Hook for creating SOW generations
 export function useCreateSOWGeneration() {
@@ -62,7 +60,6 @@ export function useSOWGeneration(id: string | null) {
     },
     enabled: !!id,
     refetchInterval: (query) => {
-      // Poll every 2 seconds if still processing - Fix: access data properly
       const data = query.state.data;
       return data?.generation_status === 'processing' || data?.generation_status === 'pending' ? 2000 : false;
     }
@@ -91,7 +88,7 @@ export function useDashboardMetrics() {
       if (result.error) throw new Error(result.error);
       return result.data;
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
     refetchOnWindowFocus: true
   });
 }

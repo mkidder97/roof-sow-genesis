@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,14 +12,14 @@ import { SOWErrorBoundary } from '@/components/SOWErrorBoundary';
 import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
 import Breadcrumb from '@/components/navigation/Breadcrumb';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
-import { 
-  FieldInspectionData, 
-  SOWGenerationRequest, 
+import { useToast } from '@/hooks/use-toast';
+import {
+  FieldInspectionData,
+  SOWGenerationRequest,
   SOWGenerationError,
   createSOWError,
-  isNetworkError 
-} from '@/types/sowGeneration';
-import { useToast } from '@/hooks/use-toast';
+  isNetworkError
+} from '@/types/sow';
 
 const SOWGeneration = () => {
   const { user } = useAuth();
@@ -189,7 +188,14 @@ const SOWGeneration = () => {
   };
 
   return (
-    <SOWErrorBoundary onError={handleErrorBoundaryError}>
+    <SOWErrorBoundary onError={(error: SOWGenerationError) => {
+      console.error('Error boundary caught SOW error:', error);
+      toast({
+        title: `${error.type} Error`,
+        description: error.message,
+        variant: "destructive",
+      });
+    }}>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
         <RoleBasedNavigation />
         <Breadcrumb />
