@@ -5,14 +5,18 @@ const API_BASE_URL = import.meta.env.PROD
   : 'http://localhost:3001';
 
 export const API_ENDPOINTS = {
-  // Main SOW Generation - Your primary endpoint
-  generateSOW: `${API_BASE_URL}/api/sow/debug-sow`,
+  // NEW: Main SOW Generation API - Frontend Ready
+  generateSOW: `${API_BASE_URL}/api/sow/generate`,
+  downloadSOW: `${API_BASE_URL}/api/sow/download`,
+  getSOWStatus: `${API_BASE_URL}/api/sow/status`,
+  listSOWs: `${API_BASE_URL}/api/sow/list`,
+  deleteSOW: `${API_BASE_URL}/api/sow`,
   
-  // Debug and Development
+  // Debug and Development (existing)
   debugSOW: `${API_BASE_URL}/api/debug-sow-enhanced`,
   debugEngine: `${API_BASE_URL}/api/debug-engine-trace`,
   
-  // Template System
+  // Template System (existing)
   renderTemplate: `${API_BASE_URL}/api/render-template`,
   templateMap: `${API_BASE_URL}/api/template-map`,
   
@@ -35,32 +39,38 @@ export const API_ENDPOINTS = {
 
 export interface SOWGenerationRequest {
   // Project Information
-  projectName?: string;
-  projectAddress?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  
-  // Building Specifications
-  buildingHeight?: number;
-  deckType?: string;
-  membraneType?: string;
-  insulationType?: string;
-  
-  // Wind Analysis
-  windSpeed?: number;
-  exposureCategory?: 'B' | 'C' | 'D';
-  buildingClassification?: 'I' | 'II' | 'III' | 'IV';
-  
-  // File Upload
-  takeoffFile?: File;
-  
-  // Additional metadata
-  [key: string]: any;
+  projectData: {
+    projectName: string;
+    address: string;
+    customerName?: string;
+    customerPhone?: string;
+    buildingHeight?: number;
+    squareFootage?: number;
+    numberOfDrains?: number;
+    numberOfPenetrations?: number;
+    membraneType?: string;
+    windSpeed?: number;
+    exposureCategory?: string;
+    projectType?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    deckType?: string;
+    insulationType?: string;
+    buildingClassification?: string;
+    notes?: string;
+  };
+  inspectionId?: string;
+  file?: File;
 }
 
 export interface SOWGenerationResponse {
   success: boolean;
+  sowId?: string;
+  downloadUrl?: string;
+  generationStatus?: 'processing' | 'complete' | 'failed';
+  error?: string;
+  estimatedCompletionTime?: number;
   data?: {
     sow?: string;
     pdf?: string;
@@ -68,9 +78,11 @@ export interface SOWGenerationResponse {
     template?: string;
     templateUsed?: string;
   };
-  error?: string;
-  debug?: any;
-  file_url?: string; // Added missing property for file download URL
+  metadata?: {
+    generationTime?: number;
+    fileProcessed?: boolean;
+    extractionConfidence?: number;
+  };
 }
 
 // Legacy types for compatibility with existing SOWInputForm
@@ -145,6 +157,130 @@ export interface DraftListResponse {
   drafts?: DraftData[];
   count?: number;
   error?: string;
+}
+
+// NEW: Main SOW Generation API Function
+export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOWGenerationResponse> {
+  try {
+    const formData = new FormData();
+    
+    // Add project data as JSON string
+    formData.append('projectData', JSON.stringify(request.projectData));
+    
+    // Add inspection ID if provided
+    if (request.inspectionId) {
+      formData.append('inspectionId', request.inspectionId);
+    }
+    
+    // Add file if provided
+    if (request.file) {
+      formData.append('file', request.file);
+    }
+
+    const response = await fetch(API_ENDPOINTS.generateSOW, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('SOW generation API failed:', error);
+    throw error;
+  }
+}
+
+// NEW: Download SOW Function
+export async function downloadSOWAPI(sowId: string): Promise<Blob> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.downloadSOW}/${sowId}`, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.blob();
+  } catch (error) {
+    console.error('SOW download failed:', error);
+    throw error;
+  }
+}
+
+// NEW: Get SOW Status Function
+export async function getSOWStatusAPI(sowId: string): Promise<SOWGenerationResponse> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.getSOWStatus}/${sowId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('SOW status check failed:', error);
+    throw error;
+  }
+}
+
+// NEW: List SOWs Function
+export async function listSOWsAPI(page: number = 1, limit: number = 10): Promise<{
+  success: boolean;
+  sows: any[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.listSOWs}?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('List SOWs failed:', error);
+    throw error;
+  }
+}
+
+// NEW: Delete SOW Function
+export async function deleteSOWAPI(sowId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.deleteSOW}/${sowId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Delete SOW failed:', error);
+    throw error;
+  }
 }
 
 // Draft Management API Functions
@@ -259,7 +395,7 @@ export async function apiCall<T = any>(
   }
 }
 
-// Specialized function for file uploads
+// Specialized function for file uploads (Legacy - kept for compatibility)
 export async function uploadFileToAPI(
   endpoint: string,
   file: File,
