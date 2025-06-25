@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, FileText, Building2, Wind, Settings, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck } from 'lucide-react';
 
 interface SOWInputFormProps {
   initialData?: any;
@@ -111,6 +111,24 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
             <AlertTriangle className="h-4 w-4 text-red-400" />
             <AlertDescription className="text-red-200">
               SOW generation is currently unavailable. Please ensure the backend server is running and try again.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Single inspection data alert */}
+        {initialData && (
+          <Alert className="mb-6 bg-green-900/50 border-green-400/30">
+            <ClipboardCheck className="h-4 w-4 text-green-400" />
+            <AlertDescription className="text-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <strong>Field Inspection Data Loaded:</strong> {initialData.projectName || initialData.project_name} - 
+                  Data from the completed field inspection has been automatically populated in the form below.
+                </div>
+                <Badge className="bg-green-600 text-white">
+                  Auto-filled
+                </Badge>
+              </div>
             </AlertDescription>
           </Alert>
         )}

@@ -93,10 +93,10 @@ const SOWGeneration = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } else if (generationData?.outputPath) {
-      // Handle direct file path download
+    } else if (generationData?.file_url) {
+      // Handle direct file URL download
       const link = document.createElement('a');
-      link.href = generationData.outputPath;
+      link.href = generationData.file_url;
       link.download = `SOW_${inspectionData?.projectName || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
       link.click();
     } else {
@@ -174,24 +174,6 @@ const SOWGeneration = () => {
                 </div>
                 <Badge className={isBackendOnline ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
                   {isBackendOnline ? 'Online' : 'Offline'}
-                </Badge>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Enhanced Inspection Data Alert */}
-        {inspectionData && (
-          <Alert className="mb-6 bg-green-900/50 border-green-400/30">
-            <ClipboardCheck className="h-4 w-4 text-green-400" />
-            <AlertDescription className="text-green-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <strong>Field Inspection Data Loaded:</strong> {inspectionData.projectName} - 
-                  Data from the completed field inspection has been automatically populated in the form below.
-                </div>
-                <Badge className="bg-green-600 text-white">
-                  Auto-filled
                 </Badge>
               </div>
             </AlertDescription>
