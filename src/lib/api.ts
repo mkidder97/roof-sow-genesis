@@ -70,6 +70,7 @@ export interface SOWGenerationResponse {
   };
   error?: string;
   debug?: any;
+  file_url?: string; // Added missing property for file download URL
 }
 
 // Legacy types for compatibility with existing SOWInputForm
