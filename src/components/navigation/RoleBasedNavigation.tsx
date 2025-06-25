@@ -8,8 +8,7 @@ import {
   Home, 
   ClipboardCheck, 
   FileText,
-  ArrowLeft,
-  TrendingUp
+  ArrowLeft
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -64,7 +63,7 @@ const RoleBasedNavigation = () => {
     
     const pageDescriptions: { [key: string]: { title: string; description: string } } = {
       '/dashboard': {
-        title: userRole === 'engineer' ? 'Engineer Dashboard' : 'Inspector Dashboard',
+        title: userRole === 'engineer' ? 'Engineer Dashboard' : 'Field Inspector Dashboard',
         description: userRole === 'engineer' 
           ? 'Review completed inspections and generate SOW documents'
           : 'Manage field inspections and building assessments'
