@@ -21,6 +21,13 @@ export const API_ENDPOINTS = {
   status: `${API_BASE_URL}/api/status`,
   docs: `${API_BASE_URL}/api/docs`,
   
+  // Draft Management
+  saveDraft: `${API_BASE_URL}/api/drafts/save`,
+  loadDraft: `${API_BASE_URL}/api/drafts`,
+  listDrafts: `${API_BASE_URL}/api/drafts/list`,
+  deleteDraft: `${API_BASE_URL}/api/drafts`,
+  calculateSquareFootage: `${API_BASE_URL}/api/drafts/calculate-sqft`,
+  
   // Legacy endpoints (still supported)
   generateSOWLegacy: `${API_BASE_URL}/api/generate-sow`,
   debugSOWLegacy: `${API_BASE_URL}/api/debug-sow`,
@@ -99,6 +106,130 @@ export interface SOWResponse {
     engineeringSummary?: any;
   };
   error?: string;
+}
+
+// Draft Management Types
+export interface DraftData {
+  id?: string;
+  projectName?: string;
+  projectAddress?: string;
+  buildingHeight?: number;
+  buildingLength?: number;
+  buildingWidth?: number;
+  squareFootage?: number;
+  numberOfStories?: number;
+  roofSlope?: string;
+  deckType?: string;
+  insulationLayers?: Array<{
+    type: string;
+    thickness: number;
+  }>;
+  coverBoard?: string;
+  timestamp?: string;
+  lastModified?: string;
+  [key: string]: any;
+}
+
+export interface DraftResponse {
+  success: boolean;
+  draftId?: string;
+  draft?: DraftData;
+  message?: string;
+  error?: string;
+  squareFootage?: number;
+}
+
+export interface DraftListResponse {
+  success: boolean;
+  drafts?: DraftData[];
+  count?: number;
+  error?: string;
+}
+
+// Draft Management API Functions
+export async function saveDraft(draftData: DraftData): Promise<DraftResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.saveDraft, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': 'current-user', // Replace with actual user ID from auth context
+      },
+      body: JSON.stringify(draftData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Save draft failed:', error);
+    throw error;
+  }
+}
+
+export async function loadDraft(draftId: string): Promise<DraftResponse> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.loadDraft}/${draftId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': 'current-user', // Replace with actual user ID from auth context
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Load draft failed:', error);
+    throw error;
+  }
+}
+
+export async function listDrafts(): Promise<DraftListResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.listDrafts, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': 'current-user', // Replace with actual user ID from auth context
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('List drafts failed:', error);
+    throw error;
+  }
+}
+
+export async function deleteDraft(draftId: string): Promise<DraftResponse> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.deleteDraft}/${draftId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': 'current-user', // Replace with actual user ID from auth context
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Delete draft failed:', error);
+    throw error;
+  }
 }
 
 // Utility function for making API calls with proper error handling

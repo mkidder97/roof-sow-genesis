@@ -1,14 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFieldInspections } from '@/hooks/useFieldInspections';
+import { useDraftManagement } from '@/hooks/useDraftManagement';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ChevronLeft, ChevronRight, Save, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { FieldInspection, InspectionFormStep } from '@/types/fieldInspection';
+import { DraftData } from '@/lib/api';
 import { toast } from 'sonner';
 
 // Import step components
@@ -18,12 +19,14 @@ import EquipmentInventoryStep from './form-steps/EquipmentInventoryStep';
 import PhotoDocumentationStep from './form-steps/PhotoDocumentationStep';
 import AssessmentNotesStep from './form-steps/AssessmentNotesStep';
 import FloatingCameraButton from './FloatingCameraButton';
+import DraftManagement from './DraftManagement';
 
 const FieldInspectionForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
   const { saveInspection, inspections } = useFieldInspections();
+  const { saveDraft, currentDraftId } = useDraftManagement();
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,6 +77,51 @@ const FieldInspectionForm = () => {
   const handlePhotosAdded = (newPhotos: string[]) => {
     const updatedPhotos = [...(formData.photos || []), ...newPhotos];
     updateFormData({ photos: updatedPhotos });
+  };
+
+  // Convert form data to draft format
+  const convertToDraftFormat = (data: Partial<FieldInspection>): DraftData => {
+    return {
+      id: currentDraftId || undefined,
+      projectName: data.project_name,
+      projectAddress: data.project_address,
+      buildingHeight: data.building_height,
+      buildingLength: data.building_length,
+      buildingWidth: data.building_width,
+      squareFootage: data.square_footage,
+      numberOfStories: data.number_of_stories,
+      roofSlope: data.roof_slope,
+      deckType: data.deck_type,
+      insulationLayers: data.insulation_layers as Array<{ type: string; thickness: number }>,
+      coverBoard: data.cover_board_type,
+      // Include all other form data
+      ...data,
+    };
+  };
+
+  // Convert draft data back to form format
+  const convertFromDraftFormat = (draft: DraftData): Partial<FieldInspection> => {
+    return {
+      project_name: draft.projectName,
+      project_address: draft.projectAddress,
+      building_height: draft.buildingHeight,
+      building_length: draft.buildingLength,
+      building_width: draft.buildingWidth,
+      square_footage: draft.squareFootage,
+      number_of_stories: draft.numberOfStories,
+      roof_slope: draft.roofSlope,
+      deck_type: draft.deckType,
+      insulation_layers: draft.insulationLayers,
+      cover_board_type: draft.coverBoard,
+      // Include all other draft data
+      ...draft,
+    };
+  };
+
+  const handleLoadDraft = (draftData: DraftData) => {
+    const convertedData = convertFromDraftFormat(draftData);
+    setFormData(prev => ({ ...prev, ...convertedData }));
+    toast.success('Draft loaded successfully');
   };
 
   const validateCurrentStep = (): boolean => {
@@ -137,13 +185,16 @@ const FieldInspectionForm = () => {
         return;
       }
 
-      const savedInspectionId = await saveInspection(formData);
-      if (savedInspectionId) {
-        toast.success('Draft saved successfully');
-        if (!id) {
-          // Navigate to the edit page for the new inspection
-          navigate(`/field-inspection/${savedInspectionId}/edit`, { replace: true });
-        }
+      // Save to backend draft system
+      const draftData = convertToDraftFormat(formData);
+      const savedDraftId = await saveDraft(draftData);
+      
+      if (savedDraftId) {
+        // Also save to local inspection system if needed
+        await saveInspection(formData);
+        
+        // Don't navigate away - stay on current form
+        console.log('Draft saved successfully with ID:', savedDraftId);
       }
     } catch (error) {
       console.error('Save draft error:', error);
@@ -203,14 +254,15 @@ const FieldInspectionForm = () => {
     }
   };
 
-  // Auto-save functionality
+  // Auto-save functionality using draft system
   useEffect(() => {
-    if (!id || !formData.project_name || !formData.project_address) return;
+    if (!formData.project_name || !formData.project_address) return;
     
     const autoSave = async () => {
       try {
         setAutoSaveLoading(true);
-        await saveInspection(formData);
+        const draftData = convertToDraftFormat(formData);
+        await saveDraft(draftData);
       } catch (error) {
         console.error('Auto-save failed:', error);
       } finally {
@@ -220,7 +272,7 @@ const FieldInspectionForm = () => {
 
     const timer = setTimeout(autoSave, 30000); // Auto-save every 30 seconds
     return () => clearTimeout(timer);
-  }, [formData, id, saveInspection]);
+  }, [formData, saveDraft]);
 
   const progress = ((currentStep + 1) / steps.length) * 100;
   const validationErrors = getValidationErrors();
@@ -321,6 +373,11 @@ const FieldInspectionForm = () => {
           </div>
 
           <div className="flex gap-2">
+            <DraftManagement 
+              onLoadDraft={handleLoadDraft}
+              disabled={isLoading}
+            />
+            
             <Button
               variant="outline"
               onClick={handleSaveDraft}
