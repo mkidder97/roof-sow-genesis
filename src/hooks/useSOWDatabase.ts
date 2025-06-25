@@ -61,8 +61,9 @@ export function useSOWGeneration(id: string | null) {
       return result.data;
     },
     enabled: !!id,
-    refetchInterval: (data) => {
-      // Poll every 2 seconds if still processing
+    refetchInterval: (query) => {
+      // Poll every 2 seconds if still processing - Fix: access data properly
+      const data = query.state.data;
       return data?.generation_status === 'processing' || data?.generation_status === 'pending' ? 2000 : false;
     }
   });
@@ -115,7 +116,7 @@ export function useUpdateInspectionSOWStatus() {
   return useMutation({
     mutationFn: async ({ inspectionId, sowGenerated }: { inspectionId: string; sowGenerated: boolean }) => {
       const result = await updateInspectionSOWStatus(inspectionId, sowGenerated);
-      if (result.error) throw new Error(result.error);
+      if (result.error) throw new result.error);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['field-inspections'] });

@@ -1,7 +1,10 @@
 
 import { z } from 'zod';
 
-// Zod schemas for runtime validation
+// Fixed Generation Status Type
+export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+
+// Zod schemas for runtime validation - Fixed to match actual usage
 export const SOWGenerationRequestSchema = z.object({
   projectName: z.string().min(1, 'Project name is required'),
   projectAddress: z.string().min(1, 'Project address is required'),
@@ -17,6 +20,7 @@ export const SOWGenerationRequestSchema = z.object({
   buildingClassification: z.enum(['I', 'II', 'III', 'IV']).optional(),
   takeoffFile: z.instanceof(File).optional(),
   notes: z.string().optional(),
+  inspectionId: z.string().optional(),
 });
 
 export const FieldInspectionDataSchema = z.object({
@@ -57,8 +61,15 @@ export const SOWGenerationErrorSchema = z.object({
   type: z.enum(['network', 'validation', 'server', 'unknown']).default('unknown'),
 });
 
+// Fixed SOWGenerationResponse interface with all required properties
 export const SOWResponseSchema = z.object({
   success: z.boolean(),
+  sowId: z.string().optional(),
+  downloadUrl: z.string().optional(),
+  generationStatus: z.enum(['pending', 'processing', 'completed', 'failed', 'cancelled']).optional(),
+  error: z.string().optional(),
+  estimatedCompletionTime: z.number().optional(),
+  file_url: z.string().optional(),
   data: z.object({
     sow: z.string().optional(),
     pdf: z.string().optional(),
@@ -66,18 +77,22 @@ export const SOWResponseSchema = z.object({
     template: z.string().optional(),
     templateUsed: z.string().optional(),
   }).optional(),
-  error: z.string().optional(),
-  debug: z.any().optional(),
-  file_url: z.string().optional(),
-  generationTime: z.number().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.object({
+    generationTime: z.number().optional(),
+    fileProcessed: z.boolean().optional(),
+    extractionConfidence: z.number().optional(),
+    fileSize: z.number().optional(),
+  }).optional(),
 });
 
-// TypeScript interfaces derived from Zod schemas
+// TypeScript interfaces derived from Zod schemas - Fixed to match actual usage
 export type SOWGenerationRequest = z.infer<typeof SOWGenerationRequestSchema>;
 export type FieldInspectionData = z.infer<typeof FieldInspectionDataSchema>;
 export type SOWGenerationError = z.infer<typeof SOWGenerationErrorSchema>;
-export type SOWResponse = z.infer<typeof SOWResponseSchema>;
+export type SOWGenerationResponse = z.infer<typeof SOWResponseSchema>;
+
+// Alias for backward compatibility
+export type SOWResponse = SOWGenerationResponse;
 
 // Form data interface for the SOW input form
 export interface SOWFormData {
@@ -108,7 +123,7 @@ export interface SOWGenerationProgress {
   estimatedTimeRemaining?: number;
 }
 
-// Data transformation utilities
+// Data transformation utilities - Fixed to work with flat structure
 export function transformInspectionToSOWRequest(inspection: FieldInspectionData): Partial<SOWGenerationRequest> {
   return {
     projectName: inspection.projectName || inspection.project_name,

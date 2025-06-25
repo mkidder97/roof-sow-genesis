@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { 
@@ -43,7 +44,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
       setGenerationStatus('Initializing SOW generation...');
 
       // Create database record first
-      const templateType = data.projectData.projectType || 'commercial';
+      const templateType = (data as any).projectType || 'commercial';  // Fix: handle legacy field access
       const dbRecord = await createSOWMutation.mutateAsync({
         inspectionId: data.inspectionId,
         templateType,
@@ -65,7 +66,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
           updates: { generation_status: 'processing' }
         });
 
-        if (data.file) {
+        if (data.takeoffFile) {
           setGenerationStatus('Processing takeoff file...');
           setGenerationProgress(50);
         }
@@ -90,7 +91,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
             generation_completed_at: completedAt,
             generation_duration_seconds: generationTime,
             output_file_path: result.downloadUrl,
-            file_size_bytes: result.metadata?.fileSize
+            file_size_bytes: result.metadata?.fileSize // Fix: proper property access
           }
         });
 
@@ -151,8 +152,9 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
     queryKey: ['sow-status', sowId],
     queryFn: () => getSOWStatusAPI(sowId),
     enabled: !!sowId,
-    refetchInterval: (data) => {
-      // Poll every 2 seconds if still processing
+    refetchInterval: (query) => {
+      // Poll every 2 seconds if still processing - Fix: proper data access
+      const data = query.state.data;
       return data?.generationStatus === 'processing' ? 2000 : false;
     },
   });
