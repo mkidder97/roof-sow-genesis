@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Move } from 'lucide-react';
+import { Plus, Trash2, Move, Calculator } from 'lucide-react';
 import { FieldInspection } from '@/types/fieldInspection';
 
 interface BuildingSpecsStepProps {
@@ -40,6 +41,75 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange })
     }
   }, []);
 
+  // Enhanced square footage calculation with validation
+  const calculateSquareFootage = (length: number | undefined, width: number | undefined): number => {
+    // Ensure we have valid numbers
+    const validLength = Number(length) || 0;
+    const validWidth = Number(width) || 0;
+    
+    // Return 0 if either dimension is invalid, zero, or negative
+    if (validLength <= 0 || validWidth <= 0) {
+      return 0;
+    }
+    
+    // Calculate and round to nearest whole number
+    return Math.round(validLength * validWidth);
+  };
+
+  // Get calculation display text
+  const getCalculationDisplay = (): string | null => {
+    const length = data.building_length;
+    const width = data.building_width;
+    
+    if (!length || !width || length <= 0 || width <= 0) {
+      return null;
+    }
+    
+    const squareFootage = calculateSquareFootage(length, width);
+    return `${length} × ${width} = ${squareFootage.toLocaleString()} sq ft`;
+  };
+
+  // Handle length input change with auto-calculation
+  const handleLengthChange = (value: string) => {
+    const numericValue = parseFloat(value);
+    const length = isNaN(numericValue) ? undefined : numericValue;
+    
+    const updates: Partial<FieldInspection> = { building_length: length };
+    
+    // Auto-calculate square footage if both dimensions are valid
+    if (length && length > 0 && data.building_width && data.building_width > 0) {
+      updates.square_footage = calculateSquareFootage(length, data.building_width);
+    } else if (!length || length <= 0) {
+      // Clear square footage if length becomes invalid
+      updates.square_footage = 0;
+    }
+    
+    onChange(updates);
+  };
+
+  // Handle width input change with auto-calculation
+  const handleWidthChange = (value: string) => {
+    const numericValue = parseFloat(value);
+    const width = isNaN(numericValue) ? undefined : numericValue;
+    
+    const updates: Partial<FieldInspection> = { building_width: width };
+    
+    // Auto-calculate square footage if both dimensions are valid
+    if (width && width > 0 && data.building_length && data.building_length > 0) {
+      updates.square_footage = calculateSquareFootage(data.building_length, width);
+    } else if (!width || width <= 0) {
+      // Clear square footage if width becomes invalid
+      updates.square_footage = 0;
+    }
+    
+    onChange(updates);
+  };
+
+  // Validate dimension inputs
+  const isLengthValid = data.building_length === undefined || data.building_length > 0;
+  const isWidthValid = data.building_width === undefined || data.building_width > 0;
+  const calculationDisplay = getCalculationDisplay();
+
   const addInsulationLayer = () => {
     const newLayer: InsulationLayer = {
       id: Date.now().toString(),
@@ -61,14 +131,6 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange })
         layer.id === id ? { ...layer, ...updates } : layer
       )
     );
-  };
-
-  const calculateSquareFootage = () => {
-    const length = data.building_length || 0;
-    const width = data.building_width || 0;
-    if (length > 0 && width > 0) {
-      onChange({ square_footage: length * width });
-    }
   };
 
   return (
@@ -102,15 +164,17 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange })
                 id="building_length"
                 type="number"
                 step="0.1"
+                min="0"
                 value={data.building_length || ''}
-                onChange={(e) => {
-                  const length = parseFloat(e.target.value) || 0;
-                  onChange({ building_length: length });
-                  if (data.building_width) calculateSquareFootage();
-                }}
-                className="bg-white/20 border-blue-400/30 text-white"
+                onChange={(e) => handleLengthChange(e.target.value)}
+                className={`bg-white/20 border-blue-400/30 text-white ${
+                  !isLengthValid ? 'border-red-400 bg-red-500/20' : ''
+                }`}
                 placeholder="Enter length"
               />
+              {!isLengthValid && (
+                <p className="text-red-300 text-xs mt-1">Length must be greater than 0</p>
+              )}
             </div>
             
             <div>
@@ -119,15 +183,17 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange })
                 id="building_width"
                 type="number"
                 step="0.1"
+                min="0"
                 value={data.building_width || ''}
-                onChange={(e) => {
-                  const width = parseFloat(e.target.value) || 0;
-                  onChange({ building_width: width });
-                  if (data.building_length) calculateSquareFootage();
-                }}
-                className="bg-white/20 border-blue-400/30 text-white"
+                onChange={(e) => handleWidthChange(e.target.value)}
+                className={`bg-white/20 border-blue-400/30 text-white ${
+                  !isWidthValid ? 'border-red-400 bg-red-500/20' : ''
+                }`}
                 placeholder="Enter width"
               />
+              {!isWidthValid && (
+                <p className="text-red-300 text-xs mt-1">Width must be greater than 0</p>
+              )}
             </div>
           </div>
 
@@ -137,11 +203,27 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange })
               <Input
                 id="square_footage"
                 type="number"
+                min="0"
                 value={data.square_footage || ''}
                 onChange={(e) => onChange({ square_footage: parseFloat(e.target.value) || 0 })}
                 className="bg-white/20 border-blue-400/30 text-white"
                 placeholder="Auto-calculated or enter manually"
               />
+              
+              {/* Calculation Display */}
+              {calculationDisplay && (
+                <div className="flex items-center gap-2 mt-2 p-2 bg-blue-500/20 rounded border border-blue-400/30">
+                  <Calculator className="w-4 h-4 text-blue-300" />
+                  <span className="text-blue-200 text-sm font-medium">{calculationDisplay}</span>
+                </div>
+              )}
+              
+              {/* Instruction Text */}
+              {!calculationDisplay && (data.building_length || data.building_width) && (
+                <p className="text-blue-300 text-xs mt-1">
+                  Enter both length and width for auto-calculation
+                </p>
+              )}
             </div>
             
             <div>
@@ -313,7 +395,7 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange })
       <div className="bg-blue-500/20 rounded-lg p-4">
         <p className="text-blue-200 text-sm">
           <strong>Pro Tip:</strong><br />
-          Enter building length and width to automatically calculate square footage. You can also override the calculation manually if needed.
+          Enter building length and width to automatically calculate square footage. The calculation updates in real-time and shows the formula used.
         </p>
       </div>
     </div>
