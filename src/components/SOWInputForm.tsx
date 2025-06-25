@@ -1,477 +1,383 @@
-
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, FileText, Loader2, CheckCircle, AlertTriangle, Eye, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-
-interface ProjectData {
-  projectName?: string;
-  address?: string;
-  customerName?: string;
-  customerPhone?: string;
-  customerEmail?: string;
-  buildingHeight?: number;
-  squareFootage?: number;
-  membraneType?: string;
-  selectedMembraneBrand?: string;
-  windSpeed?: number;
-  exposureCategory?: string;
-  projectType?: string;
-  numberOfDrains?: number;
-  numberOfPenetrations?: number;
-  _inspectionId?: string;
-  _originalData?: any;
-}
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, FileText, Building2, Wind, Settings, AlertTriangle } from 'lucide-react';
 
 interface SOWInputFormProps {
-  onSubmit: (data: ProjectData, file?: File) => void;
-  initialData?: ProjectData | null;
+  initialData?: any;
+  onSubmit: (data: any) => void;
+  disabled?: boolean;
 }
 
-export const SOWInputForm: React.FC<SOWInputFormProps> = ({ onSubmit, initialData }) => {
-  const [formData, setFormData] = useState<ProjectData>({
+export const SOWInputForm: React.FC<SOWInputFormProps> = ({ 
+  initialData, 
+  onSubmit, 
+  disabled = false 
+}) => {
+  const [formData, setFormData] = useState({
     projectName: '',
-    address: '',
-    customerName: '',
-    customerPhone: '',
-    customerEmail: '',
-    buildingHeight: undefined,
-    squareFootage: undefined,
+    projectAddress: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    buildingHeight: '',
+    deckType: '',
     membraneType: '',
-    selectedMembraneBrand: '',
-    windSpeed: undefined,
+    insulationType: '',
+    windSpeed: '',
     exposureCategory: '',
-    projectType: '',
-    numberOfDrains: undefined,
-    numberOfPenetrations: undefined,
+    buildingClassification: '',
+    takeoffFile: null as File | null,
+    notes: ''
   });
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [isProcessingFile, setIsProcessingFile] = useState(false);
-  const [fileProcessingStatus, setFileProcessingStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [processingError, setProcessingError] = useState<string>('');
-  const [showOriginalData, setShowOriginalData] = useState(false);
+  const [activeTab, setActiveTab] = useState('project');
 
   useEffect(() => {
     if (initialData) {
-      console.log('Received initial data:', initialData);
       setFormData(prev => ({
         ...prev,
-        ...initialData
+        projectName: initialData.projectName || initialData.project_name || '',
+        projectAddress: initialData.projectAddress || initialData.project_address || '',
+        city: initialData.city || '',
+        state: initialData.state || '',
+        zipCode: initialData.zipCode || initialData.zip_code || '',
+        buildingHeight: initialData.buildingHeight || initialData.building_height || '',
+        deckType: initialData.deckType || initialData.deck_type || '',
+        membraneType: initialData.membraneType || initialData.membrane_type || '',
+        insulationType: initialData.insulationType || initialData.insulation_type || '',
+        windSpeed: initialData.windSpeed || initialData.wind_speed || '',
+        exposureCategory: initialData.exposureCategory || initialData.exposure_category || '',
+        buildingClassification: initialData.buildingClassification || initialData.building_classification || '',
+        notes: initialData.notes || ''
       }));
     }
   }, [initialData]);
 
-  const handleInputChange = (field: keyof ProjectData, value: string | number) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const processTakeoffFile = async (file: File) => {
-    setIsProcessingFile(true);
-    setFileProcessingStatus('idle');
-    setProcessingError('');
-
-    try {
-      // Simulate processing for now - will be connected to backend later
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock successful processing
-      setFileProcessingStatus('success');
-      console.log('File processed successfully (mock)');
-    } catch (error) {
-      console.error('Error processing takeoff file:', error);
-      setProcessingError(error instanceof Error ? error.message : 'Failed to process takeoff file');
-      setFileProcessingStatus('error');
-    } finally {
-      setIsProcessingFile(false);
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setUploadedFile(file);
-      await processTakeoffFile(file);
+      setFormData(prev => ({
+        ...prev,
+        takeoffFile: file
+      }));
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData, uploadedFile || undefined);
+    if (disabled) return;
+    
+    // Basic validation
+    if (!formData.projectName || !formData.projectAddress) {
+      alert('Please fill in required fields: Project Name and Address');
+      return;
+    }
+    
+    onSubmit(formData);
   };
 
-  const resetForm = () => {
-    setFormData({
-      projectName: '',
-      address: '',
-      customerName: '',
-      customerPhone: '',
-      customerEmail: '',
-      buildingHeight: undefined,
-      squareFootage: undefined,
-      membraneType: '',
-      selectedMembraneBrand: '',
-      windSpeed: undefined,
-      exposureCategory: '',
-      projectType: '',
-      numberOfDrains: undefined,
-      numberOfPenetrations: undefined,
-    });
-    setUploadedFile(null);
-    setFileProcessingStatus('idle');
-    setProcessingError('');
-  };
-
-  const hasInspectionData = initialData && initialData._inspectionId;
+  const isFormValid = formData.projectName && formData.projectAddress;
 
   return (
-    <div className="space-y-6">
-      {/* Inspection Data Status */}
-      {hasInspectionData && (
-        <Card className="bg-green-900/50 border-green-400/30">
-          <CardHeader>
-            <CardTitle className="text-green-200 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              Field Inspection Data Loaded
-              <Badge className="bg-green-600 text-white ml-2">
-                ID: {initialData._inspectionId}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">{formData.numberOfDrains || 0}</div>
-                <div className="text-green-200 text-sm">Drains Detected</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">{formData.numberOfPenetrations || 0}</div>
-                <div className="text-green-200 text-sm">Penetrations Detected</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">{formData.squareFootage?.toLocaleString() || 'N/A'}</div>
-                <div className="text-green-200 text-sm">Square Footage</div>
-              </div>
-            </div>
-            
-            {initialData._originalData && (
-              <Collapsible open={showOriginalData} onOpenChange={setShowOriginalData}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="outline" size="sm" className="border-green-400 text-green-200 hover:bg-green-600">
-                    <Eye className="w-4 h-4 mr-2" />
-                    {showOriginalData ? 'Hide' : 'View'} Original Inspection Data
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
-                  <div className="bg-green-950/50 rounded-lg p-4 max-h-40 overflow-y-auto">
-                    <pre className="text-green-200 text-xs">
-                      {JSON.stringify(initialData._originalData, null, 2)}
-                    </pre>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-          </CardContent>
-        </Card>
-      )}
+    <Card className={`bg-white/10 backdrop-blur-md border-blue-400/30 ${disabled ? 'opacity-50' : ''}`}>
+      <CardHeader>
+        <CardTitle className="text-white flex items-center gap-2">
+          <FileText className="w-5 h-5" />
+          SOW Generation Form
+          {initialData && (
+            <Badge className="bg-green-600 text-white">
+              Pre-filled from Inspection
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {disabled && (
+          <Alert className="mb-6 bg-red-900/50 border-red-400/30">
+            <AlertTriangle className="h-4 w-4 text-red-400" />
+            <AlertDescription className="text-red-200">
+              SOW generation is currently unavailable. Please ensure the backend server is running and try again.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-4 mb-6 bg-white/10 backdrop-blur-md">
+              <TabsTrigger 
+                value="project" 
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                disabled={disabled}
+              >
+                <Building2 className="w-4 h-4 mr-2" />
+                Project
+              </TabsTrigger>
+              <TabsTrigger 
+                value="building" 
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                disabled={disabled}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Building
+              </TabsTrigger>
+              <TabsTrigger 
+                value="wind" 
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                disabled={disabled}
+              >
+                <Wind className="w-4 h-4 mr-2" />
+                Wind
+              </TabsTrigger>
+              <TabsTrigger 
+                value="upload" 
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                disabled={disabled}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Files
+              </TabsTrigger>
+            </TabsList>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Customer & Project Information */}
-        <Card className="bg-white/5 border-blue-400/30">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center justify-between">
-              Customer & Project Information
-              {hasInspectionData && (
-                <Badge className="bg-blue-600 text-white">
-                  Auto-filled from inspection
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="customerName" className="text-blue-200">Customer Name *</Label>
-                <Input
-                  id="customerName"
-                  value={formData.customerName || ''}
-                  onChange={(e) => handleInputChange('customerName', e.target.value)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="Customer or company name"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="customerPhone" className="text-blue-200">Customer Phone *</Label>
-                <Input
-                  id="customerPhone"
-                  type="tel"
-                  value={formData.customerPhone || ''}
-                  onChange={(e) => handleInputChange('customerPhone', e.target.value)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="(555) 123-4567"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="customerEmail" className="text-blue-200">Customer Email</Label>
-              <Input
-                id="customerEmail"
-                type="email"
-                value={formData.customerEmail || ''}
-                onChange={(e) => handleInputChange('customerEmail', e.target.value)}
-                className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                placeholder="customer@email.com"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="projectName" className="text-blue-200">Building/Project Name *</Label>
-                <Input
-                  id="projectName"
-                  value={formData.projectName || ''}
-                  onChange={(e) => handleInputChange('projectName', e.target.value)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="Enter building name"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="address" className="text-blue-200">Project Address *</Label>
-                <Input
-                  id="address"
-                  value={formData.address || ''}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="Enter complete address"
-                  required
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Building Specifications */}
-        <Card className="bg-white/5 border-blue-400/30">
-          <CardHeader>
-            <CardTitle className="text-white">Building Specifications</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="buildingHeight" className="text-blue-200">Building Height (ft)</Label>
-                <Input
-                  id="buildingHeight"
-                  type="number"
-                  value={formData.buildingHeight || ''}
-                  onChange={(e) => handleInputChange('buildingHeight', parseFloat(e.target.value) || 0)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="Height in feet"
-                />
-              </div>
-              <div>
-                <Label htmlFor="squareFootage" className="text-blue-200">Square Footage</Label>
-                <Input
-                  id="squareFootage"
-                  type="number"
-                  value={formData.squareFootage || ''}
-                  onChange={(e) => handleInputChange('squareFootage', parseFloat(e.target.value) || 0)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="Total sq ft"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="numberOfDrains" className="text-blue-200">Number of Drains</Label>
-                <Input
-                  id="numberOfDrains"
-                  type="number"
-                  value={formData.numberOfDrains || ''}
-                  onChange={(e) => handleInputChange('numberOfDrains', parseInt(e.target.value) || 0)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="Total drains"
-                />
-              </div>
-              <div>
-                <Label htmlFor="numberOfPenetrations" className="text-blue-200">Number of Penetrations</Label>
-                <Input
-                  id="numberOfPenetrations"
-                  type="number"
-                  value={formData.numberOfPenetrations || ''}
-                  onChange={(e) => handleInputChange('numberOfPenetrations', parseInt(e.target.value) || 0)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="Total penetrations"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="windSpeed" className="text-blue-200">Wind Speed (mph)</Label>
-                <Input
-                  id="windSpeed"
-                  type="number"
-                  value={formData.windSpeed || ''}
-                  onChange={(e) => handleInputChange('windSpeed', parseFloat(e.target.value) || 0)}
-                  className="bg-white/10 border-blue-400/30 text-white placeholder:text-blue-300"
-                  placeholder="Design wind speed"
-                />
-              </div>
-              <div>
-                <Label htmlFor="membraneType" className="text-blue-200">Membrane Type</Label>
-                <Select value={formData.membraneType || ''} onValueChange={(value) => handleInputChange('membraneType', value)}>
-                  <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                    <SelectValue placeholder="Select membrane type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="TPO">TPO</SelectItem>
-                    <SelectItem value="PVC">PVC</SelectItem>
-                    <SelectItem value="EPDM">EPDM</SelectItem>
-                    <SelectItem value="Modified Bitumen">Modified Bitumen</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="exposureCategory" className="text-blue-200">Exposure Category</Label>
-                <Select value={formData.exposureCategory || ''} onValueChange={(value) => handleInputChange('exposureCategory', value)}>
-                  <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                    <SelectValue placeholder="Select exposure" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="B">Category B</SelectItem>
-                    <SelectItem value="C">Category C</SelectItem>
-                    <SelectItem value="D">Category D</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="projectType" className="text-blue-200">Project Type</Label>
-              <Select value={formData.projectType || ''} onValueChange={(value) => handleInputChange('projectType', value)}>
-                <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                  <SelectValue placeholder="Select project type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recover">Recover</SelectItem>
-                  <SelectItem value="tearoff">Tear-Off</SelectItem>
-                  <SelectItem value="replacement">Replacement</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Document Upload & Auto-Fill */}
-        <Card className="bg-white/5 border-blue-400/30">
-          <CardHeader>
-            <CardTitle className="text-white">Document Upload & Auto-Fill</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed border-blue-400/30 rounded-lg p-6 text-center">
-              <input
-                type="file"
-                id="file-upload"
-                className="hidden"
-                accept=".pdf,.xlsx,.xls,.csv"
-                onChange={handleFileUpload}
-                disabled={isProcessingFile}
-              />
-              <label htmlFor="file-upload" className="cursor-pointer">
-                {isProcessingFile ? (
-                  <div className="flex flex-col items-center">
-                    <Loader2 className="w-8 h-8 text-blue-400 mx-auto mb-2 animate-spin" />
-                    <p className="text-white mb-1">Processing Takeoff File...</p>
-                    <p className="text-blue-300 text-sm">Extracting project data</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <Upload className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                    <p className="text-white mb-1">Upload Takeoff File for Auto-Fill</p>
-                    <p className="text-blue-300 text-sm">PDF, Excel, or CSV files supported</p>
-                  </div>
-                )}
-              </label>
-              
-              {uploadedFile && !isProcessingFile && (
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  <span className="text-white">{uploadedFile.name}</span>
-                  {fileProcessingStatus === 'success' && (
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                  )}
-                  {fileProcessingStatus === 'error' && (
-                    <AlertTriangle className="w-4 h-4 text-red-400" />
-                  )}
+            {/* Project Information Tab */}
+            <TabsContent value="project" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="projectName" className="text-blue-200">Project Name *</Label>
+                  <Input
+                    id="projectName"
+                    value={formData.projectName}
+                    onChange={(e) => handleInputChange('projectName', e.target.value)}
+                    className="bg-white/10 border-blue-400/30 text-white"
+                    disabled={disabled}
+                    required
+                  />
                 </div>
-              )}
-            </div>
+                <div>
+                  <Label htmlFor="projectAddress" className="text-blue-200">Project Address *</Label>
+                  <Input
+                    id="projectAddress"
+                    value={formData.projectAddress}
+                    onChange={(e) => handleInputChange('projectAddress', e.target.value)}
+                    className="bg-white/10 border-blue-400/30 text-white"
+                    disabled={disabled}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city" className="text-blue-200">City</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    className="bg-white/10 border-blue-400/30 text-white"
+                    disabled={disabled}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state" className="text-blue-200">State</Label>
+                  <Input
+                    id="state"
+                    value={formData.state}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                    className="bg-white/10 border-blue-400/30 text-white"
+                    disabled={disabled}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="zipCode" className="text-blue-200">Zip Code</Label>
+                  <Input
+                    id="zipCode"
+                    value={formData.zipCode}
+                    onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                    className="bg-white/10 border-blue-400/30 text-white"
+                    disabled={disabled}
+                  />
+                </div>
+              </div>
+            </TabsContent>
 
-            {/* Processing Status Messages */}
-            {fileProcessingStatus === 'success' && (
-              <Alert className="mt-4 bg-green-500/20 border-green-500/30">
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription className="text-green-200">
-                  Takeoff file processed successfully! Ready for SOW generation.
-                </AlertDescription>
-              </Alert>
-            )}
+            {/* Building Specifications Tab */}
+            <TabsContent value="building" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="buildingHeight" className="text-blue-200">Building Height (ft)</Label>
+                  <Input
+                    id="buildingHeight"
+                    type="number"
+                    value={formData.buildingHeight}
+                    onChange={(e) => handleInputChange('buildingHeight', e.target.value)}
+                    className="bg-white/10 border-blue-400/30 text-white"
+                    disabled={disabled}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="deckType" className="text-blue-200">Deck Type</Label>
+                  <Select 
+                    value={formData.deckType} 
+                    onValueChange={(value) => handleInputChange('deckType', value)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                      <SelectValue placeholder="Select deck type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="concrete">Concrete</SelectItem>
+                      <SelectItem value="metal">Metal</SelectItem>
+                      <SelectItem value="wood">Wood</SelectItem>
+                      <SelectItem value="gypsum">Gypsum</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="membraneType" className="text-blue-200">Membrane Type</Label>
+                  <Select 
+                    value={formData.membraneType} 
+                    onValueChange={(value) => handleInputChange('membraneType', value)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                      <SelectValue placeholder="Select membrane type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tpo">TPO</SelectItem>
+                      <SelectItem value="epdm">EPDM</SelectItem>
+                      <SelectItem value="pvc">PVC</SelectItem>
+                      <SelectItem value="modified-bitumen">Modified Bitumen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="insulationType" className="text-blue-200">Insulation Type</Label>
+                  <Select 
+                    value={formData.insulationType} 
+                    onValueChange={(value) => handleInputChange('insulationType', value)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                      <SelectValue placeholder="Select insulation type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="polyiso">Polyiso</SelectItem>
+                      <SelectItem value="eps">EPS</SelectItem>
+                      <SelectItem value="xps">XPS</SelectItem>
+                      <SelectItem value="mineral-wool">Mineral Wool</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
 
-            {fileProcessingStatus === 'error' && (
-              <Alert className="mt-4 bg-red-500/20 border-red-500/30">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-red-200">
-                  Error processing takeoff file: {processingError}. You can still fill the form manually.
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+            {/* Wind Parameters Tab */}
+            <TabsContent value="wind" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="windSpeed" className="text-blue-200">Design Wind Speed (mph)</Label>
+                  <Input
+                    id="windSpeed"
+                    type="number"
+                    value={formData.windSpeed}
+                    onChange={(e) => handleInputChange('windSpeed', e.target.value)}
+                    className="bg-white/10 border-blue-400/30 text-white"
+                    disabled={disabled}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="exposureCategory" className="text-blue-200">Exposure Category</Label>
+                  <Select 
+                    value={formData.exposureCategory} 
+                    onValueChange={(value) => handleInputChange('exposureCategory', value)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                      <SelectValue placeholder="Select exposure" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="B">B - Urban/Suburban</SelectItem>
+                      <SelectItem value="C">C - Open Terrain</SelectItem>
+                      <SelectItem value="D">D - Flat/Unobstructed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="buildingClassification" className="text-blue-200">Building Classification</Label>
+                  <Select 
+                    value={formData.buildingClassification} 
+                    onValueChange={(value) => handleInputChange('buildingClassification', value)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                      <SelectValue placeholder="Select classification" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="I">I - Low Hazard</SelectItem>
+                      <SelectItem value="II">II - Standard</SelectItem>
+                      <SelectItem value="III">III - Substantial Hazard</SelectItem>
+                      <SelectItem value="IV">IV - Essential Facilities</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
 
-        {/* Form Actions */}
-        <div className="flex gap-4 justify-center">
-          <Button 
-            type="button"
-            onClick={resetForm}
-            variant="outline"
-            className="border-blue-400 text-blue-200 hover:bg-blue-600"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Reset Form
-          </Button>
-          <Button 
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg"
-            disabled={isProcessingFile}
-          >
-            {isProcessingFile ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <FileText className="w-5 h-5 mr-2" />
-                Generate SOW Document
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-    </div>
+            {/* File Upload Tab */}
+            <TabsContent value="upload" className="space-y-4">
+              <div>
+                <Label htmlFor="takeoffFile" className="text-blue-200">Takeoff File (PDF, Excel, etc.)</Label>
+                <Input
+                  id="takeoffFile"
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="bg-white/10 border-blue-400/30 text-white file:bg-blue-600 file:text-white file:border-0 file:rounded"
+                  accept=".pdf,.xlsx,.xls,.csv"
+                  disabled={disabled}
+                />
+                {formData.takeoffFile && (
+                  <p className="text-green-400 text-sm mt-2">
+                    File selected: {formData.takeoffFile.name}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="notes" className="text-blue-200">Additional Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  className="bg-white/10 border-blue-400/30 text-white"
+                  rows={4}
+                  placeholder="Any additional specifications or requirements..."
+                  disabled={disabled}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-2"
+              disabled={disabled || !isFormValid}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Generate SOW
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };

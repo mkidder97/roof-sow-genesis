@@ -6,20 +6,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, FileText, ClipboardCheck, Info, Sparkles } from 'lucide-react';
+import { ArrowLeft, FileText, ClipboardCheck, Info, Sparkles, Wifi, WifiOff } from 'lucide-react';
 import { SOWInputForm } from '@/components/SOWInputForm';
 import SOWGenerationStatus from '@/components/SOWGenerationStatus';
 import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
 import Breadcrumb from '@/components/navigation/Breadcrumb';
+import { useSOWGeneration } from '@/hooks/useSOWGeneration';
 
 const SOWGeneration = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [inspectionData, setInspectionData] = useState(null);
-  const [generationStatus, setGenerationStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [generationMessage, setGenerationMessage] = useState('');
+
+  // Use the real SOW generation hook
+  const {
+    generateSOW,
+    isGenerating,
+    generationError,
+    generationData,
+    generationProgress,
+    generationStatus,
+    healthStatus,
+    isHealthLoading,
+    isBackendOnline,
+    reset
+  } = useSOWGeneration({
+    onSuccess: (data) => {
+      console.log('SOW generated successfully:', data);
+    },
+    onError: (error) => {
+      console.error('SOW generation failed:', error);
+    }
+  });
 
   useEffect(() => {
     // Check if we came from an inspection
@@ -32,47 +51,76 @@ const SOWGeneration = () => {
   const handleSOWSubmit = async (data: any) => {
     console.log('SOW generation requested with data:', data);
     
-    // Start generation process
-    setGenerationStatus('processing');
-    setGenerationProgress(0);
-    setGenerationMessage('Initializing SOW generation...');
+    // Transform the form data to match the API expected format
+    const apiData = {
+      projectName: data.projectName,
+      projectAddress: data.projectAddress,
+      city: data.city,
+      state: data.state,
+      zipCode: data.zipCode,
+      buildingHeight: data.buildingHeight,
+      deckType: data.deckType,
+      membraneType: data.membraneType,
+      insulationType: data.insulationType,
+      windSpeed: data.windSpeed,
+      exposureCategory: data.exposureCategory,
+      buildingClassification: data.buildingClassification,
+      takeoffFile: data.takeoffFile, // Handle file upload if present
+    };
 
-    try {
-      // Simulate the SOW generation process with progress updates
-      const steps = [
-        { progress: 20, message: 'Analyzing project data...' },
-        { progress: 40, message: 'Calculating wind loads...' },
-        { progress: 60, message: 'Generating technical specifications...' },
-        { progress: 80, message: 'Formatting professional document...' },
-        { progress: 100, message: 'SOW generation complete!' }
-      ];
-
-      for (const step of steps) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setGenerationProgress(step.progress);
-        setGenerationMessage(step.message);
-      }
-
-      // Success
-      setGenerationStatus('success');
-      console.log('SOW generated successfully (mock)');
-    } catch (error) {
-      console.error('Error generating SOW:', error);
-      setGenerationStatus('error');
-      setGenerationMessage('Failed to generate SOW. Please try again.');
-    }
+    // Make the real API call
+    generateSOW(apiData);
   };
 
   const handleDownload = () => {
     console.log('Downloading SOW PDF...');
-    // This will be connected to actual backend PDF download
-    alert('PDF download will be implemented with backend integration');
+    
+    if (generationData?.data?.pdf) {
+      // Handle base64 PDF download
+      const byteCharacters = atob(generationData.data.pdf);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `SOW_${inspectionData?.projectName || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } else if (generationData?.outputPath) {
+      // Handle direct file path download
+      const link = document.createElement('a');
+      link.href = generationData.outputPath;
+      link.download = `SOW_${inspectionData?.projectName || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+    } else {
+      console.error('No PDF data available for download');
+    }
   };
 
   const handleRetry = () => {
-    setGenerationStatus('idle');
-    setGenerationProgress(0);
-    setGenerationMessage('');
+    reset();
+  };
+
+  // Determine the current generation status for the status component
+  const getGenerationStatus = () => {
+    if (isGenerating) return 'processing';
+    if (generationError) return 'error';
+    if (generationData?.success) return 'success';
+    return 'idle';
+  };
+
+  const getGenerationMessage = () => {
+    if (isGenerating) return generationStatus || 'Processing SOW generation...';
+    if (generationError) return generationError.message || 'SOW generation failed';
+    if (generationData?.success) return 'SOW generated successfully!';
+    return '';
   };
 
   return (
@@ -107,6 +155,31 @@ const SOWGeneration = () => {
           </div>
         </div>
 
+        {/* Backend Status Alert */}
+        {!isHealthLoading && (
+          <Alert className={`mb-6 ${isBackendOnline ? 'bg-green-900/50 border-green-400/30' : 'bg-red-900/50 border-red-400/30'}`}>
+            {isBackendOnline ? (
+              <Wifi className="h-4 w-4 text-green-400" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-red-400" />
+            )}
+            <AlertDescription className={isBackendOnline ? 'text-green-200' : 'text-red-200'}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <strong>Backend Status:</strong> {isBackendOnline ? 'Connected' : 'Offline'} - 
+                  {isBackendOnline 
+                    ? 'Ready to generate SOW documents' 
+                    : 'Unable to connect to SOW generation service. Please ensure the backend server is running on localhost:3001.'
+                  }
+                </div>
+                <Badge className={isBackendOnline ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
+                  {isBackendOnline ? 'Online' : 'Offline'}
+                </Badge>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Enhanced Inspection Data Alert */}
         {inspectionData && (
           <Alert className="mb-6 bg-green-900/50 border-green-400/30">
@@ -127,9 +200,9 @@ const SOWGeneration = () => {
 
         {/* Generation Status */}
         <SOWGenerationStatus 
-          status={generationStatus}
+          status={getGenerationStatus()}
           progress={generationProgress}
-          message={generationMessage}
+          message={getGenerationMessage()}
           onDownload={handleDownload}
           onRetry={handleRetry}
         />
@@ -172,6 +245,7 @@ const SOWGeneration = () => {
         <SOWInputForm 
           initialData={inspectionData} 
           onSubmit={handleSOWSubmit}
+          disabled={!isBackendOnline}
         />
 
         {/* Enhanced Navigation Help */}
