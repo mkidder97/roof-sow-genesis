@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,10 +10,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck } from 'lucide-react';
+import { 
+  SOWFormData, 
+  FieldInspectionData, 
+  SOWGenerationRequest,
+  transformInspectionToSOWRequest,
+  transformFormDataToSOWRequest,
+  createSOWError,
+  SOWGenerationRequestSchema 
+} from '@/types/sowGeneration';
+import { useToast } from '@/hooks/use-toast';
 
 interface SOWInputFormProps {
-  initialData?: any;
-  onSubmit: (data: any) => void;
+  initialData?: FieldInspectionData;
+  onSubmit: (data: SOWGenerationRequest) => void;
   disabled?: boolean;
 }
 
@@ -21,7 +32,8 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
   onSubmit, 
   disabled = false 
 }) => {
-  const [formData, setFormData] = useState({
+  const { toast } = useToast();
+  const [formData, setFormData] = useState<SOWFormData>({
     projectName: '',
     projectAddress: '',
     city: '',
@@ -34,42 +46,74 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     windSpeed: '',
     exposureCategory: '',
     buildingClassification: '',
-    takeoffFile: null as File | null,
+    takeoffFile: null,
     notes: ''
   });
   const [activeTab, setActiveTab] = useState('project');
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (initialData) {
+      const transformedData = transformInspectionToSOWRequest(initialData);
       setFormData(prev => ({
         ...prev,
-        projectName: initialData.projectName || initialData.project_name || '',
-        projectAddress: initialData.projectAddress || initialData.project_address || '',
-        city: initialData.city || '',
-        state: initialData.state || '',
-        zipCode: initialData.zipCode || initialData.zip_code || '',
-        buildingHeight: initialData.buildingHeight || initialData.building_height || '',
-        deckType: initialData.deckType || initialData.deck_type || '',
-        membraneType: initialData.membraneType || initialData.membrane_type || '',
-        insulationType: initialData.insulationType || initialData.insulation_type || '',
-        windSpeed: initialData.windSpeed || initialData.wind_speed || '',
-        exposureCategory: initialData.exposureCategory || initialData.exposure_category || '',
-        buildingClassification: initialData.buildingClassification || initialData.building_classification || '',
-        notes: initialData.notes || ''
+        projectName: transformedData.projectName || '',
+        projectAddress: transformedData.projectAddress || '',
+        city: transformedData.city || '',
+        state: transformedData.state || '',
+        zipCode: transformedData.zipCode || '',
+        buildingHeight: transformedData.buildingHeight?.toString() || '',
+        deckType: transformedData.deckType || '',
+        membraneType: transformedData.membraneType || '',
+        insulationType: transformedData.insulationType || '',
+        windSpeed: transformedData.windSpeed?.toString() || '',
+        exposureCategory: transformedData.exposureCategory || '',
+        buildingClassification: transformedData.buildingClassification || '',
+        notes: transformedData.notes || ''
       }));
     }
   }, [initialData]);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof SOWFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a PDF, Excel, or CSV file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Please upload a file smaller than 10MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setFormData(prev => ({
         ...prev,
         takeoffFile: file
@@ -77,20 +121,54 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    try {
+      const sowRequest = transformFormDataToSOWRequest(formData);
+      SOWGenerationRequestSchema.parse(sowRequest);
+      setValidationErrors({});
+      return true;
+    } catch (error: any) {
+      if (error.errors) {
+        error.errors.forEach((err: any) => {
+          const path = err.path.join('.');
+          errors[path] = err.message;
+        });
+      }
+      setValidationErrors(errors);
+      return false;
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (disabled) return;
     
-    // Basic validation
-    if (!formData.projectName || !formData.projectAddress) {
-      alert('Please fill in required fields: Project Name and Address');
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form before submitting.",
+        variant: "destructive",
+      });
       return;
     }
     
-    onSubmit(formData);
+    try {
+      const sowRequest = transformFormDataToSOWRequest(formData);
+      console.log('SOW generation requested with validated data:', sowRequest);
+      onSubmit(sowRequest);
+    } catch (error: any) {
+      console.error('Form transformation error:', error);
+      toast({
+        title: "Form Error",
+        description: "There was an error processing the form data.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const isFormValid = formData.projectName && formData.projectAddress;
+  const isFormValid = formData.projectName && formData.projectAddress && Object.keys(validationErrors).length === 0;
 
   return (
     <Card className={`bg-white/10 backdrop-blur-md border-blue-400/30 ${disabled ? 'opacity-50' : ''}`}>
@@ -115,7 +193,6 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
           </Alert>
         )}
 
-        {/* Single inspection data alert */}
         {initialData && (
           <Alert className="mb-6 bg-green-900/50 border-green-400/30">
             <ClipboardCheck className="h-4 w-4 text-green-400" />
@@ -183,6 +260,9 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                     disabled={disabled}
                     required
                   />
+                  {validationErrors.projectName && (
+                    <p className="text-red-400 text-sm mt-1">{validationErrors.projectName}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="projectAddress" className="text-blue-200">Project Address *</Label>
@@ -194,6 +274,9 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                     disabled={disabled}
                     required
                   />
+                  {validationErrors.projectAddress && (
+                    <p className="text-red-400 text-sm mt-1">{validationErrors.projectAddress}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="city" className="text-blue-200">City</Label>
@@ -241,6 +324,9 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                     className="bg-white/10 border-blue-400/30 text-white"
                     disabled={disabled}
                   />
+                  {validationErrors.buildingHeight && (
+                    <p className="text-red-400 text-sm mt-1">{validationErrors.buildingHeight}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="deckType" className="text-blue-200">Deck Type</Label>
@@ -312,6 +398,9 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                     className="bg-white/10 border-blue-400/30 text-white"
                     disabled={disabled}
                   />
+                  {validationErrors.windSpeed && (
+                    <p className="text-red-400 text-sm mt-1">{validationErrors.windSpeed}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="exposureCategory" className="text-blue-200">Exposure Category</Label>
