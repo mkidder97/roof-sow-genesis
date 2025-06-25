@@ -77,8 +77,29 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
         setGenerationProgress(70);
         setGenerationStatus('Generating SOW document...');
 
+        // Transform data for API compatibility
+        const apiData = {
+          projectData: {
+            projectName: data.projectName || '',
+            projectAddress: data.projectAddress || '',
+            city: data.city,
+            state: data.state,
+            zipCode: data.zipCode,
+            buildingHeight: data.buildingHeight,
+            deckType: data.deckType,
+            membraneType: data.membraneType,
+            insulationType: data.insulationType,
+            windSpeed: data.windSpeed,
+            exposureCategory: data.exposureCategory,
+            buildingClassification: data.buildingClassification,
+            notes: data.notes
+          },
+          takeoffFile: takeoffFile,
+          inspectionId: data.inspectionId
+        };
+
         // Call the API to generate SOW
-        const result = await generateSOWAPI(data);
+        const result = await generateSOWAPI(apiData as any);
         
         setGenerationProgress(100);
         setGenerationStatus('SOW generation complete!');
@@ -106,7 +127,13 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
           });
         }
 
-        return { ...result, sowId: dbRecord.id };
+        const response: SOWGenerationResponse = { 
+          ...result, 
+          sowId: dbRecord.id,
+          generationStatus: 'completed'
+        };
+        
+        return response;
       } catch (error) {
         // Update database with error
         await updateSOWMutation.mutateAsync({
@@ -323,7 +350,26 @@ export function useSOWWorkflow() {
         inspectionId: data.inspectionId,
       };
 
-      return await generateSOWAPI(sowRequest);
+      // Transform for API compatibility
+      const apiData = {
+        projectData: {
+          projectName: sowRequest.projectName || '',
+          projectAddress: sowRequest.projectAddress || '',
+          city: sowRequest.city,
+          state: sowRequest.state,
+          zipCode: sowRequest.zipCode,
+          buildingHeight: sowRequest.buildingHeight,
+          deckType: sowRequest.deckType,
+          membraneType: sowRequest.membraneType,
+          insulationType: sowRequest.insulationType,
+          windSpeed: sowRequest.windSpeed,
+          exposureCategory: sowRequest.exposureCategory,
+          buildingClassification: sowRequest.buildingClassification,
+          notes: sowRequest.notes
+        }
+      };
+
+      return await generateSOWAPI(apiData as any);
     },
   });
 
@@ -336,7 +382,6 @@ export function useSOWWorkflow() {
   };
 }
 
-// Hook for real-time SOW status monitoring
 export function useSOWStatusMonitor(sowId: string | null) {
   const [isMonitoring, setIsMonitoring] = useState(false);
 

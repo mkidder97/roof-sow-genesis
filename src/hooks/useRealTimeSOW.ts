@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { SOWGenerationRecord } from '@/lib/sowDatabase';
+import { SOWGenerationRecord } from '@/types/sow';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useRealTimeSOWUpdates() {

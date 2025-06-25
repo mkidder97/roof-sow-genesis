@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { SOWGenerationRequest, SOWGenerationRecord, DashboardMetrics, GenerationStatus } from "@/types/sow";
 
@@ -143,7 +144,6 @@ export async function updateInspectionSOWStatus(inspectionId: string, sowGenerat
       .from('field_inspections')
       .update({ 
         sow_generated: sowGenerated,
-        // Note: Remove the RPC call as it's causing issues - use simple increment instead
         sow_generation_count: sowGenerated ? 1 : 0
       })
       .eq('id', inspectionId);
@@ -172,3 +172,6 @@ export async function getSOWTemplates(): Promise<{ data: any[]; error: string | 
     return { data: [], error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+
+// Export the record type for use in other files
+export type { SOWGenerationRecord };

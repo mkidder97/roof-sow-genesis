@@ -1,13 +1,13 @@
 
 // Complete SOW Type Definitions - Single Source of Truth
-// Based on actual code usage analysis
+// All SOW-related interfaces consolidated here
 
 export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
-// Main SOW Generation Request - matches actual usage in components
+// Main SOW Generation Request - flat structure based on actual usage
 export interface SOWGenerationRequest {
-  projectName: string;
-  projectAddress: string;
+  projectName?: string;
+  projectAddress?: string;
   city?: string;
   state?: string;
   zipCode?: string;
@@ -105,6 +105,52 @@ export interface FieldInspectionData {
   status?: string;
 }
 
+// Section component interfaces
+export interface ProjectMetadata {
+  projectName: string;
+  companyName: string;
+  address: string;
+  squareFootage?: number;
+  projectType: 'Recover' | 'Tear-Off' | 'Replacement';
+  deckType: 'Steel' | 'Wood' | 'Concrete';
+  buildingHeight?: number;
+  length?: number;
+  width?: number;
+}
+
+export interface Membrane {
+  manufacturer: string;
+  productName: string;
+  membraneType: 'TPO' | 'PVC';
+  thickness: 45 | 60 | 80 | 115;
+  warrantyTerm: 20 | 25 | 30;
+  attachmentMethod: 'Induction Welded' | 'Fully Adhered' | 'Mechanically Attached';
+}
+
+export interface Takeoff {
+  drains?: number;
+  pipePenetrations?: number;
+  curbs?: number;
+  hvacUnits?: number;
+  skylights?: number;
+  scuppers?: number;
+  expansionJoints?: boolean;
+}
+
+export interface Notes {
+  contractorName: string;
+  addendaNotes: string;
+  warrantyNotes: string;
+}
+
+export interface Environmental {
+  windSpeed?: number;
+  exposureCategory?: 'B' | 'C' | 'D';
+  buildingClassification?: 'I' | 'II' | 'III' | 'IV';
+  seismicZone?: string;
+  climateZone?: string;
+}
+
 // Dashboard metrics interface
 export interface DashboardMetrics {
   totalInspections: number;
@@ -141,7 +187,7 @@ export function isNetworkError(error: any): boolean {
          error?.name === 'TypeError';
 }
 
-export function transformInspectionToSOWRequest(inspection: FieldInspectionData): Partial<SOWGenerationRequest> {
+export function transformInspectionToSOWRequest(inspection: FieldInspectionData): SOWGenerationRequest {
   return {
     projectName: inspection.projectName || inspection.project_name || '',
     projectAddress: inspection.projectAddress || inspection.project_address || '',
