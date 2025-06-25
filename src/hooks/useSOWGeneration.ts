@@ -1,5 +1,3 @@
-// src/hooks/useSOWGeneration.ts - React hook for SOW generation API calls
-
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { 
@@ -14,6 +12,12 @@ import {
   SOWGenerationRequest,
   SOWGenerationResponse 
 } from '@/lib/api';
+import { 
+  useCreateSOWGeneration, 
+  useUpdateSOWGeneration, 
+  useSOWGeneration as useSOWGenerationDB,
+  useUpdateInspectionSOWStatus 
+} from '@/hooks/useSOWDatabase';
 
 export interface UseSOWGenerationProps {
   onSuccess?: (data: SOWGenerationResponse) => void;
@@ -23,28 +27,94 @@ export interface UseSOWGenerationProps {
 export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps = {}) {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStatus, setGenerationStatus] = useState<string>('');
+  const [currentSOWId, setCurrentSOWId] = useState<string | null>(null);
+
+  // Database mutations
+  const createSOWMutation = useCreateSOWGeneration();
+  const updateSOWMutation = useUpdateSOWGeneration();
+  const updateInspectionMutation = useUpdateInspectionSOWStatus();
+
+  // Monitor current SOW generation
+  const { data: currentSOW } = useSOWGenerationDB(currentSOWId);
 
   const generateSOWMutation = useMutation({
     mutationFn: async (data: SOWGenerationRequest) => {
       setGenerationProgress(10);
       setGenerationStatus('Initializing SOW generation...');
 
+      // Create database record first
+      const templateType = data.projectData.projectType || 'commercial';
+      const dbRecord = await createSOWMutation.mutateAsync({
+        inspectionId: data.inspectionId,
+        templateType,
+        inputData: data
+      });
+
+      if (!dbRecord) {
+        throw new Error('Failed to create SOW generation record');
+      }
+
+      setCurrentSOWId(dbRecord.id);
       setGenerationProgress(30);
       setGenerationStatus('Processing project data...');
 
-      if (data.file) {
-        setGenerationStatus('Processing takeoff file...');
-        setGenerationProgress(50);
+      try {
+        // Update status to processing
+        await updateSOWMutation.mutateAsync({
+          id: dbRecord.id,
+          updates: { generation_status: 'processing' }
+        });
+
+        if (data.file) {
+          setGenerationStatus('Processing takeoff file...');
+          setGenerationProgress(50);
+        }
+
+        setGenerationProgress(70);
+        setGenerationStatus('Generating SOW document...');
+
+        // Call the API to generate SOW
+        const result = await generateSOWAPI(data);
+        
+        setGenerationProgress(100);
+        setGenerationStatus('SOW generation complete!');
+
+        // Update database with completion
+        const completedAt = new Date().toISOString();
+        const generationTime = Math.floor((new Date(completedAt).getTime() - new Date(dbRecord.generation_started_at).getTime()) / 1000);
+
+        await updateSOWMutation.mutateAsync({
+          id: dbRecord.id,
+          updates: {
+            generation_status: 'completed',
+            generation_completed_at: completedAt,
+            generation_duration_seconds: generationTime,
+            output_file_path: result.downloadUrl,
+            file_size_bytes: result.metadata?.fileSize
+          }
+        });
+
+        // Update inspection status if linked
+        if (data.inspectionId) {
+          await updateInspectionMutation.mutateAsync({
+            inspectionId: data.inspectionId,
+            sowGenerated: true
+          });
+        }
+
+        return { ...result, sowId: dbRecord.id };
+      } catch (error) {
+        // Update database with error
+        await updateSOWMutation.mutateAsync({
+          id: dbRecord.id,
+          updates: {
+            generation_status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            generation_completed_at: new Date().toISOString()
+          }
+        });
+        throw error;
       }
-
-      setGenerationProgress(70);
-      setGenerationStatus('Generating SOW document...');
-
-      const result = await generateSOWAPI(data);
-      
-      setGenerationProgress(100);
-      setGenerationStatus('SOW generation complete!');
-      return result;
     },
     onSuccess: (data) => {
       setGenerationStatus('Success!');
@@ -126,6 +196,7 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
     generationData: generateSOWMutation.data,
     generationProgress,
     generationStatus,
+    currentSOW, // Real-time SOW status from database
     
     // SOW download
     downloadSOW: downloadSOWMutation.mutate,
@@ -156,10 +227,9 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
     // Reset function
     reset: () => {
       generateSOWMutation.reset();
-      downloadSOWMutation.reset();
-      deleteSOWMutation.reset();
       setGenerationProgress(0);
       setGenerationStatus('');
+      setCurrentSOWId(null);
     },
   };
 }

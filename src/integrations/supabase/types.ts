@@ -192,6 +192,7 @@ export type Database = {
           skylights: number | null
           skylights_detailed: Json | null
           sow_generated: boolean | null
+          sow_generation_count: number | null
           sow_id: string | null
           special_requirements: string | null
           square_footage: number | null
@@ -253,6 +254,7 @@ export type Database = {
           skylights?: number | null
           skylights_detailed?: Json | null
           sow_generated?: boolean | null
+          sow_generation_count?: number | null
           sow_id?: string | null
           special_requirements?: string | null
           square_footage?: number | null
@@ -314,6 +316,7 @@ export type Database = {
           skylights?: number | null
           skylights_detailed?: Json | null
           sow_generated?: boolean | null
+          sow_generation_count?: number | null
           sow_id?: string | null
           special_requirements?: string | null
           square_footage?: number | null
@@ -617,6 +620,65 @@ export type Database = {
           },
         ]
       }
+      sow_generations: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          generation_completed_at: string | null
+          generation_duration_seconds: number | null
+          generation_started_at: string | null
+          generation_status: string | null
+          id: string
+          input_data: Json
+          inspection_id: string | null
+          output_file_path: string | null
+          template_type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          generation_completed_at?: string | null
+          generation_duration_seconds?: number | null
+          generation_started_at?: string | null
+          generation_status?: string | null
+          id?: string
+          input_data: Json
+          inspection_id?: string | null
+          output_file_path?: string | null
+          template_type: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          generation_completed_at?: string | null
+          generation_duration_seconds?: number | null
+          generation_started_at?: string | null
+          generation_status?: string | null
+          id?: string
+          input_data?: Json
+          inspection_id?: string | null
+          output_file_path?: string | null
+          template_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sow_generations_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "field_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sow_outputs: {
         Row: {
           asce_version: string | null
@@ -702,6 +764,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sow_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          template_data: Json
+          template_type: string
+          version: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          template_data: Json
+          template_type: string
+          version: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          template_data?: Json
+          template_type?: string
+          version?: string
+        }
+        Relationships: []
       }
       user_profiles: {
         Row: {
