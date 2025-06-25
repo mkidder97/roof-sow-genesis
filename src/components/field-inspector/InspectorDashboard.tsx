@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Filter, ClipboardCheck, Calendar, MapPin, User, Loader2, FileText } from 'lucide-react';
+import { Plus, Search, Filter, ClipboardCheck, Calendar, MapPin, User, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
 import Breadcrumb from '@/components/navigation/Breadcrumb';
@@ -123,19 +123,6 @@ const InspectorDashboard = () => {
             <Plus className="w-5 h-5 mr-2" />
             New Inspection
           </Button>
-          
-          {/* Ready for SOW Badge */}
-          {inspections.filter(i => i.status === 'Completed' && !i.sow_generated).length > 0 && (
-            <Button
-              onClick={() => navigate('/dashboard', { state: { tab: 'ready-sow' } })}
-              variant="outline"
-              className="border-green-400 text-green-200 hover:bg-green-600 px-8 py-3 text-lg h-auto"
-              size="lg"
-            >
-              <FileText className="w-5 h-5 mr-2" />
-              {inspections.filter(i => i.status === 'Completed' && !i.sow_generated).length} Ready for SOW
-            </Button>
-          )}
         </div>
 
         {/* Search and Filter */}

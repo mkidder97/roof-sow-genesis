@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Building,
   MapPin,
-  Calendar
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -32,6 +33,7 @@ const UnifiedDashboard = () => {
   const draftInspections = inspections.filter(i => i.status === 'Draft');
   const completedInspections = inspections.filter(i => i.status === 'Completed');
   const readyForSOW = completedInspections.filter(inspection => !inspection.sow_generated);
+  const sowGenerated = inspections.filter(inspection => inspection.sow_generated);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -43,6 +45,19 @@ const UnifiedDashboard = () => {
 
   // Engineer Dashboard
   if (userRole === 'engineer') {
+    // Engineer-specific metrics based on SOW generation workflow
+    const engineerStats = {
+      pendingReview: readyForSOW.length,
+      sowsGenerated: sowGenerated.length,
+      thisWeekSOWs: sowGenerated.filter(i => {
+        const sowDate = new Date(i.updated_at || '');
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return sowDate >= weekAgo;
+      }).length,
+      totalProcessed: sowGenerated.length + readyForSOW.length
+    };
+
     return (
       <div className="container mx-auto px-4 py-6">
         {/* Engineer Dashboard Header */}
@@ -54,26 +69,30 @@ const UnifiedDashboard = () => {
           </Badge>
         </div>
 
-        {/* Engineer Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Engineer-Specific Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
             <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-yellow-400 mb-2">{readyForSOW.length}</div>
-              <div className="text-blue-200">Ready for SOW</div>
+              <div className="text-3xl font-bold text-yellow-400 mb-2">{engineerStats.pendingReview}</div>
+              <div className="text-blue-200">Pending Review</div>
             </CardContent>
           </Card>
           <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
             <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-green-400 mb-2">{completedInspections.length}</div>
-              <div className="text-blue-200">Total Completed</div>
+              <div className="text-3xl font-bold text-green-400 mb-2">{engineerStats.sowsGenerated}</div>
+              <div className="text-blue-200">SOWs Generated</div>
             </CardContent>
           </Card>
           <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
             <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-blue-400 mb-2">
-                {inspections.filter(i => i.sow_generated).length}
-              </div>
-              <div className="text-blue-200">SOW Generated</div>
+              <div className="text-3xl font-bold text-blue-400 mb-2">{engineerStats.thisWeekSOWs}</div>
+              <div className="text-blue-200">This Week</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-purple-400 mb-2">{engineerStats.totalProcessed}</div>
+              <div className="text-blue-200">Total Processed</div>
             </CardContent>
           </Card>
         </div>
@@ -155,7 +174,7 @@ const UnifiedDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Actions for Engineers */}
+        {/* Engineer Quick Actions */}
         <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
           <CardHeader>
             <CardTitle className="text-white">Quick Actions</CardTitle>
@@ -169,12 +188,12 @@ const UnifiedDashboard = () => {
               Create New SOW
             </Button>
             <Button
-              onClick={() => navigate('/field-inspector/dashboard')}
+              onClick={() => navigate('/dashboard')}
               variant="outline"
               className="border-blue-400 text-blue-200 hover:bg-blue-600 justify-start h-12"
             >
-              <ClipboardCheck className="w-5 h-5 mr-2" />
-              View All Inspections
+              <TrendingUp className="w-5 h-5 mr-2" />
+              View SOW Analytics
             </Button>
           </CardContent>
         </Card>
@@ -182,7 +201,7 @@ const UnifiedDashboard = () => {
     );
   }
 
-  // Inspector Dashboard (default)
+  // Inspector Dashboard
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Inspector Dashboard Header */}

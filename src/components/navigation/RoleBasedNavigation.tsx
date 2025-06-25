@@ -8,7 +8,8 @@ import {
   Home, 
   ClipboardCheck, 
   FileText,
-  ArrowLeft
+  ArrowLeft,
+  TrendingUp
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -24,13 +25,9 @@ const RoleBasedNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Debug: log user data to see what's available
-  console.log('User data:', user);
-  console.log('User metadata:', user?.user_metadata);
-  
   const userRole = user?.user_metadata?.role || 'inspector';
-  console.log('Detected user role:', userRole);
 
+  // Role-specific navigation items
   const navigationItems: NavigationItem[] = [
     {
       path: '/dashboard',
@@ -39,13 +36,15 @@ const RoleBasedNavigation = () => {
       description: 'Main dashboard overview',
       roles: ['inspector', 'engineer']
     },
+    // Inspector-only navigation
     {
       path: '/field-inspector/dashboard',
-      label: 'Field Inspections',
+      label: 'Inspections',
       icon: <ClipboardCheck className="w-4 h-4" />,
       description: 'Manage field inspections',
-      roles: ['inspector', 'engineer']
+      roles: ['inspector']
     },
+    // Engineer-only navigation
     {
       path: '/sow-generation',
       label: 'SOW Generation',
@@ -55,6 +54,7 @@ const RoleBasedNavigation = () => {
     }
   ];
 
+  // Filter navigation items based on user role
   const availableItems = navigationItems.filter(item => 
     item.roles.includes(userRole)
   );
@@ -93,7 +93,9 @@ const RoleBasedNavigation = () => {
 
     return pageDescriptions[currentPath] || {
       title: 'SOW Genesis',
-      description: 'Professional roof inspection and SOW generation platform'
+      description: userRole === 'engineer' 
+        ? 'Professional SOW generation platform'
+        : 'Professional roof inspection platform'
     };
   };
 
@@ -124,13 +126,13 @@ const RoleBasedNavigation = () => {
             </div>
           </div>
 
-          {/* Right: User Role + Quick Nav */}
+          {/* Right: User Role + Role-Specific Navigation */}
           <div className="flex items-center gap-4">
             <Badge className={userRole === 'engineer' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}>
               {userRole === 'engineer' ? 'Engineer' : 'Inspector'}
             </Badge>
             
-            {/* Quick Navigation */}
+            {/* Role-Specific Quick Navigation */}
             <div className="hidden md:flex gap-2">
               {availableItems.map((item) => (
                 <Button
