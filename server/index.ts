@@ -1,5 +1,5 @@
 // Enhanced Express Server with Complete Multi-Role Workflow Integration & File Management
-// NOW INCLUDES: Advanced Section-Input Mapping System + Draft Management
+// NOW INCLUDES: Advanced Section-Input Mapping System + Draft Management + SOW Generation API
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -23,6 +23,15 @@ import {
   renderTemplateContent,
   getTemplateMap
 } from './routes/sow-enhanced.js';
+
+// Import NEW SOW Generation API routes for frontend integration
+import { 
+  generateSOW,
+  downloadSOW,
+  getSOWStatus,
+  listSOWs,
+  deleteSOW
+} from './routes/sow-generation-api.js';
 
 // Import enhanced formatting routes
 import enhancedFormattingRouter from './routes/sow-enhanced-formatting.js';
@@ -60,6 +69,9 @@ import {
   calculateSquareFootageEndpoint,
   draftSystemHealth 
 } from './routes/draft-management.js';
+
+// Import Supabase health check
+import { checkSupabaseConnection } from './lib/supabase.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -112,7 +124,26 @@ app.get('/api/test/section-mapping', testSectionMapping);
 app.get('/api/sow/mappings', testSOWMappings);
 
 // ======================
-// DRAFT MANAGEMENT ENDPOINTS (NEW)
+// NEW: SOW GENERATION API ENDPOINTS (Frontend Ready)
+// ======================
+
+// Main SOW generation endpoint - Frontend ready
+app.post('/api/sow/generate', upload.single('file'), generateSOW);
+
+// Download generated SOW PDF
+app.get('/api/sow/download/:sowId', downloadSOW);
+
+// Get SOW generation status
+app.get('/api/sow/status/:sowId', getSOWStatus);
+
+// List user's SOWs
+app.get('/api/sow/list', listSOWs);
+
+// Delete SOW
+app.delete('/api/sow/:sowId', deleteSOW);
+
+// ======================
+// DRAFT MANAGEMENT ENDPOINTS
 // ======================
 app.post('/api/drafts/save', saveDraft);
 app.get('/api/drafts/:draftId', loadDraft);
@@ -147,7 +178,7 @@ app.post('/api/debug-sow-legacy', debugSOW);
 // ======================
 
 // Main debug endpoint with Section Engine integration
-app.post('/api/sow/debug-sow', debugSOWEnhanced);
+app.post('/api/sow/debug-sow', upload.single('takeoffFile'), debugSOWEnhanced);
 
 // Section-specific analysis
 app.post('/api/sow/debug-sections', debugSectionAnalysis);
@@ -180,14 +211,27 @@ app.get('/api/jurisdiction/health', jurisdictionHealth);
 // SYSTEM STATUS & DOCUMENTATION
 // ======================
 
-// Enhanced system status endpoint with section mapping and draft management
-app.get('/api/status', (req, res) => {
+// Enhanced system status endpoint with SOW generation API status
+app.get('/api/status', async (req, res) => {
+  const supabaseStatus = await checkSupabaseConnection();
+  
   res.json({
-    phase: 'Complete Multi-Role Workflow System with SOW Integration, File Management, Section-Input Mapping & Draft Management',
-    version: '9.1.0-draft-management',
-    engineVersion: '9.1.0 - Draft Management + Section-Input Mapping + Enhanced Integration + Multi-Role Workflow-SOW Integration',
+    phase: 'Complete Multi-Role Workflow System with SOW API Integration, File Management, Section-Input Mapping & Draft Management',
+    version: '10.0.0-sow-api-integration',
+    engineVersion: '10.0.0 - SOW API Integration + Draft Management + Section-Input Mapping + Enhanced Integration + Multi-Role Workflow-SOW Integration',
     serverStatus: 'running',
     timestamp: new Date().toISOString(),
+    
+    // NEW: SOW Generation API Status
+    sowGenerationAPI: {
+      frontend_integration: 'Complete ✅',
+      file_upload_support: 'Multipart form data with file handling ✅',
+      database_tracking: 'Full SOW generation tracking ✅',
+      error_handling: 'Comprehensive error handling and recovery ✅',
+      download_system: 'PDF download endpoints ✅',
+      supabase_connection: supabaseStatus.connected ? 'Connected ✅' : `Disconnected: ${supabaseStatus.error} ⚠️`
+    },
+    
     draftManagement: {
       draft_persistence: 'In-memory draft storage with validation ✅',
       auto_calculation: 'Real-time square footage calculation ✅',
@@ -218,10 +262,18 @@ app.get('/api/status', (req, res) => {
       handoff_system: 'Inspector → Consultant → Engineer ✅',
       collaboration: 'Comments, activities, audit trail ✅',
       api_endpoints: 'Complete workflow management ✅',
-      sow_integration: 'ENHANCED + MAPPING ENGINE ✅',
+      sow_integration: 'ENHANCED + MAPPING ENGINE + API INTEGRATION ✅',
       file_integration: 'COMPLETE ✅'
     },
     endpoints: {
+      // NEW: SOW Generation API Endpoints
+      sowGenerationAPI: {
+        'POST /api/sow/generate': 'Frontend-ready SOW generation with file upload',
+        'GET /api/sow/download/:sowId': 'Download generated PDF',
+        'GET /api/sow/status/:sowId': 'Check generation status',
+        'GET /api/sow/list': 'List user SOWs with pagination',
+        'DELETE /api/sow/:sowId': 'Delete SOW and associated files'
+      },
       draftManagement: {
         'POST /api/drafts/save': 'Save inspection draft with auto-calculation',
         'GET /api/drafts/:draftId': 'Load specific draft',
@@ -258,7 +310,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     workflow_integration: req.path.includes('workflow') || req.body?.project_id,
     file_management: req.path.includes('files'),
     section_mapping: req.path.includes('mapping'),
-    draft_management: req.path.includes('drafts')
+    draft_management: req.path.includes('drafts'),
+    sow_generation_api: req.path.includes('/api/sow/')
   });
 });
 
@@ -271,6 +324,15 @@ app.use('*', (req, res) => {
     availableEndpoints: [
       'GET /health - System health check',
       'GET /api/status - Complete system status',
+      
+      // NEW: SOW Generation API
+      'POST /api/sow/generate - Frontend-ready SOW generation',
+      'GET /api/sow/download/:sowId - Download generated PDF',
+      'GET /api/sow/status/:sowId - Check generation status',
+      'GET /api/sow/list - List user SOWs',
+      'DELETE /api/sow/:sowId - Delete SOW',
+      
+      // Existing endpoints
       'GET /api/test/section-mapping - Section mapping test',
       'GET /api/sow/mappings - SOW mappings overview',
       'POST /api/drafts/save - Save inspection draft',
@@ -284,7 +346,7 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('🚀 Enhanced Multi-Role Workflow-SOW Integration + File Management + Section Mapping + Draft Management Server Starting...');
+  console.log('🚀 Enhanced Multi-Role Workflow-SOW API Integration + File Management + Section Mapping + Draft Management Server Starting...');
   console.log('=' .repeat(100));
   console.log(`📡 Server running on port ${PORT}`);
   console.log(`🔗 Base URL: http://localhost:${PORT}`);
@@ -295,7 +357,14 @@ app.listen(PORT, () => {
   console.log(`   🗺️ Section Mapping Test: GET /api/test/section-mapping`);
   console.log(`   📋 SOW Mappings: GET /api/sow/mappings`);
   console.log('');
-  console.log('💾 NEW: Draft Management System:');
+  console.log('🎯 NEW: Frontend-Ready SOW Generation API:');
+  console.log(`   🎨 Generate SOW: POST /api/sow/generate`);
+  console.log(`   📥 Download PDF: GET /api/sow/download/:sowId`);
+  console.log(`   📊 Check Status: GET /api/sow/status/:sowId`);
+  console.log(`   📋 List SOWs: GET /api/sow/list`);
+  console.log(`   🗑️ Delete SOW: DELETE /api/sow/:sowId`);
+  console.log('');
+  console.log('💾 Draft Management System:');
   console.log(`   💾 Save Draft: POST /api/drafts/save`);
   console.log(`   📖 Load Draft: GET /api/drafts/:draftId`);
   console.log(`   📋 List Drafts: GET /api/drafts/list`);
@@ -321,6 +390,9 @@ app.listen(PORT, () => {
   console.log(`   🔄 Self-Healing: POST /api/sow/debug-self-healing`);
   console.log('');
   console.log('✨ Key System Achievements:');
+  console.log(`   ✅ Frontend-ready SOW generation API with full database tracking`);
+  console.log(`   ✅ Complete file upload and processing with PDF generation`);
+  console.log(`   ✅ Field inspection to SOW workflow integration`);
   console.log(`   ✅ Draft management with auto-calculation and validation`);
   console.log(`   ✅ Working test endpoints for section mapping validation`);
   console.log(`   ✅ Comprehensive workflow and file management systems`);
@@ -330,18 +402,22 @@ app.listen(PORT, () => {
   console.log('');
   console.log('📁 Output Directory:', outputDir);
   console.log('🌍 CORS Enabled for Lovable and local development');
-  console.log('🗄️ Database: Supabase with complete workflow + file management schema');
+  console.log('🗄️ Database: Supabase with complete workflow + file management + SOW tracking schema');
   console.log('=' .repeat(100));
-  console.log('🎉 Enhanced Multi-Role Workflow-SOW Integration + File Management + Section Mapping + Draft Management System OPERATIONAL!');
+  console.log('🎉 Enhanced Multi-Role Workflow-SOW API Integration + File Management + Section Mapping + Draft Management System OPERATIONAL!');
   console.log('');
-  console.log('💾 NEW FEATURES:');
+  console.log('🎯 NEW FEATURES:');
+  console.log('    🔌 Frontend-ready SOW generation API that the React components can connect to immediately');
+  console.log('    📊 Complete database tracking of SOW generation requests and status');
+  console.log('    📁 File upload processing with takeoff data extraction');
+  console.log('    🔗 Seamless integration with field inspection workflow');
   console.log('    💾 Draft persistence for inspection forms');
   console.log('    🧮 Accurate square footage auto-calculation');
   console.log('    👤 Per-user draft isolation and management');
   console.log('    🛡️ Comprehensive input validation and error recovery');
   console.log('');
-  console.log('🧪 Ready for immediate testing!');
-  console.log('🚀 System fully operational with working draft management + section mapping!');
+  console.log('🧪 Ready for immediate frontend connection!');
+  console.log('🚀 System fully operational with complete SOW generation API integration!');
 });
 
 export default app;
