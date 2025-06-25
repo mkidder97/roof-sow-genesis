@@ -5,7 +5,7 @@ import { useDashboardMetrics, useSOWHistory } from '@/hooks/useSOWDatabase';
 import { useFieldInspections } from '@/hooks/useFieldInspections';
 
 // Cache configuration
-const CACHE_TIME = 5 * 60 * 1000; // 5 minutes
+const GC_TIME = 5 * 60 * 1000; // 5 minutes (garbage collection time)
 const STALE_TIME = 30 * 1000; // 30 seconds
 
 export function useOptimizedDashboardMetrics() {
@@ -17,7 +17,7 @@ export function useOptimizedDashboardMetrics() {
       return data;
     },
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: GC_TIME,
     refetchOnWindowFocus: false,
     refetchInterval: 60000, // Refetch every minute
   });
@@ -31,7 +31,7 @@ export function useOptimizedSOWHistory(limit: number = 10) {
       return data;
     },
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: GC_TIME,
     refetchOnWindowFocus: false,
   });
 }
@@ -46,7 +46,7 @@ export function useOptimizedInspections() {
       return inspections;
     },
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: GC_TIME,
     refetchOnWindowFocus: false,
   });
 
