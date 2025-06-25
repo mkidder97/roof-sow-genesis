@@ -7,10 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Home, 
   ClipboardCheck, 
-  FileText, 
-  Users, 
-  Building, 
-  Settings,
+  FileText,
   ArrowLeft
 } from 'lucide-react';
 
@@ -35,54 +32,41 @@ const RoleBasedNavigation = () => {
       label: 'Dashboard',
       icon: <Home className="w-4 h-4" />,
       description: 'Main dashboard overview',
-      roles: ['inspector', 'consultant', 'engineer', 'admin']
+      roles: ['inspector', 'engineer']
     },
     {
       path: '/field-inspector/dashboard',
       label: 'Field Inspections',
       icon: <ClipboardCheck className="w-4 h-4" />,
       description: 'Manage field inspections',
-      roles: ['inspector', 'consultant', 'engineer', 'admin']
+      roles: ['inspector', 'engineer']
     },
     {
       path: '/sow-generation',
       label: 'SOW Generation',
       icon: <FileText className="w-4 h-4" />,
       description: 'Generate scope of work documents',
-      roles: ['engineer', 'consultant', 'admin']
-    },
-    {
-      path: '/workflow',
-      label: 'Multi-Role Workflow',
-      icon: <Users className="w-4 h-4" />,
-      description: 'Collaborative project workflow',
-      roles: ['inspector', 'consultant', 'engineer', 'admin']
-    },
-    {
-      path: '/workflow/sow-generation',
-      label: 'Workflow SOW',
-      icon: <Building className="w-4 h-4" />,
-      description: 'SOW from workflow projects',
-      roles: ['engineer', 'admin']
+      roles: ['engineer']
     }
   ];
 
   const availableItems = navigationItems.filter(item => 
-    item.roles.includes(userRole) || item.roles.includes('admin')
+    item.roles.includes(userRole)
   );
 
   const getCurrentPageInfo = () => {
     const currentPath = location.pathname;
     
-    // Map specific routes to clear descriptions
     const pageDescriptions: { [key: string]: { title: string; description: string } } = {
       '/dashboard': {
-        title: 'Main Dashboard',
-        description: 'Overview of all activities and quick access to main features'
+        title: userRole === 'engineer' ? 'Engineer Dashboard' : 'Inspector Dashboard',
+        description: userRole === 'engineer' 
+          ? 'Review completed inspections and generate SOW documents'
+          : 'Manage field inspections and building assessments'
       },
       '/field-inspector/dashboard': {
-        title: 'Field Inspector Dashboard',
-        description: 'Manage field inspections - create, view, and track inspection progress'
+        title: 'Field Inspections',
+        description: 'View and manage all field inspections'
       },
       '/field-inspection/new': {
         title: 'New Field Inspection',
@@ -90,19 +74,7 @@ const RoleBasedNavigation = () => {
       },
       '/sow-generation': {
         title: 'SOW Generation',
-        description: 'Generate professional scope of work documents from project data'
-      },
-      '/workflow': {
-        title: 'Multi-Role Workflow Dashboard',
-        description: 'Collaborative project management: Inspector → Consultant → Engineer workflow'
-      },
-      '/workflow/sow-generation': {
-        title: 'Workflow SOW Generation',
-        description: 'Generate SOW documents from completed multi-role workflow projects'
-      },
-      '/workflow/create-project': {
-        title: 'Create Workflow Project',
-        description: 'Start a new project in the multi-role workflow system'
+        description: 'Generate professional scope of work documents from inspection data'
       }
     };
 
@@ -116,7 +88,7 @@ const RoleBasedNavigation = () => {
 
     return pageDescriptions[currentPath] || {
       title: 'SOW Genesis',
-      description: 'Professional roof scope of work generation platform'
+      description: 'Professional roof inspection and SOW generation platform'
     };
   };
 
@@ -149,13 +121,13 @@ const RoleBasedNavigation = () => {
 
           {/* Right: User Role + Quick Nav */}
           <div className="flex items-center gap-4">
-            <Badge className="bg-blue-600 text-white">
-              {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+            <Badge className={userRole === 'engineer' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}>
+              {userRole === 'engineer' ? 'Engineer' : 'Inspector'}
             </Badge>
             
-            {/* Quick Navigation Dropdown */}
+            {/* Quick Navigation */}
             <div className="hidden md:flex gap-2">
-              {availableItems.slice(0, 4).map((item) => (
+              {availableItems.map((item) => (
                 <Button
                   key={item.path}
                   onClick={() => navigate(item.path)}

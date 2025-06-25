@@ -34,9 +34,6 @@ import InspectionDetailsPage from "./pages/InspectionDetailsPage";
 import SOWGeneration from "./pages/SOWGeneration";
 import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import MultiRoleDashboard from '@/components/workflow/MultiRoleDashboard';
-import CreateProject from '@/components/workflow/CreateProject';
-import WorkflowSOWGeneration from '@/components/workflow/WorkflowSOWGeneration';
 
 const queryClient = new QueryClient();
 
@@ -77,13 +74,8 @@ function App() {
             <Route path="/field-inspection/:id" element={<InspectionDetailsPage />} />
             <Route path="/field-inspection/:id/edit" element={<FieldInspectionForm />} />
 
-            {/* SOW Generation Route */}
+            {/* SOW Generation Route - Engineer Only */}
             <Route path="/sow-generation" element={<SOWGeneration />} />
-            
-            {/* Workflow Routes */}
-            <Route path="/workflow" element={<MultiRoleDashboard />} />
-            <Route path="/workflow/create-project" element={<CreateProject />} />
-            <Route path="/workflow/sow-generation" element={<WorkflowSOWGeneration />} />
           </Routes>
         </AuthProvider>
       </Router>
