@@ -58,28 +58,88 @@ const UnifiedDashboard = () => {
     };
 
     const handleGenerateSOW = (inspection: any) => {
-      // Convert field inspection data to SOW format
-      const sowData = {
-        projectName: inspection.project_name,
-        address: inspection.project_address,
-        customerName: inspection.customer_name,
-        customerPhone: inspection.customer_phone,
-        buildingHeight: inspection.building_height,
-        squareFootage: inspection.square_footage,
-        membraneType: inspection.existing_membrane_type || 'TPO',
-        projectType: 'recover', // Default for now
-        windSpeed: 120, // Default for now
-        exposureCategory: 'C', // Default for now
-        numberOfDrains: inspection.drainage_options ? 
-          JSON.parse(inspection.drainage_options).reduce((sum: number, drain: any) => sum + (drain.count || 0), 0) : 0,
-        numberOfPenetrations: inspection.penetrations ? 
-          JSON.parse(inspection.penetrations).reduce((sum: number, pen: any) => sum + (pen.count || 0), 0) : 0,
+      console.log('Starting SOW generation for inspection:', inspection);
+      
+      // Helper function to safely parse JSON data
+      const safeJsonParse = (jsonString: any, fallback: any = []) => {
+        if (!jsonString) return fallback;
+        try {
+          if (typeof jsonString === 'string') {
+            return JSON.parse(jsonString);
+          }
+          if (Array.isArray(jsonString) || typeof jsonString === 'object') {
+            return jsonString;
+          }
+          return fallback;
+        } catch (error) {
+          console.warn('JSON parse error:', error, 'for data:', jsonString);
+          return fallback;
+        }
       };
 
+      // Helper function to count items from array data
+      const countItems = (items: any[], countField: string = 'count') => {
+        if (!Array.isArray(items)) return 0;
+        return items.reduce((sum, item) => {
+          const count = item[countField] || item.count || 1;
+          return sum + (typeof count === 'number' ? count : 0);
+        }, 0);
+      };
+
+      // Parse drainage options and calculate drain count
+      const drainageOptions = safeJsonParse(inspection.drainage_options, []);
+      console.log('Parsed drainage options:', drainageOptions);
+      const numberOfDrains = countItems(drainageOptions);
+
+      // Parse penetrations and calculate penetration count
+      const penetrations = safeJsonParse(inspection.penetrations, []);
+      console.log('Parsed penetrations:', penetrations);
+      const numberOfPenetrations = countItems(penetrations);
+
+      // Convert field inspection data to SOW format with proper field mapping
+      const sowData = {
+        // Customer Information
+        customerName: inspection.customer_name || '',
+        customerPhone: inspection.customer_phone || '',
+        customerEmail: '', // Not available in field inspection
+        
+        // Project Information
+        projectName: inspection.project_name || '',
+        address: inspection.project_address || '',
+        
+        // Building Specifications
+        buildingHeight: inspection.building_height || undefined,
+        squareFootage: inspection.square_footage || undefined,
+        
+        // Technical Specifications
+        membraneType: inspection.existing_membrane_type || 'TPO',
+        selectedMembraneBrand: '', // Not available in field inspection
+        windSpeed: 120, // Default - should be calculated based on location
+        exposureCategory: 'C', // Default - should be determined based on location
+        projectType: 'recover', // Default - could be inferred from inspection data
+        
+        // Takeoff Data
+        numberOfDrains,
+        numberOfPenetrations,
+        
+        // Additional data for debugging
+        _inspectionId: inspection.id,
+        _originalData: {
+          drainageOptions,
+          penetrations,
+          hvacUnits: safeJsonParse(inspection.hvac_units, []),
+          roofDrains: safeJsonParse(inspection.roof_drains, [])
+        }
+      };
+
+      console.log('Final SOW data being passed:', sowData);
+
+      // Navigate to SOW generation with the converted data
       navigate('/sow-generation', { 
         state: { 
           fromInspection: true, 
-          inspectionData: sowData 
+          inspectionData: sowData,
+          originalInspection: inspection // Keep original for reference
         } 
       });
     };
@@ -232,6 +292,8 @@ const UnifiedDashboard = () => {
         </Badge>
       </div>
 
+      {/* ... keep existing code (Inspector metrics and tabs) the same ... */}
+      
       {/* Inspector Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
