@@ -81,6 +81,14 @@ const FieldInspectionForm = () => {
 
   // Convert form data to draft format
   const convertToDraftFormat = (data: Partial<FieldInspection>): DraftData => {
+    // Convert insulation_layers to simple format for API
+    const insulationLayers = data.insulation_layers 
+      ? data.insulation_layers.map(layer => ({
+          type: layer.type || '',
+          thickness: layer.thickness || 0
+        }))
+      : [];
+
     return {
       id: currentDraftId || undefined,
       projectName: data.project_name,
@@ -92,7 +100,7 @@ const FieldInspectionForm = () => {
       numberOfStories: data.number_of_stories,
       roofSlope: data.roof_slope,
       deckType: data.deck_type,
-      insulationLayers: data.insulation_layers as Array<{ type: string; thickness: number }>,
+      insulationLayers: insulationLayers,
       coverBoard: data.cover_board_type,
       // Include all other form data
       ...data,
@@ -101,6 +109,16 @@ const FieldInspectionForm = () => {
 
   // Convert draft data back to form format
   const convertFromDraftFormat = (draft: DraftData): Partial<FieldInspection> => {
+    // Convert insulation layers back to full format with IDs
+    const insulationLayers = draft.insulationLayers 
+      ? draft.insulationLayers.map((layer, index) => ({
+          id: `${Date.now()}-${index}`,
+          type: layer.type || '',
+          thickness: layer.thickness || 0,
+          description: ''
+        }))
+      : [];
+
     return {
       project_name: draft.projectName,
       project_address: draft.projectAddress,
@@ -111,7 +129,7 @@ const FieldInspectionForm = () => {
       number_of_stories: draft.numberOfStories,
       roof_slope: draft.roofSlope,
       deck_type: draft.deckType,
-      insulation_layers: draft.insulationLayers,
+      insulation_layers: insulationLayers,
       cover_board_type: draft.coverBoard,
       // Include all other draft data
       ...draft,
