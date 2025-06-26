@@ -1,5 +1,3 @@
-
-
 export interface UseSOWGenerationProps {
   onSuccess?: (data: SOWGenerationResponse) => void;
   onError?: (error: Error) => void;
