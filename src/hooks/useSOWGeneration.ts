@@ -77,11 +77,11 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
         setGenerationProgress(70);
         setGenerationStatus('Generating SOW document...');
 
-        // Transform data for API compatibility
+        // CRITICAL: Transform data to match backend API expectations
         const apiData = {
           projectData: {
             projectName: data.projectName || '',
-            projectAddress: data.projectAddress || '',
+            projectAddress: data.projectAddress || '', // Backend expects "projectAddress"
             city: data.city,
             state: data.state,
             zipCode: data.zipCode,
@@ -92,11 +92,24 @@ export function useSOWGeneration({ onSuccess, onError }: UseSOWGenerationProps =
             windSpeed: data.windSpeed,
             exposureCategory: data.exposureCategory,
             buildingClassification: data.buildingClassification,
+            customerName: data.customerName,
+            customerPhone: data.customerPhone,
+            squareFootage: data.squareFootage,
+            numberOfDrains: data.numberOfDrains,
+            numberOfPenetrations: data.numberOfPenetrations,
+            projectType: data.projectType,
             notes: data.notes
           },
-          takeoffFile: takeoffFile,
+          file: takeoffFile, // Changed from takeoffFile to file
           inspectionId: data.inspectionId
         };
+
+        console.log('🚀 Calling SOW generation API with properly mapped data:', {
+          projectName: apiData.projectData.projectName,
+          projectAddress: apiData.projectData.projectAddress,
+          hasFile: !!apiData.file,
+          inspectionId: apiData.inspectionId
+        });
 
         // Call the API to generate SOW
         const result = await generateSOWAPI(apiData as any);
@@ -332,10 +345,10 @@ export function useTemplateOperations() {
 export function useSOWWorkflow() {
   const generateFromInspectionMutation = useMutation({
     mutationFn: async (data: { inspectionData: FieldInspectionData; inspectionId: string }) => {
-      // Transform inspection data to SOW format
+      // Transform inspection data to SOW format with CORRECT field mapping
       const sowRequest: SOWGenerationRequest = {
         projectName: data.inspectionData.projectName || data.inspectionData.project_name || '',
-        projectAddress: data.inspectionData.projectAddress || data.inspectionData.project_address || '',
+        projectAddress: data.inspectionData.projectAddress || data.inspectionData.project_address || '', // Ensure correct mapping
         city: data.inspectionData.city,
         state: data.inspectionData.state,
         zipCode: data.inspectionData.zipCode || data.inspectionData.zip_code,
@@ -350,11 +363,11 @@ export function useSOWWorkflow() {
         inspectionId: data.inspectionId,
       };
 
-      // Transform for API compatibility
+      // Transform for API compatibility with CORRECT projectData structure
       const apiData = {
         projectData: {
           projectName: sowRequest.projectName || '',
-          projectAddress: sowRequest.projectAddress || '',
+          projectAddress: sowRequest.projectAddress || '', // This is the key fix!
           city: sowRequest.city,
           state: sowRequest.state,
           zipCode: sowRequest.zipCode,
@@ -366,8 +379,15 @@ export function useSOWWorkflow() {
           exposureCategory: sowRequest.exposureCategory,
           buildingClassification: sowRequest.buildingClassification,
           notes: sowRequest.notes
-        }
+        },
+        inspectionId: data.inspectionId
       };
+
+      console.log('🔄 Generating SOW from inspection with mapped data:', {
+        projectName: apiData.projectData.projectName,
+        projectAddress: apiData.projectData.projectAddress,
+        inspectionId: apiData.inspectionId
+      });
 
       return await generateSOWAPI(apiData as any);
     },
