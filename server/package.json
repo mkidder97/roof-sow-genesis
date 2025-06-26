@@ -15,6 +15,7 @@
     "start:professional": "tsx index-professional.ts",
     "start:supabase": "tsx index-supabase.ts",
     "start:realtime": "tsx index-realtime-integrated.ts",
+    "start:main": "tsx index.ts",
     "build": "tsc",
     "start:production": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
