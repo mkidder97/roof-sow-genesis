@@ -394,7 +394,7 @@ export function useSOWStatusMonitor(sowId: string | null) {
       if (data?.generationStatus === 'processing') {
         return 2000;
       }
-      if (data?.generationStatus === 'completed' || data?.generationStatus === 'failed') {
+      if (data?.generationStatus === 'complete' || data?.generationStatus === 'failed') {
         setIsMonitoring(false);
         return false;
       }
