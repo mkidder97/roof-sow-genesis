@@ -28,7 +28,16 @@ export function useDatabaseHealth() {
         throw new Error(`Database health check failed: ${error.message}`);
       }
       
-      return data;
+      // Handle the JSON data properly by parsing it if it's a string
+      const healthData = typeof data === 'string' ? JSON.parse(data) : data;
+      
+      return {
+        timestamp: healthData.timestamp,
+        active_connections: healthData.active_connections || 0,
+        slow_queries: healthData.slow_queries || 0,
+        table_sizes: healthData.table_sizes || {},
+        database_size: healthData.database_size || 0
+      } as DatabaseHealth;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 25000, // Consider stale after 25 seconds

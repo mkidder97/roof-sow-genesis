@@ -1,3 +1,4 @@
+
 export interface UseSOWGenerationProps {
   onSuccess?: (data: SOWGenerationResponse) => void;
   onError?: (error: Error) => void;
@@ -8,6 +9,9 @@ export interface SOWGenerationResponse {
   sowId?: string;
   downloadUrl?: string;
   generationStatus?: GenerationStatus;
+  data?: {
+    pdf?: string;
+  };
   metadata?: {
     generationTime?: number;
     fileProcessed?: boolean;
@@ -85,6 +89,78 @@ export interface FieldInspectionData {
   buildingClassification?: string;
   building_classification?: string;
   notes?: string;
+}
+
+// SOW Form Section Types
+export interface ProjectMetadata {
+  projectName: string;
+  companyName: string;
+  address: string;
+  squareFootage?: number;
+  projectType: 'Recover' | 'Tear-Off' | 'Replacement';
+  deckType: 'Steel' | 'Wood' | 'Concrete';
+  buildingHeight?: number;
+  length?: number;
+  width?: number;
+}
+
+export interface Environmental {
+  city: string;
+  state: string;
+  zip: string;
+  elevation?: number;
+  jurisdiction: string;
+  exposureCategory: 'B' | 'C' | 'D';
+  asceVersion: '7-10' | '7-16' | '7-22';
+  hvhzZone: boolean;
+}
+
+export interface Membrane {
+  manufacturer: string;
+  productName: string;
+  membraneType: 'TPO' | 'PVC';
+  thickness: 45 | 60 | 80 | 115;
+  warrantyTerm: 20 | 25 | 30;
+  attachmentMethod: 'Induction Welded' | 'Fully Adhered' | 'Mechanically Attached';
+}
+
+export interface Takeoff {
+  drains?: number;
+  pipePenetrations?: number;
+  curbs?: number;
+  hvacUnits?: number;
+  skylights?: number;
+  scuppers?: number;
+  expansionJoints: boolean;
+}
+
+export interface Notes {
+  contractorName: string;
+  addendaNotes: string;
+  warrantyNotes: string;
+}
+
+// Error handling types
+export interface SOWGenerationError extends Error {
+  type: 'network' | 'server' | 'validation' | 'unknown';
+  code?: string;
+  details?: any;
+}
+
+export function createSOWError(message: string, type: SOWGenerationError['type'], code?: string, details?: any): SOWGenerationError {
+  const error = new Error(message) as SOWGenerationError;
+  error.type = type;
+  error.code = code;
+  error.details = details;
+  return error;
+}
+
+export function isNetworkError(error: Error): boolean {
+  return error.message.includes('fetch') || 
+         error.message.includes('network') || 
+         error.message.includes('connection') ||
+         error.name === 'NetworkError' ||
+         error.name === 'TypeError';
 }
 
 export function transformInspectionToSOWRequest(inspectionData: FieldInspectionData): SOWGenerationRequest {
