@@ -181,4 +181,3 @@ export function transformInspectionToSOWRequest(inspectionData: FieldInspectionD
     notes: inspectionData.notes,
   };
 }
-
