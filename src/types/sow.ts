@@ -1,4 +1,5 @@
 
+
 export interface UseSOWGenerationProps {
   onSuccess?: (data: SOWGenerationResponse) => void;
   onError?: (error: Error) => void;
@@ -180,3 +181,4 @@ export function transformInspectionToSOWRequest(inspectionData: FieldInspectionD
     notes: inspectionData.notes,
   };
 }
+
