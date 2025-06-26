@@ -139,6 +139,30 @@ export type Database = {
           },
         ]
       }
+      database_performance_log: {
+        Row: {
+          details: Json | null
+          id: string
+          metric_name: string
+          metric_value: number
+          recorded_at: string | null
+        }
+        Insert: {
+          details?: Json | null
+          id?: string
+          metric_name: string
+          metric_value: number
+          recorded_at?: string | null
+        }
+        Update: {
+          details?: Json | null
+          id?: string
+          metric_name?: string
+          metric_value?: number
+          recorded_at?: string | null
+        }
+        Relationships: []
+      }
       field_inspections: {
         Row: {
           access_method: string | null
@@ -620,10 +644,52 @@ export type Database = {
           },
         ]
       }
+      sow_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          sow_generation_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          sow_generation_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          sow_generation_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sow_audit_log_sow_generation_id_fkey"
+            columns: ["sow_generation_id"]
+            isOneToOne: false
+            referencedRelation: "sow_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sow_generations: {
         Row: {
           created_at: string | null
           error_message: string | null
+          file_mime_type: string | null
           file_size_bytes: number | null
           generation_completed_at: string | null
           generation_duration_seconds: number | null
@@ -640,6 +706,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           error_message?: string | null
+          file_mime_type?: string | null
           file_size_bytes?: number | null
           generation_completed_at?: string | null
           generation_duration_seconds?: number | null
@@ -656,6 +723,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           error_message?: string | null
+          file_mime_type?: string | null
           file_size_bytes?: number | null
           generation_completed_at?: string | null
           generation_duration_seconds?: number | null
@@ -898,10 +966,40 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dashboard_metrics_cache: {
+        Row: {
+          avg_generation_time: number | null
+          completed_sows: number | null
+          inspections_this_week: number | null
+          last_updated: string | null
+          pending_sows: number | null
+          sows_this_week: number | null
+          total_inspections: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      archive_old_sows: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_database_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      log_performance_metric: {
+        Args: {
+          p_metric_name: string
+          p_metric_value: number
+          p_details?: Json
+        }
+        Returns: undefined
+      }
+      refresh_dashboard_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       user_role_enum: "inspector" | "consultant" | "engineer" | "admin"
