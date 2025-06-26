@@ -7,7 +7,7 @@ import {
   generateSOWWithEngineering, 
   generateDebugSOW, 
   validateSOWInputs 
-} from '../core/sow-generator.js';
+} from '../routes/sow-enhanced.js';
 import { parseTakeoffFile, TakeoffFile } from '../core/takeoff-engine.js';
 import { supabase } from '../lib/supabase.js';
 
@@ -15,7 +15,7 @@ import { supabase } from '../lib/supabase.js';
 interface SOWGenerationRequest {
   projectData: {
     projectName: string;
-    address: string;
+    projectAddress: string;
     customerName?: string;
     customerPhone?: string;
     buildingHeight?: number;
@@ -132,7 +132,7 @@ export async function generateSOW(req: Request, res: Response) {
     }
     
     // Validate required fields
-    if (!projectData.projectName || !projectData.address) {
+    if (!projectData.projectName || !projectData.projectAddress) {
       return res.status(400).json({
         success: false,
         error: 'Project name and address are required',
@@ -147,7 +147,7 @@ export async function generateSOW(req: Request, res: Response) {
         .insert({
           id: sowId,
           project_name: projectData.projectName,
-          project_address: projectData.address,
+          project_address: projectData.projectAddress,
           customer_name: projectData.customerName,
           customer_phone: projectData.customerPhone,
           status: 'processing',
@@ -174,7 +174,7 @@ export async function generateSOW(req: Request, res: Response) {
     // Transform project data to SOW generator format
     const sowInputs = {
       projectName: projectData.projectName,
-      projectAddress: projectData.address,
+      projectAddress: projectData.projectAddress,
       city: projectData.city,
       state: projectData.state,
       zipCode: projectData.zipCode,
@@ -212,7 +212,7 @@ export async function generateSOW(req: Request, res: Response) {
       fileProcessed: projectData._fileProcessed
     });
     
-    // Generate SOW using existing system
+    // Generate SOW using existing enhanced system
     const sowResult = await generateSOWWithEngineering(sowInputs);
     
     if (!sowResult.success) {
@@ -517,5 +517,47 @@ export async function deleteSOW(req: Request, res: Response) {
   } catch (error) {
     console.error('❌ Delete SOW error:', error);
     res.status(500).json({ error: 'Failed to delete SOW' });
+  }
+}
+
+// Helper function to ensure the SOW generator is correctly connected
+async function generateSOWWithEngineering(inputs: any) {
+  try {
+    // Import and use the enhanced SOW generator from routes
+    const { debugSOWEnhanced } = await import('./sow-enhanced.js');
+    
+    // Create a mock request object for the debug function
+    const mockReq = {
+      body: inputs,
+      file: null
+    };
+    
+    let result: any = null;
+    const mockRes = {
+      json: (data: any) => { result = data; },
+      status: () => mockRes
+    };
+    
+    await debugSOWEnhanced(mockReq as any, mockRes as any);
+    
+    if (result && result.success) {
+      return {
+        success: true,
+        data: result.data,
+        engineeringSummary: result.engineeringSummary,
+        pdfPath: result.outputPath
+      };
+    } else {
+      return {
+        success: false,
+        error: result?.error || 'SOW generation failed'
+      };
+    }
+  } catch (error) {
+    console.error('SOW generation error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
