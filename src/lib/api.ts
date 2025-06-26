@@ -38,10 +38,10 @@ export const API_ENDPOINTS = {
 } as const;
 
 export interface SOWGenerationRequest {
-  // Project Information
+  // Project Information - ALIGNED WITH BACKEND EXPECTATIONS
   projectData: {
     projectName: string;
-    address: string;
+    projectAddress: string; // IMPORTANT: Backend expects "projectAddress", not "address"
     customerName?: string;
     customerPhone?: string;
     buildingHeight?: number;
@@ -159,13 +159,36 @@ export interface DraftListResponse {
   error?: string;
 }
 
-// NEW: Main SOW Generation API Function
+// NEW: Main SOW Generation API Function - UPDATED WITH PROPER FIELD MAPPING
 export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOWGenerationResponse> {
   try {
     const formData = new FormData();
     
-    // Add project data as JSON string
-    formData.append('projectData', JSON.stringify(request.projectData));
+    // CRITICAL: Ensure proper field mapping for backend compatibility
+    const mappedProjectData = {
+      projectName: request.projectData.projectName,
+      projectAddress: request.projectData.projectAddress, // Backend expects this exact field name
+      customerName: request.projectData.customerName,
+      customerPhone: request.projectData.customerPhone,
+      buildingHeight: request.projectData.buildingHeight,
+      squareFootage: request.projectData.squareFootage,
+      numberOfDrains: request.projectData.numberOfDrains,
+      numberOfPenetrations: request.projectData.numberOfPenetrations,
+      membraneType: request.projectData.membraneType,
+      windSpeed: request.projectData.windSpeed,
+      exposureCategory: request.projectData.exposureCategory,
+      projectType: request.projectData.projectType,
+      city: request.projectData.city,
+      state: request.projectData.state,
+      zipCode: request.projectData.zipCode,
+      deckType: request.projectData.deckType,
+      insulationType: request.projectData.insulationType,
+      buildingClassification: request.projectData.buildingClassification,
+      notes: request.projectData.notes
+    };
+    
+    // Add project data as JSON string with proper field mapping
+    formData.append('projectData', JSON.stringify(mappedProjectData));
     
     // Add inspection ID if provided
     if (request.inspectionId) {
@@ -176,6 +199,12 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
     if (request.file) {
       formData.append('file', request.file);
     }
+
+    console.log('🚀 Sending SOW generation request with mapped data:', {
+      projectName: mappedProjectData.projectName,
+      projectAddress: mappedProjectData.projectAddress, // Verify this mapping
+      hasFile: !!request.file
+    });
 
     const response = await fetch(API_ENDPOINTS.generateSOW, {
       method: 'POST',
