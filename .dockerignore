@@ -1,0 +1,152 @@
+# .dockerignore for roof-sow-genesis
+
+# Node modules and build artifacts
+node_modules/
+dist/
+build/
+.cache/
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation and markdown files (keep README.md)
+*.md
+!README.md
+docs/
+development/
+
+# Test files
+tests/
+test/
+coverage/
+.nyc_output/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.test
+.env.local
+
+# Supabase local development
+supabase/.branches
+supabase/.temp
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Lock files (keep them for consistency)
+# Uncomment the following lines if you want to exclude lock files
+# package-lock.json
+# yarn.lock
+# bun.lockb
+
+# Large files that shouldn't be in Docker context
+*.pdf
+*.zip
+*.tar.gz
+*.rar
+
+# Development utilities
+fixes/
+self-healing-agent.ts
