@@ -1,5 +1,10 @@
 // Enhanced Express Server with Complete Multi-Role Workflow Integration & File Management
 // NOW INCLUDES: Advanced Section-Input Mapping System + Draft Management + SOW Generation API
+
+// CRITICAL: Load environment variables first
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -75,6 +80,12 @@ import { checkSupabaseConnection } from './lib/supabase.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Verify environment variables are loaded
+console.log('🔧 Environment Check:');
+console.log(`   SUPABASE_URL: ${process.env.SUPABASE_URL ? '✅ Set' : '❌ Missing'}`);
+console.log(`   SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ Set' : '❌ Missing'}`);
+console.log(`   PORT: ${PORT}`);
 
 // Enhanced CORS configuration for Lovable and local development
 app.use(cors({
