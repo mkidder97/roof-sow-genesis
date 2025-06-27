@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +11,10 @@ import { toast } from 'sonner';
 interface PhotoDocumentationStepProps {
   data: Partial<FieldInspection>;
   onChange: (updates: Partial<FieldInspection>) => void;
+  readOnly?: boolean;
 }
 
-const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, onChange }) => {
+const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, onChange, readOnly = false }) => {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -219,6 +219,7 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
           onClick={openCamera}
           className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4 h-auto"
           size="lg"
+          disabled={readOnly}
         >
           <Camera className="w-6 h-6 mr-3" />
           Take Photos
@@ -234,6 +235,7 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
           onClick={openFileSelect}
           variant="outline"
           className="border-blue-400 text-blue-200 hover:bg-blue-800"
+          disabled={readOnly}
         >
           <Upload className="w-4 h-4 mr-2" />
           Upload from Gallery
@@ -249,6 +251,7 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
         multiple
         onChange={(e) => handleFileSelect(e.target.files)}
         style={{ display: 'none' }}
+        disabled={readOnly}
       />
       
       <input
@@ -258,6 +261,7 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
         multiple
         onChange={(e) => handleFileSelect(e.target.files)}
         style={{ display: 'none' }}
+        disabled={readOnly}
       />
 
       {/* Upload Progress */}
@@ -340,13 +344,15 @@ const PhotoDocumentationStep: React.FC<PhotoDocumentationStepProps> = ({ data, o
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => removePhoto(photoUrl, index)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    {!readOnly && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => removePhoto(photoUrl, index)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

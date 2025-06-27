@@ -102,9 +102,9 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange, r
               <SelectValue placeholder="Select roof slope" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="flat">Flat (0-2%)</SelectItem>
-              <SelectItem value="low">Low Slope (2-10%)</SelectItem>
-              <SelectItem value="steep">Steep Slope (&gt;10%)</SelectItem>
+              <SelectItem value="low">Low Slope (0-2/12, under 17%)</SelectItem>
+              <SelectItem value="moderate">Moderate Slope (2/12-4/12, 17-33%)</SelectItem>
+              <SelectItem value="steep">Steep Slope (4/12+, over 33%)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -115,7 +115,9 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange, r
           <strong>Measurement Tips:</strong><br />
           • Use measuring tape for accurate dimensions<br />
           • Count building stories from exterior view<br />
-          • Record roof slope observations for membrane selection
+          • Record roof slope observations for membrane selection<br />
+          • Low slope requires membrane systems (TPO, EPDM, PVC)<br />
+          • Steep slope allows for shingles and other materials
         </p>
       </div>
     </div>

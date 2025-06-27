@@ -50,9 +50,9 @@ export interface SOWGenerationResponse {
 }
 
 export interface SOWGenerationRequest {
-  // Make core fields required to match api.ts usage
-  projectName: string;
-  projectAddress: string;
+  // Make core fields optional to match component usage
+  projectName?: string;
+  projectAddress?: string;
   
   // Optional fields
   customerName?: string;
