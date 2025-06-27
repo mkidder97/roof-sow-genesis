@@ -85,8 +85,10 @@ async def health_check():
         "version": "1.0.0",
         "endpoints": {
             "submit_takeoff": "/api/submit-takeoff",
+            "validate_only": "/api/validate-only",
             "workflow_status": "/api/workflow/{workflow_id}",
-            "download_pdf": "/api/download/pdf/{filename}"
+            "download_pdf": "/api/download/pdf/{filename}",
+            "recent_workflows": "/api/recent-workflows"
         }
     }
 
@@ -135,6 +137,27 @@ async def submit_takeoff(form_data: TakeoffFormData, background_tasks: Backgroun
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+@app.post("/api/validate-only")
+async def validate_takeoff_only(form_data: TakeoffFormData):
+    """Validate takeoff data without generating SOW (for real-time validation)"""
+    try:
+        from validate_takeoff_data import TakeoffValidator
+        
+        takeoff_data = form_data.dict(exclude_none=True)
+        validator = TakeoffValidator()
+        is_valid, errors, warnings = validator.validate_data(takeoff_data)
+        
+        return {
+            "is_valid": is_valid,
+            "errors": errors,
+            "warnings": warnings,
+            "error_count": len(errors),
+            "warning_count": len(warnings)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Validation error: {str(e)}")
+
 @app.get("/api/workflow/{workflow_id}")
 async def get_workflow_status(workflow_id: str):
     """Get status of a specific workflow"""
@@ -167,27 +190,6 @@ async def download_pdf(filename: str):
         if "not found" in str(e).lower():
             raise HTTPException(status_code=404, detail="PDF file not found")
         raise HTTPException(status_code=500, detail=f"Error downloading file: {str(e)}")
-
-@app.get("/api/validate-only")
-async def validate_takeoff_only(form_data: TakeoffFormData):
-    """Validate takeoff data without generating SOW (for real-time validation)"""
-    try:
-        from validate_takeoff_data import TakeoffValidator
-        
-        takeoff_data = form_data.dict(exclude_none=True)
-        validator = TakeoffValidator()
-        is_valid, errors, warnings = validator.validate_data(takeoff_data)
-        
-        return {
-            "is_valid": is_valid,
-            "errors": errors,
-            "warnings": warnings,
-            "error_count": len(errors),
-            "warning_count": len(warnings)
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Validation error: {str(e)}")
 
 @app.get("/api/recent-workflows")
 async def get_recent_workflows(limit: int = 10):
