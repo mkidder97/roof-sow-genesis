@@ -14,14 +14,14 @@ const AvailableInspections = () => {
   const { generateSOW, isGenerating } = useSOWGeneration({
     onSuccess: () => {
       toast({
-        title: "SOW Generated",
-        description: "Statement of Work has been generated successfully.",
+        title: "SOW Generated Successfully",
+        description: "Statement of Work has been generated and is ready for download.",
       });
       refetch(); // Refresh the inspections list
     },
     onError: (error) => {
       toast({
-        title: "Generation Failed",
+        title: "SOW Generation Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -31,6 +31,8 @@ const AvailableInspections = () => {
 
   const handleGenerateSOW = async (inspection: any) => {
     try {
+      console.log('Generating SOW for inspection:', inspection);
+      
       const sowRequest = {
         projectName: inspection.project_name,
         projectAddress: inspection.project_address,
@@ -52,9 +54,15 @@ const AvailableInspections = () => {
         projectType: 'recover' // Default for field inspections
       };
 
+      console.log('SOW Request:', sowRequest);
       await generateSOW(sowRequest);
     } catch (error) {
       console.error('SOW generation error:', error);
+      toast({
+        title: "Generation Error",
+        description: "Failed to generate SOW. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -82,6 +90,7 @@ const AvailableInspections = () => {
     );
   }
 
+  // Phase 1: Only show inspections that don't have SOWs generated yet
   const availableInspections = completedInspections.filter(inspection => !inspection.sow_generated);
 
   if (availableInspections.length === 0) {
@@ -170,11 +179,12 @@ const AvailableInspections = () => {
                   onClick={() => handleGenerateSOW(inspection)}
                   disabled={isGenerating}
                   className="bg-blue-600 hover:bg-blue-700"
+                  size="lg"
                 >
                   {isGenerating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
+                      Generating SOW...
                     </>
                   ) : (
                     <>
