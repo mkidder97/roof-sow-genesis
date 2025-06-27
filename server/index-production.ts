@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 // Import clean production SOW routes
-import sowProductionRouter from './routes/sow-production.js';
+import sowProductionRouter from './routes/sow-production';
 
 // Import enhanced manufacturer analysis (keep the good parts)
 import { 
@@ -17,7 +17,7 @@ import {
   validateCompliance,
   getPressureTable,
   debugJurisdiction
-} from './routes/jurisdiction.js';
+} from './routes/jurisdiction';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -65,7 +65,7 @@ app.get('/health', async (req, res) => {
         pdfGeneration: 'operational'
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({
       success: false,
       status: 'unhealthy',
