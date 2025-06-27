@@ -1,19 +1,39 @@
 version: "3.9"
 services:
   frontend:
-    build: .
+    build: 
+      context: .
+      target: development
     ports:
       - "5173:5173"
     volumes:
       - .:/app
       - sow-data:/app/data/sow
+      - /app/node_modules  # Prevent node_modules from being overwritten
     working_dir: /app
-    command: npm run dev
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:3001
+      - VITE_API_URL=http://localhost:8001
       - VITE_SUPABASE_URL=https://tcxtdwfbifklgbvzjomn.supabase.co
       - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHRkd2ZiaWZrbGdidnpqb21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NzM0ODYsImV4cCI6MjA1MjU0OTQ4Nn0.RJbvfH3j_qMjIj8jWz1jv_cOJf2J-gMqgJdU8Q6fHoM
+
+  api:
+    build: 
+      context: .
+      target: development
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+      - sow-data:/app/data
+    working_dir: /app/mcp/tools
+    command: python3 api_server.py --host 0.0.0.0 --port 8001
+    environment:
+      - SUPABASE_URL=https://tcxtdwfbifklgbvzjomn.supabase.co
+      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHRkd2ZiaWZrbGdidnpqb21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NzM0ODYsImV4cCI6MjA1MjU0OTQ4Nn0.RJbvfH3j_qMjIj8jWz1jv_cOJf2J-gMqgJdU8Q6fHoM
+    depends_on:
+      - frontend
 
 volumes:
   sow-data:
