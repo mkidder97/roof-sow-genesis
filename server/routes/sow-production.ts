@@ -1,11 +1,11 @@
 // Clean Production SOW Generation - No Self-Healing, Direct Generation
 import express from 'express';
 import multer from 'multer';
-import { generateWindAnalysis } from '../lib/wind-analysis.js';
-import { analyzeJurisdiction } from '../lib/jurisdiction-analysis.js';
-import { EnhancedManufacturerAnalysisEngine } from '../manufacturer/EnhancedManufacturerAnalysisEngine.js';
-import { generatePDF } from '../lib/pdf-generator.js';
-import { parseTakeoffFile } from '../core/takeoff-engine.js';
+import { generateWindAnalysis } from '../lib/wind-analysis';
+import { analyzeJurisdiction } from '../lib/jurisdiction-analysis';
+import { EnhancedManufacturerAnalysisEngine } from '../manufacturer/EnhancedManufacturerAnalysisEngine';
+import { generatePDF } from '../lib/pdf-generator';
+import { parseTakeoffFile } from '../core/takeoff-engine';
 
 const router = express.Router();
 const upload = multer({ 
@@ -48,7 +48,7 @@ export async function generateSOWProduction(req: express.Request, res: express.R
         // Merge extracted data with project data
         projectData = { ...projectData, ...extractedData };
         console.log('✅ File processing complete');
-      } catch (error) {
+      } catch (error: any) {
         console.warn('⚠️ File processing failed, using manual data:', error.message);
       }
     }
@@ -148,7 +148,7 @@ export async function generateSOWProduction(req: express.Request, res: express.R
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     const generationTime = Date.now() - startTime;
     console.error('❌ Production SOW Generation Failed:', error);
 
@@ -188,7 +188,7 @@ export async function checkSOWHealth(req: express.Request, res: express.Response
       version: 'production-1.0.0'
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Health check failed:', error);
     res.status(500).json({
       success: false,
