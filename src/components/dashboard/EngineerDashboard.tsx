@@ -138,26 +138,16 @@ const EngineerDashboard = () => {
           </Card>
         </div>
 
-        {/* Main Content */}
-        <Tabs defaultValue="inspections" className="w-full">
+        {/* Main Content - Set default tab to "available" */}
+        <Tabs defaultValue="available" className="w-full">
           <TabsList>
-            <TabsTrigger value="inspections">Available Inspections</TabsTrigger>
+            <TabsTrigger value="available">Available Inspections</TabsTrigger>
             <TabsTrigger value="recent">Recent SOW Generations</TabsTrigger>
             <TabsTrigger value="all">All History</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="inspections" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Inspections Ready for SOW Generation</CardTitle>
-                <CardDescription>
-                  Select completed field inspections to generate Statement of Work documents
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AvailableInspections />
-              </CardContent>
-            </Card>
+          <TabsContent value="available" className="space-y-4">
+            <AvailableInspections />
           </TabsContent>
           
           <TabsContent value="recent" className="space-y-4">
