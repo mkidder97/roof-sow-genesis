@@ -1,0 +1,30 @@
+# docker-compose.override.yml - Development overrides
+version: '3.8'
+
+services:
+  roof-sow-genesis:
+    # Override for development
+    build:
+      target: development
+    environment:
+      - NODE_ENV=development
+      - DEBUG=true
+      - VITE_API_URL=http://localhost:8001
+    volumes:
+      # Mount source for hot reloading
+      - .:/app
+      - /app/node_modules
+      # Mount additional development directories
+      - ./mcp-tools:/app/mcp-tools
+      - ./server:/app/server
+    command: npm run dev
+    ports:
+      - "8080:8080"
+      - "5173:5173"
+
+  # Override to include all development services by default
+  supabase-db:
+    profiles: []  # Remove profile restriction for development
+
+  redis:
+    profiles: []  # Remove profile restriction for development
