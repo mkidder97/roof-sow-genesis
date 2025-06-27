@@ -104,7 +104,7 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({ data, onChange, r
             <SelectContent>
               <SelectItem value="flat">Flat (0-2%)</SelectItem>
               <SelectItem value="low">Low Slope (2-10%)</SelectItem>
-              <SelectItem value="steep">Steep Slope (>10%)</SelectItem>
+              <SelectItem value="steep">Steep Slope (&gt;10%)</SelectItem>
             </SelectContent>
           </Select>
         </div>
