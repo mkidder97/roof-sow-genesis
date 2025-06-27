@@ -17,6 +17,15 @@ export const API_ENDPOINTS = {
   status: `${API_BASE_URL}/api/status`,
   sowHealth: `${API_BASE_URL}/api/sow/health`,
   
+  // Debug endpoints (for development)
+  debugSOW: `${API_BASE_URL}/api/debug/sow`,
+  debugEngine: `${API_BASE_URL}/api/debug/engine`,
+  
+  // Template endpoints
+  templateMap: `${API_BASE_URL}/api/templates/map`,
+  renderTemplate: `${API_BASE_URL}/api/templates/render`,
+  docs: `${API_BASE_URL}/api/docs`,
+  
   // Jurisdiction Analysis (Keep - These are good)
   jurisdictionAnalyze: `${API_BASE_URL}/api/jurisdiction/analyze`,
   jurisdictionLookup: `${API_BASE_URL}/api/jurisdiction/lookup`,
@@ -60,6 +69,7 @@ export interface SOWGenerationRequest {
 
 export interface SOWGenerationResponse {
   success: boolean;
+  downloadUrl?: string;
   data?: {
     pdf?: string;
     sow?: string;
@@ -93,8 +103,37 @@ export interface SOWGenerationResponse {
     extractionConfidence?: number;
     liveManufacturerData?: boolean;
     productionGeneration?: boolean;
+    fileSize?: number;
   };
   error?: string;
+}
+
+// Type aliases for backward compatibility
+export type SOWResponse = SOWGenerationResponse;
+export type SOWPayload = SOWGenerationRequest;
+
+/**
+ * Generic API call utility
+ */
+export async function apiCall(url: string, options: RequestInit = {}): Promise<any> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('API call error:', error);
+    throw error;
+  }
 }
 
 /**
@@ -165,6 +204,47 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
     console.error('❌ Production SOW generation failed:', error);
     throw error;
   }
+}
+
+/**
+ * Download SOW PDF
+ */
+export async function downloadSOWAPI(sowId: string): Promise<Blob> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.downloadSOW}/${sowId}`);
+    
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status}`);
+    }
+    
+    return await response.blob();
+  } catch (error) {
+    console.error('Download error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get SOW status
+ */
+export async function getSOWStatusAPI(sowId: string): Promise<any> {
+  return apiCall(`${API_ENDPOINTS.getSOWStatus}/${sowId}`);
+}
+
+/**
+ * List SOWs
+ */
+export async function listSOWsAPI(): Promise<any> {
+  return apiCall(API_ENDPOINTS.listSOWs);
+}
+
+/**
+ * Delete SOW
+ */
+export async function deleteSOWAPI(sowId: string): Promise<any> {
+  return apiCall(`${API_ENDPOINTS.deleteSOW}/${sowId}`, {
+    method: 'DELETE'
+  });
 }
 
 /**
