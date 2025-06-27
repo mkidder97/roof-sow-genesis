@@ -2,15 +2,16 @@
 """
 validate_takeoff_data.py
 Validates required fields in takeoff JSON data
+Enhanced with optional database integration for Phase 1
 """
 
 import json
 import sys
 import re
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 class TakeoffValidator:
-    """Validator for takeoff data JSON"""
+    """Validator for takeoff data JSON with optional database integration"""
     
     # Required fields with their validation rules
     REQUIRED_FIELDS = {
@@ -100,9 +101,11 @@ class TakeoffValidator:
         }
     }
     
-    def __init__(self):
+    def __init__(self, db_client=None):
+        """Initialize validator with optional database client"""
         self.errors = []
         self.warnings = []
+        self.db_client = db_client
     
     def validate_field(self, field_name: str, value: Any, rules: Dict[str, Any]) -> bool:
         """Validate a single field against its rules"""
@@ -148,8 +151,17 @@ class TakeoffValidator:
         
         return True
     
-    def validate_data(self, data: Dict[str, Any]) -> Tuple[bool, List[str], List[str]]:
-        """Validate complete takeoff data"""
+    def validate_data(self, data: Dict[str, Any], project_id: Optional[str] = None) -> Tuple[bool, List[str], List[str]]:
+        """
+        Validate complete takeoff data
+        
+        Args:
+            data: Takeoff data to validate
+            project_id: Optional project ID for database logging
+            
+        Returns:
+            Tuple of (is_valid, errors, warnings)
+        """
         self.errors = []
         self.warnings = []
         
@@ -175,6 +187,26 @@ class TakeoffValidator:
             self.warnings.append(f"Unknown field: {field}")
         
         is_valid = len(self.errors) == 0
+        
+        # Log validation to database if client is available and project_id is provided
+        if self.db_client and project_id and hasattr(self.db_client, 'log_workflow_activity'):
+            try:
+                self.db_client.log_workflow_activity(
+                    project_id, 
+                    "validation_completed",
+                    notes=f"Validation result: {'PASSED' if is_valid else 'FAILED'} ({len(self.errors)} errors, {len(self.warnings)} warnings)",
+                    metadata={
+                        "is_valid": is_valid,
+                        "error_count": len(self.errors),
+                        "warning_count": len(self.warnings),
+                        "errors": self.errors,
+                        "warnings": self.warnings
+                    }
+                )
+            except Exception as e:
+                # Don't fail validation due to database logging issues
+                self.warnings.append(f"Database logging failed: {str(e)}")
+        
         return is_valid, self.errors, self.warnings
     
     def _validate_business_rules(self, data: Dict[str, Any]):
@@ -195,8 +227,22 @@ class TakeoffValidator:
         roof_area = data.get('roof_area', 0)
         if isinstance(roof_area, (int, float)) and roof_area > 100000:
             self.warnings.append("Very large roof area - please verify measurement")
+        
+        # Fastening pattern and membrane compatibility
+        membrane_type = data.get('membrane_type', '')
+        fastening_pattern = data.get('fastening_pattern', '')
+        
+        if membrane_type == 'EPDM' and fastening_pattern == 'Mechanically Attached':
+            self.warnings.append("EPDM with mechanical attachment requires special consideration")
+        
+        # Building code and state correlation (basic check)
+        state = data.get('state', '')
+        building_code = data.get('building_code', '')
+        
+        if state == 'FL' and building_code and not building_code.startswith('FBC'):
+            self.warnings.append("Florida projects typically use Florida Building Code (FBC)")
 
-def print_validation_results(is_valid: bool, errors: List[str], warnings: List[str]):
+def print_validation_results(is_valid: bool, errors: List[str], warnings: List[str], db_connected: bool = False):
     """Print validation results in a formatted manner"""
     print("=" * 50)
     print("TAKEOFF DATA VALIDATION RESULTS")
@@ -206,6 +252,11 @@ def print_validation_results(is_valid: bool, errors: List[str], warnings: List[s
         print("✅ VALIDATION PASSED")
     else:
         print("❌ VALIDATION FAILED")
+    
+    if db_connected:
+        print("🗄️  Database: Connected")
+    else:
+        print("📁 Database: File-only mode")
     
     if errors:
         print(f"\n🚨 ERRORS ({len(errors)}):")
@@ -236,10 +287,24 @@ def main():
         with open(input_file, 'r') as f:
             takeoff_data = json.load(f)
         
-        validator = TakeoffValidator()
+        # Try to initialize database client for enhanced validation
+        db_client = None
+        db_connected = False
+        try:
+            from supabase_client import get_supabase_client
+            db_client = get_supabase_client()
+            db_connected = db_client.is_connected()
+        except ImportError:
+            # Database client not available - proceed with basic validation
+            pass
+        except Exception:
+            # Database connection failed - proceed with basic validation
+            pass
+        
+        validator = TakeoffValidator(db_client=db_client)
         is_valid, errors, warnings = validator.validate_data(takeoff_data)
         
-        print_validation_results(is_valid, errors, warnings)
+        print_validation_results(is_valid, errors, warnings, db_connected)
         
         # Return appropriate exit code
         sys.exit(0 if is_valid else 1)
