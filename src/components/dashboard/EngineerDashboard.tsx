@@ -8,6 +8,7 @@ import { Download, FileText, Clock, AlertCircle, CheckCircle2, User, MapPin } fr
 import { useDashboardMetrics, useSOWHistory } from '@/hooks/useSOWDatabase';
 import { useRealTimeSOWUpdates } from '@/hooks/useRealTimeSOW';
 import { format } from 'date-fns';
+import AvailableInspections from './AvailableInspections';
 
 const EngineerDashboard = () => {
   // Real-time data hooks
@@ -138,11 +139,26 @@ const EngineerDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="recent" className="w-full">
+        <Tabs defaultValue="inspections" className="w-full">
           <TabsList>
+            <TabsTrigger value="inspections">Available Inspections</TabsTrigger>
             <TabsTrigger value="recent">Recent SOW Generations</TabsTrigger>
             <TabsTrigger value="all">All History</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="inspections" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Inspections Ready for SOW Generation</CardTitle>
+                <CardDescription>
+                  Select completed field inspections to generate Statement of Work documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AvailableInspections />
+              </CardContent>
+            </Card>
+          </TabsContent>
           
           <TabsContent value="recent" className="space-y-4">
             <Card>
@@ -170,7 +186,7 @@ const EngineerDashboard = () => {
                           {getStatusIcon(sow.generation_status)}
                           <div>
                             <div className="font-medium">
-                              {(sow.input_data as any)?.projectData?.projectName || 'Unnamed Project'}
+                              {(sow.input_data as any)?.projectName || 'Unnamed Project'}
                             </div>
                             <div className="text-sm text-gray-500 flex items-center space-x-2">
                               <span>{format(new Date(sow.created_at), 'MMM dd, yyyy HH:mm')}</span>
@@ -223,7 +239,6 @@ const EngineerDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Similar structure but with more detailed view */}
                 <p className="text-gray-500">Complete history view - implement as needed</p>
               </CardContent>
             </Card>
