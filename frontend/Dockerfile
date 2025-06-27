@@ -24,8 +24,10 @@ COPY index.html ./
 COPY vite.config.ts ./
 COPY tsconfig.json ./
 COPY tsconfig.*.json ./
-COPY tailwind.config.js ./
+COPY tailwind.config.ts ./
 COPY postcss.config.js ./
+COPY components.json ./
+COPY eslint.config.js ./
 COPY .env* ./
 
 # Expose Vite dev server port
