@@ -72,7 +72,14 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     overall_condition: 5,
     photos: [],
     completed: false,
-    ready_for_handoff: false
+    ready_for_handoff: false,
+    // New required fields with defaults
+    city: '',
+    state: 'FL',
+    zip_code: '',
+    wind_speed: 140,
+    exposure_category: 'C',
+    building_classification: 'II'
   });
 
   const [activeTab, setActiveTab] = useState('project-info');
@@ -109,6 +116,12 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
         if (!formData.project_name?.trim()) errors.push('Project name is required');
         if (!formData.project_address?.trim()) errors.push('Project address is required');
         if (!formData.inspector_name?.trim()) errors.push('Inspector name is required');
+        if (!formData.city?.trim()) errors.push('City is required');
+        if (!formData.state?.trim()) errors.push('State is required');
+        if (!formData.zip_code?.trim()) errors.push('Zip code is required');
+        if (!formData.wind_speed || formData.wind_speed <= 0) errors.push('Wind speed is required');
+        if (!formData.exposure_category?.trim()) errors.push('Exposure category is required');
+        if (!formData.building_classification?.trim()) errors.push('Building classification is required');
         break;
       case 'building-specs':
         if (!formData.building_height || formData.building_height <= 0) errors.push('Building height must be greater than 0');
@@ -219,10 +232,13 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
   ];
 
   const getTabStatus = (tabId: string) => {
-    // Simple validation logic for tab status
+    // Enhanced validation logic for tab status
     switch (tabId) {
       case 'project-info':
-        return formData.project_name && formData.project_address && formData.inspector_name ? 'complete' : 'incomplete';
+        return (formData.project_name && formData.project_address && formData.inspector_name && 
+                formData.city && formData.state && formData.zip_code && 
+                formData.wind_speed && formData.exposure_category && formData.building_classification) 
+                ? 'complete' : 'incomplete';
       case 'building-specs':
         return formData.building_height && formData.square_footage ? 'complete' : 'incomplete';
       default:

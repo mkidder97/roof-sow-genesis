@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,28 +32,40 @@ const AvailableInspections = () => {
     try {
       console.log('Generating SOW for inspection:', inspection);
       
+      // Enhanced data mapping with all required fields
       const sowRequest = {
         projectName: inspection.project_name,
         projectAddress: inspection.project_address,
-        customerName: inspection.customer_name,
-        customerPhone: inspection.customer_phone,
-        buildingHeight: inspection.building_height,
-        squareFootage: inspection.square_footage,
-        deckType: inspection.deck_type,
-        membraneType: inspection.existing_membrane_type,
-        insulationType: inspection.insulation_type,
-        city: inspection.city,
-        state: inspection.state,
-        zipCode: inspection.zip_code,
-        buildingClassification: inspection.building_classification,
-        exposureCategory: inspection.exposure_category,
-        windSpeed: inspection.wind_speed,
-        notes: inspection.notes,
+        city: inspection.city || 'Unknown',
+        state: inspection.state || 'FL',
+        zipCode: inspection.zip_code || '00000',
+        customerName: inspection.customer_name || 'TBD',
+        customerPhone: inspection.customer_phone || 'TBD',
+        buildingHeight: inspection.building_height || 20,
+        squareFootage: inspection.square_footage || 10000,
+        deckType: inspection.deck_type || 'steel',
+        membraneType: inspection.existing_membrane_type || 'tpo',
+        insulationType: inspection.insulation_type || 'polyiso',
+        windSpeed: inspection.wind_speed || 140,
+        exposureCategory: inspection.exposure_category || 'C',
+        buildingClassification: inspection.building_classification || 'II',
+        notes: inspection.notes || '',
         inspectionId: inspection.id,
-        projectType: 'recover' // Default for field inspections
+        projectType: 'recover', // Default for field inspections
+        
+        // Additional fields for complete SOW generation
+        buildingLength: inspection.building_length || 100,
+        buildingWidth: inspection.building_width || 100,
+        roofSlope: inspection.roof_slope || 'flat',
+        numberOfStories: inspection.number_of_stories || 1,
+        hvacUnits: inspection.hvac_units?.length || 0,
+        skylights: inspection.skylights || 0,
+        roofHatches: inspection.roof_hatches || 0,
+        penetrations: inspection.penetrations?.length || 0,
+        drains: inspection.roof_drains?.length || 0,
       };
 
-      console.log('SOW Request:', sowRequest);
+      console.log('Enhanced SOW Request:', sowRequest);
       await generateSOW(sowRequest);
     } catch (error) {
       console.error('SOW generation error:', error);
@@ -131,6 +142,19 @@ const AvailableInspections = () => {
                 </div>
 
                 <p className="text-gray-600 mb-3">{inspection.project_address}</p>
+                
+                {/* Enhanced location and wind data display */}
+                <div className="text-sm text-gray-600 mb-3">
+                  {inspection.city && inspection.state && (
+                    <span>{inspection.city}, {inspection.state} {inspection.zip_code}</span>
+                  )}
+                  {inspection.wind_speed && (
+                    <span className="ml-4">Wind: {inspection.wind_speed} mph</span>
+                  )}
+                  {inspection.exposure_category && (
+                    <span className="ml-2">Exp: {inspection.exposure_category}</span>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -169,6 +193,11 @@ const AvailableInspections = () => {
                   {inspection.building_height && (
                     <Badge variant="secondary" className="text-xs">
                       {inspection.building_height}ft Height
+                    </Badge>
+                  )}
+                  {inspection.building_classification && (
+                    <Badge variant="secondary" className="text-xs">
+                      Class {inspection.building_classification}
                     </Badge>
                   )}
                 </div>

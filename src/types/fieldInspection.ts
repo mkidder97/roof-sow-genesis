@@ -156,3 +156,100 @@ export interface FieldInspectionRow {
   gas_line_penetrating_deck: boolean | null;
   access_method: string | null;
 }
+
+export interface FieldInspection {
+  id?: string;
+  project_name: string;
+  project_address: string;
+  inspector_name: string;
+  inspector_id?: string;
+  inspection_date?: string;
+  status: 'Draft' | 'Completed' | 'Under Review' | 'Approved';
+  priority_level: 'Standard' | 'Expedited' | 'Emergency';
+  
+  // New required address fields
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  
+  // New required wind and building fields
+  wind_speed?: number;
+  exposure_category?: string;
+  building_classification?: string;
+  
+  // Building specifications
+  building_height?: number;
+  building_length?: number;
+  building_width?: number;
+  square_footage?: number;
+  number_of_stories?: number;
+  
+  // Weather and access
+  weather_conditions?: string;
+  access_method?: 'internal_hatch' | 'external_ladder' | 'extension_ladder';
+  
+  // Roof system details
+  deck_type?: string;
+  existing_membrane_type?: string;
+  existing_membrane_condition?: number;
+  insulation_type?: string;
+  insulation_condition?: string;
+  roof_slope?: string;
+  roof_age_years?: number;
+  cover_board_type?: string;
+  
+  // Equipment and features
+  hvac_units?: any[];
+  roof_drains?: any[];
+  penetrations?: any[];
+  insulation_layers?: any[];
+  skylights?: number;
+  skylights_detailed?: any[];
+  roof_hatches?: number;
+  
+  // Conditions and assessments
+  overall_condition?: number;
+  concerns?: string;
+  recommendations?: string;
+  notes?: string;
+  handoff_notes?: string;
+  special_requirements?: string;
+  
+  // Drainage and protection
+  drainage_options?: any[];
+  interior_protection_needed?: boolean;
+  interior_protection_sqft?: number;
+  conduit_attached?: boolean;
+  upgraded_lighting?: boolean;
+  interior_fall_protection?: boolean;
+  curbs_above_8?: boolean;
+  gas_line_penetrating_deck?: boolean;
+  
+  // Customer information (optional for field inspections)
+  customer_name?: string;
+  customer_phone?: string;
+  
+  // Documentation
+  photos?: string[];
+  
+  // Workflow tracking
+  completed?: boolean;
+  completed_at?: string;
+  ready_for_handoff?: boolean;
+  sow_generated?: boolean;
+  sow_id?: string;
+  sow_generation_count?: number;
+  
+  // Project tracking
+  project_id?: string;
+  
+  // System fields
+  created_at?: string;
+  updated_at?: string;
+  
+  // Field inspection specific data
+  observations?: Record<string, any>;
+  measurements?: Record<string, any>;
+  conditions?: Record<string, any>;
+  takeoff_items?: Record<string, any>;
+}

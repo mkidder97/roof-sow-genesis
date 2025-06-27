@@ -73,10 +73,116 @@ const ProjectInfoStep: React.FC<ProjectInfoStepProps> = ({ data, onChange, readO
         />
       </div>
 
+      {/* New Address Components */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="city" className="text-white">City *</Label>
+          <Input
+            id="city"
+            value={data.city || ''}
+            onChange={(e) => onChange({ city: e.target.value })}
+            className="bg-white/20 border-blue-400/30 text-white placeholder-blue-200"
+            placeholder="City"
+            disabled={readOnly}
+            required
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="state" className="text-white">State *</Label>
+          <Select 
+            value={data.state || ''} 
+            onValueChange={(value) => onChange({ state: value })}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
+              <SelectValue placeholder="Select state" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-blue-400/30">
+              <SelectItem value="FL" className="text-white hover:bg-blue-600/20">Florida</SelectItem>
+              <SelectItem value="AL" className="text-white hover:bg-blue-600/20">Alabama</SelectItem>
+              <SelectItem value="GA" className="text-white hover:bg-blue-600/20">Georgia</SelectItem>
+              <SelectItem value="SC" className="text-white hover:bg-blue-600/20">South Carolina</SelectItem>
+              <SelectItem value="NC" className="text-white hover:bg-blue-600/20">North Carolina</SelectItem>
+              <SelectItem value="TX" className="text-white hover:bg-blue-600/20">Texas</SelectItem>
+              <SelectItem value="LA" className="text-white hover:bg-blue-600/20">Louisiana</SelectItem>
+              <SelectItem value="MS" className="text-white hover:bg-blue-600/20">Mississippi</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="zip_code" className="text-white">Zip Code *</Label>
+          <Input
+            id="zip_code"
+            value={data.zip_code || ''}
+            onChange={(e) => onChange({ zip_code: e.target.value })}
+            className="bg-white/20 border-blue-400/30 text-white placeholder-blue-200"
+            placeholder="00000"
+            disabled={readOnly}
+            required
+          />
+        </div>
+      </div>
+
+      {/* Wind and Building Classification */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="wind_speed" className="text-white">Design Wind Speed (mph) *</Label>
+          <Input
+            id="wind_speed"
+            type="number"
+            value={data.wind_speed || ''}
+            onChange={(e) => onChange({ wind_speed: parseInt(e.target.value) || 0 })}
+            className="bg-white/20 border-blue-400/30 text-white placeholder-blue-200"
+            placeholder="140"
+            disabled={readOnly}
+            required
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="exposure_category" className="text-white">Exposure Category *</Label>
+          <Select 
+            value={data.exposure_category || ''} 
+            onValueChange={(value) => onChange({ exposure_category: value })}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
+              <SelectValue placeholder="Select exposure" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-blue-400/30">
+              <SelectItem value="B" className="text-white hover:bg-blue-600/20">B - Urban/Suburban</SelectItem>
+              <SelectItem value="C" className="text-white hover:bg-blue-600/20">C - Open Terrain</SelectItem>
+              <SelectItem value="D" className="text-white hover:bg-blue-600/20">D - Flat/Unobstructed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="building_classification" className="text-white">Building Classification *</Label>
+          <Select 
+            value={data.building_classification || ''} 
+            onValueChange={(value) => onChange({ building_classification: value })}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
+              <SelectValue placeholder="Select classification" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-blue-400/30">
+              <SelectItem value="I" className="text-white hover:bg-blue-600/20">I - Low Hazard</SelectItem>
+              <SelectItem value="II" className="text-white hover:bg-blue-600/20">II - Standard</SelectItem>
+              <SelectItem value="III" className="text-white hover:bg-blue-600/20">III - Substantial Hazard</SelectItem>
+              <SelectItem value="IV" className="text-white hover:bg-blue-600/20">IV - Essential Facilities</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="bg-blue-500/20 rounded-lg p-4">
         <p className="text-blue-200 text-sm">
           <strong>Field Inspector Instructions:</strong><br />
-          Focus on building details and roof conditions. Customer information will be added later by office staff when preparing the SOW.
+          Complete all required fields including address components and wind data. This information is essential for SOW generation and must be accurate for proper engineering calculations.
         </p>
       </div>
     </div>
