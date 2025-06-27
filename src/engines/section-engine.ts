@@ -2,7 +2,7 @@
 // Section Engine for SOW Template Selection
 // Location: src/engines/section-engine.ts
 
-import { FieldInspectionData } from '@/types/fieldInspection';
+import { FieldInspection } from '@/types/fieldInspection';
 
 export interface SectionEngineResult {
   selectedTemplate: string;
@@ -16,7 +16,7 @@ export class SectionEngine {
   /**
    * Analyze inspection data and determine optimal SOW template and sections
    */
-  static analyzeSections(inspectionData: FieldInspectionData): SectionEngineResult {
+  static analyzeSections(inspectionData: FieldInspection): SectionEngineResult {
     const analysis = {
       selectedTemplate: 'T1-recover',
       requiredSections: ['project-info', 'roof-system', 'materials', 'labor'],
@@ -66,7 +66,7 @@ export class SectionEngine {
     );
   }
 
-  private static calculateSlope(data: FieldInspectionData): number {
+  private static calculateSlope(data: FieldInspection): number {
     // Simple slope calculation - in production this would be more sophisticated
     if (data.roof_slope === 'steep') return 4;
     if (data.roof_slope === 'moderate') return 2;
@@ -76,7 +76,7 @@ export class SectionEngine {
   /**
    * Get section recommendations based on project characteristics
    */
-  static getSectionRecommendations(data: FieldInspectionData): string[] {
+  static getSectionRecommendations(data: FieldInspection): string[] {
     const recommendations = [];
 
     if (data.existing_membrane_condition && data.existing_membrane_condition < 3) {

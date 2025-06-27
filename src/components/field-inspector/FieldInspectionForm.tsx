@@ -12,21 +12,21 @@ import { Separator } from '@/components/ui/separator';
 import { CheckCircle, AlertTriangle, Clock, Upload, Camera, Save, FileText, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFieldInspections } from '@/hooks/useFieldInspections';
-import { FieldInspectionData } from '@/types/fieldInspection';
+import { FieldInspection } from '@/types/fieldInspection';
 
-import { ProjectInfoStep } from './form-steps/ProjectInfoStep';
-import { BuildingSpecsStep } from './form-steps/BuildingSpecsStep';
-import { RoofAssessmentStep } from './form-steps/RoofAssessmentStep';
-import { EquipmentInventoryStep } from './form-steps/EquipmentInventoryStep';
-import { PhotoDocumentationStep } from './form-steps/PhotoDocumentationStep';
-import { AssessmentNotesStep } from './form-steps/AssessmentNotesStep';
-import { HandoffPreparationPanel } from './HandoffPreparationPanel';
-import { PhotoCaptureSystem } from './PhotoCaptureSystem';
+import ProjectInfoStep from './form-steps/ProjectInfoStep';
+import BuildingSpecsStep from './form-steps/BuildingSpecsStep';
+import RoofAssessmentStep from './form-steps/RoofAssessmentStep';
+import EquipmentInventoryStep from './form-steps/EquipmentInventoryStep';
+import PhotoDocumentationStep from './form-steps/PhotoDocumentationStep';
+import AssessmentNotesStep from './form-steps/AssessmentNotesStep';
+import HandoffPreparationPanel from './HandoffPreparationPanel';
+import PhotoCaptureSystem from './PhotoCaptureSystem';
 
 interface FieldInspectionFormProps {
   inspectionId?: string;
-  onSave?: (data: FieldInspectionData) => void;
-  onComplete?: (data: FieldInspectionData) => void;
+  onSave?: (data: FieldInspection) => void;
+  onComplete?: (data: FieldInspection) => void;
   readOnly?: boolean;
 }
 
@@ -38,14 +38,13 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
 }) => {
   const { toast } = useToast();
   const {
-    createInspection,
-    updateInspection,
+    saveInspection,
     getInspection,
-    isLoading,
+    loading,
     error
   } = useFieldInspections();
 
-  const [formData, setFormData] = useState<Partial<FieldInspectionData>>({
+  const [formData, setFormData] = useState<Partial<FieldInspection>>({
     project_name: '',
     project_address: '',
     inspector_name: '',
@@ -85,8 +84,10 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     if (inspectionId) {
       const fetchInspection = async () => {
         try {
-          const inspectionData = await getInspection.mutateAsync(inspectionId);
-          setFormData(inspectionData);
+          const inspectionData = await getInspection(inspectionId);
+          if (inspectionData) {
+            setFormData(inspectionData);
+          }
         } catch (err) {
           console.error('Error fetching inspection:', err);
           toast({
@@ -131,18 +132,10 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      let result;
-      if (inspectionId) {
-        result = await updateInspection.mutateAsync({
-          id: inspectionId,
-          updates: formData
-        });
-      } else {
-        result = await createInspection.mutateAsync(formData as FieldInspectionData);
-      }
+      const result = await saveInspection(formData);
 
-      if (onSave) {
-        onSave(result);
+      if (result && onSave) {
+        onSave(formData as FieldInspection);
       }
 
       toast({
@@ -181,18 +174,10 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      let result;
-      if (inspectionId) {
-        result = await updateInspection.mutateAsync({
-          id: inspectionId,
-          updates: completedData
-        });
-      } else {
-        result = await createInspection.mutateAsync(completedData as FieldInspectionData);
-      }
+      const result = await saveInspection(completedData);
 
-      if (onComplete) {
-        onComplete(result);
+      if (result && onComplete) {
+        onComplete(completedData as FieldInspection);
       }
 
       toast({
@@ -212,7 +197,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof FieldInspectionData, value: any) => {
+  const handleInputChange = (field: keyof FieldInspection, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -402,7 +387,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
       {/* Handoff Panel - Only show if inspection is completed */}
       {formData.completed && (
         <HandoffPreparationPanel
-          inspectionData={formData as FieldInspectionData}
+          inspectionData={formData as FieldInspection}
           inspectionId={inspectionId}
         />
       )}

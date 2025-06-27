@@ -41,8 +41,29 @@ export const API_ENDPOINTS = {
 } as const;
 
 export interface SOWGenerationRequest {
-  // Clean production request structure
-  projectData: {
+  // Clean production request structure - properties at root level
+  projectName: string;
+  projectAddress: string;
+  customerName?: string;
+  customerPhone?: string;
+  buildingHeight?: number;
+  squareFootage?: number;
+  numberOfDrains?: number;
+  numberOfPenetrations?: number;
+  membraneType?: string;
+  windSpeed?: number;
+  exposureCategory?: string;
+  projectType?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  deckType?: string;
+  insulationType?: string;
+  buildingClassification?: string;
+  notes?: string;
+  inspectionId?: string;
+  file?: File;
+  projectData?: {
     projectName: string;
     projectAddress: string;
     customerName?: string;
@@ -63,13 +84,14 @@ export interface SOWGenerationRequest {
     buildingClassification?: string;
     notes?: string;
   };
-  inspectionId?: string;
-  file?: File;
 }
 
 export interface SOWGenerationResponse {
   success: boolean;
   downloadUrl?: string;
+  filename?: string;
+  outputPath?: string;
+  fileSize?: number;
   data?: {
     pdf?: string;
     sow?: string;
@@ -146,25 +168,25 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
     
     // Clean project data mapping
     const projectData = {
-      projectName: request.projectData.projectName,
-      projectAddress: request.projectData.projectAddress,
-      customerName: request.projectData.customerName,
-      customerPhone: request.projectData.customerPhone,
-      buildingHeight: request.projectData.buildingHeight,
-      squareFootage: request.projectData.squareFootage,
-      numberOfDrains: request.projectData.numberOfDrains,
-      numberOfPenetrations: request.projectData.numberOfPenetrations,
-      membraneType: request.projectData.membraneType,
-      windSpeed: request.projectData.windSpeed,
-      exposureCategory: request.projectData.exposureCategory,
-      projectType: request.projectData.projectType,
-      city: request.projectData.city,
-      state: request.projectData.state,
-      zipCode: request.projectData.zipCode,
-      deckType: request.projectData.deckType,
-      insulationType: request.projectData.insulationType,
-      buildingClassification: request.projectData.buildingClassification,
-      notes: request.projectData.notes
+      projectName: request.projectName,
+      projectAddress: request.projectAddress,
+      customerName: request.customerName,
+      customerPhone: request.customerPhone,
+      buildingHeight: request.buildingHeight,
+      squareFootage: request.squareFootage,
+      numberOfDrains: request.numberOfDrains,
+      numberOfPenetrations: request.numberOfPenetrations,
+      membraneType: request.membraneType,
+      windSpeed: request.windSpeed,
+      exposureCategory: request.exposureCategory,
+      projectType: request.projectType,
+      city: request.city,
+      state: request.state,
+      zipCode: request.zipCode,
+      deckType: request.deckType,
+      insulationType: request.insulationType,
+      buildingClassification: request.buildingClassification,
+      notes: request.notes
     };
     
     // Add project data
@@ -323,16 +345,14 @@ export async function getDevToolsInfo(): Promise<any> {
 export async function generateSOW(payload: any): Promise<any> {
   // Convert legacy payload to new format
   const request: SOWGenerationRequest = {
-    projectData: {
-      projectName: payload.projectName || 'Untitled Project',
-      projectAddress: payload.address || payload.projectAddress || '',
-      buildingHeight: payload.buildingHeight,
-      squareFootage: payload.squareFootage,
-      membraneType: payload.membraneThickness?.includes('TPO') ? 'TPO' : 'EPDM',
-      projectType: payload.projectType || 'recover',
-      deckType: payload.deckType,
-      exposureCategory: payload.exposureCategory
-    }
+    projectName: payload.projectName || 'Untitled Project',
+    projectAddress: payload.address || payload.projectAddress || '',
+    buildingHeight: payload.buildingHeight,
+    squareFootage: payload.squareFootage,
+    membraneType: payload.membraneThickness?.includes('TPO') ? 'TPO' : 'EPDM',
+    projectType: payload.projectType || 'recover',
+    deckType: payload.deckType,
+    exposureCategory: payload.exposureCategory
   };
 
   return generateSOWAPI(request);
