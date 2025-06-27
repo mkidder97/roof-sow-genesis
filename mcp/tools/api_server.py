@@ -48,20 +48,20 @@ class TakeoffFormData(BaseModel):
     project_name: str = Field(..., min_length=1, max_length=100)
     address: str = Field(..., min_length=10, max_length=200)
     roof_area: float = Field(..., gt=0, le=1000000)
-    membrane_type: str = Field(..., regex="^(TPO|EPDM|PVC|Modified Bitumen|Built-Up)$")
-    fastening_pattern: str = Field(..., regex="^(Mechanically Attached|Fully Adhered|Ballasted)$")
+    membrane_type: str = Field(..., pattern="^(TPO|EPDM|PVC|Modified Bitumen|Built-Up)$")
+    fastening_pattern: str = Field(..., pattern="^(Mechanically Attached|Fully Adhered|Ballasted)$")
     
     # Optional fields
-    insulation_type: Optional[str] = Field(None, regex="^(Polyiso|XPS|EPS|Mineral Wool|None)$")
+    insulation_type: Optional[str] = Field(None, pattern="^(Polyiso|XPS|EPS|Mineral Wool|None)$")
     insulation_thickness: Optional[float] = Field(None, ge=0, le=12)
-    deck_type: Optional[str] = Field(None, regex="^(Steel|Concrete|Wood|Lightweight Concrete)$")
+    deck_type: Optional[str] = Field(None, pattern="^(Steel|Concrete|Wood|Lightweight Concrete)$")
     building_height: Optional[float] = Field(None, ge=8, le=500)
-    wind_zone: Optional[str] = Field(None, regex="^(I|II|III|IV)$")
+    wind_zone: Optional[str] = Field(None, pattern="^(I|II|III|IV)$")
     hvhz_zone: Optional[bool] = None
     county: Optional[str] = Field(None, min_length=2, max_length=50)
-    state: Optional[str] = Field(None, regex="^[A-Z]{2}$")
-    building_code: Optional[str] = Field(None, regex="^(IBC2021|IBC2018|FBC2020|FBC2023)$")
-    asce_version: Optional[str] = Field(None, regex="^(7-16|7-22|7-10)$")
+    state: Optional[str] = Field(None, pattern="^[A-Z]{2}$")
+    building_code: Optional[str] = Field(None, pattern="^(IBC2021|IBC2018|FBC2020|FBC2023)$")
+    asce_version: Optional[str] = Field(None, pattern="^(7-16|7-22|7-10)$")
 
 class WorkflowResponse(BaseModel):
     """Enhanced response model for workflow results with database info"""
