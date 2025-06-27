@@ -7,21 +7,56 @@ export interface SOWGenerationResponse {
   success: boolean;
   sowId?: string;
   downloadUrl?: string;
+  filename?: string;
+  outputPath?: string;
+  fileSize?: number;
   generationStatus?: GenerationStatus;
   data?: {
     pdf?: string;
+    sow?: string;
+    engineeringSummary?: {
+      jurisdiction?: {
+        location: string;
+        asceVersion: string;
+        hvhz: boolean;
+        windSpeed: number;
+      };
+      windAnalysis?: {
+        pressures: any;
+        zones: any;
+        calculations: any;
+      };
+      manufacturerAnalysis?: {
+        selectedPattern: string;
+        manufacturer: string;
+        system: string;
+        approvals: string[];
+        liveDataSources: string[];
+        dataSource: string;
+      };
+    };
+    template?: string;
+    templateUsed?: string;
   };
+  generationTime?: number;
   metadata?: {
-    generationTime?: number;
     fileProcessed?: boolean;
     extractionConfidence?: number;
+    liveManufacturerData?: boolean;
+    productionGeneration?: boolean;
     fileSize?: number;
   };
+  error?: string;
 }
 
 export interface SOWGenerationRequest {
-  projectName?: string;
-  projectAddress?: string;
+  // Make core fields required to match api.ts usage
+  projectName: string;
+  projectAddress: string;
+  
+  // Optional fields
+  customerName?: string;
+  customerPhone?: string;
   city?: string;
   state?: string;
   zipCode?: string;
@@ -35,6 +70,33 @@ export interface SOWGenerationRequest {
   notes?: string;
   inspectionId?: string;
   takeoffFile?: File;
+  projectType?: string;
+  squareFootage?: number;
+  numberOfDrains?: number;
+  numberOfPenetrations?: number;
+  
+  // Keep projectData for backward compatibility
+  projectData?: {
+    projectName?: string;
+    projectAddress?: string;
+    customerName?: string;
+    customerPhone?: string;
+    squareFootage?: number;
+    numberOfDrains?: number;
+    numberOfPenetrations?: number;
+    projectType?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    buildingHeight?: number;
+    deckType?: string;
+    membraneType?: string;
+    insulationType?: string;
+    windSpeed?: number;
+    exposureCategory?: string;
+    buildingClassification?: string;
+    notes?: string;
+  };
 }
 
 export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';

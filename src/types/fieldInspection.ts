@@ -1,4 +1,3 @@
-
 export interface FieldInspection {
   id?: string;
   inspector_name: string;
@@ -37,7 +36,7 @@ export interface FieldInspection {
   created_at?: string;
   updated_at?: string;
   completed_at?: string;
-  // New fields for enhanced functionality
+  // Additional properties from Supabase schema
   drainage_options?: DrainageOption[];
   interior_protection_needed?: boolean;
   interior_protection_sqft?: number;
@@ -47,6 +46,21 @@ export interface FieldInspection {
   curbs_above_8?: boolean;
   gas_line_penetrating_deck?: boolean;
   access_method?: 'internal_hatch' | 'external_ladder' | 'extension_ladder';
+  weather_conditions?: string;
+  completed?: boolean;
+  project_type?: string;
+  ready_for_handoff?: boolean;
+  handoff_notes?: string;
+  sow_generation_count?: number;
+  special_requirements?: string;
+  roof_hatches?: number;
+  project_id?: string;
+  observations?: any;
+  measurements?: any;
+  conditions?: any;
+  takeoff_items?: any;
+  recommendations?: string;
+  concerns?: string;
 }
 
 export interface InsulationLayer {

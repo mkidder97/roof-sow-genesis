@@ -1,4 +1,5 @@
 // src/lib/api.ts - Clean Production API Configuration
+import { SOWGenerationRequest, SOWGenerationResponse } from '@/types/sow';
 
 const API_BASE_URL = import.meta.env.PROD 
   ? import.meta.env.VITE_API_URL || 'https://your-production-backend.com' 
@@ -40,99 +41,12 @@ export const API_ENDPOINTS = {
   devTools: `${API_BASE_URL}/api/dev-tools`,
 } as const;
 
-export interface SOWGenerationRequest {
-  // Clean production request structure - properties at root level
-  projectName: string;
-  projectAddress: string;
-  customerName?: string;
-  customerPhone?: string;
-  buildingHeight?: number;
-  squareFootage?: number;
-  numberOfDrains?: number;
-  numberOfPenetrations?: number;
-  membraneType?: string;
-  windSpeed?: number;
-  exposureCategory?: string;
-  projectType?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  deckType?: string;
-  insulationType?: string;
-  buildingClassification?: string;
-  notes?: string;
-  inspectionId?: string;
-  file?: File;
-  projectData?: {
-    projectName: string;
-    projectAddress: string;
-    customerName?: string;
-    customerPhone?: string;
-    buildingHeight?: number;
-    squareFootage?: number;
-    numberOfDrains?: number;
-    numberOfPenetrations?: number;
-    membraneType?: string;
-    windSpeed?: number;
-    exposureCategory?: string;
-    projectType?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    deckType?: string;
-    insulationType?: string;
-    buildingClassification?: string;
-    notes?: string;
-  };
-}
-
-export interface SOWGenerationResponse {
-  success: boolean;
-  downloadUrl?: string;
-  filename?: string;
-  outputPath?: string;
-  fileSize?: number;
-  data?: {
-    pdf?: string;
-    sow?: string;
-    engineeringSummary?: {
-      jurisdiction?: {
-        location: string;
-        asceVersion: string;
-        hvhz: boolean;
-        windSpeed: number;
-      };
-      windAnalysis?: {
-        pressures: any;
-        zones: any;
-        calculations: any;
-      };
-      manufacturerAnalysis?: {
-        selectedPattern: string;
-        manufacturer: string;
-        system: string;
-        approvals: string[];
-        liveDataSources: string[];
-        dataSource: string;
-      };
-    };
-    template?: string;
-    templateUsed?: string;
-  };
-  generationTime?: number;
-  metadata?: {
-    fileProcessed?: boolean;
-    extractionConfidence?: number;
-    liveManufacturerData?: boolean;
-    productionGeneration?: boolean;
-    fileSize?: number;
-  };
-  error?: string;
-}
-
 // Type aliases for backward compatibility
 export type SOWResponse = SOWGenerationResponse;
 export type SOWPayload = SOWGenerationRequest;
+
+// Re-export types for convenience
+export { SOWGenerationRequest, SOWGenerationResponse };
 
 /**
  * Generic API call utility
@@ -198,14 +112,14 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
     }
     
     // Add file if provided
-    if (request.file) {
-      formData.append('file', request.file);
+    if (request.takeoffFile) {
+      formData.append('file', request.takeoffFile);
     }
 
     console.log('🚀 Clean production SOW generation request:', {
       projectName: projectData.projectName,
       projectAddress: projectData.projectAddress,
-      hasFile: !!request.file,
+      hasFile: !!request.takeoffFile,
       productionMode: true
     });
 

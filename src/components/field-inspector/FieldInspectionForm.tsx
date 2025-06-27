@@ -169,7 +169,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
       ...formData,
       completed: true,
       completed_at: new Date().toISOString(),
-      status: 'Completed'
+      status: 'Completed' as const
     };
 
     setIsSubmitting(true);
@@ -197,11 +197,16 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof FieldInspection, value: any) => {
+  const handleInputChange = (updates: Partial<FieldInspection>) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      ...updates
     }));
+  };
+
+  // Helper function for individual field updates
+  const updateField = (field: keyof FieldInspection, value: any) => {
+    handleInputChange({ [field]: value });
   };
 
   const tabs = [
@@ -388,7 +393,6 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
       {formData.completed && (
         <HandoffPreparationPanel
           inspectionData={formData as FieldInspection}
-          inspectionId={inspectionId}
         />
       )}
 
@@ -397,7 +401,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
         <PhotoCaptureSystem
           onPhotoCapture={(photoUrl) => {
             const currentPhotos = formData.photos || [];
-            handleInputChange('photos', [...currentPhotos, photoUrl]);
+            updateField('photos', [...currentPhotos, photoUrl]);
             setShowPhotoCapture(false);
             toast({
               title: "Photo Added",
