@@ -37,10 +37,35 @@
       "required": true,
       "priority": 5
     },
+    "submittal_requirements": {
+      "dependencies": ["project_critical_submittals", "pre_construction_submittals", "in_progress_submittals", "closeout_submittals"],
+      "required": true,
+      "priority": 6
+    },
+    "project_critical_submittals": {
+      "dependencies": ["manufacturer_system_approval", "product_data_sheets", "florida_product_approval", "engineering_reports", "fastening_plan"],
+      "required": true,
+      "priority": 7
+    },
+    "pre_construction_submittals": {
+      "dependencies": ["project_specific_details", "accessory_data_sheets", "msds_sheets", "warranties", "building_permit", "schedule"],
+      "required": true,
+      "priority": 8
+    },
+    "in_progress_submittals": {
+      "dependencies": ["metal_color_selections", "shop_drawings"],
+      "required": false,
+      "priority": 9
+    },
+    "closeout_submittals": {
+      "dependencies": ["executed_warranties", "executed_guaranties", "consent_of_surety", "closed_permit", "punchlist_verification"],
+      "required": true,
+      "priority": 10
+    },
     "flashings_and_accessories": {
       "dependencies": ["penetrations", "drains", "hvac_units", "skylights", "roof_hatches"],
       "required": true,
-      "priority": 6
+      "priority": 11
     },
     "drainage_systems": {
       "dependencies": ["number_of_drains", "drain_types", "gutter_type", "downspouts"],
@@ -51,106 +76,155 @@
         }
       },
       "required": false,
-      "priority": 7
+      "priority": 12
     },
     "insulation_requirements": {
       "dependencies": ["insulation_type", "insulation_thickness", "insulation_r_value", "energy_code_requirements"],
       "required": true,
-      "priority": 8
-    },
-    "vapor_barrier": {
-      "dependencies": ["climate_zone", "deck_type", "insulation_type"],
-      "conditionalLogic": {
-        "climate_zone": {
-          "1-3": "vapor_barrier_not_required",
-          "4-8": "vapor_barrier_recommended"
-        }
-      },
-      "required": false,
-      "priority": 9
-    },
-    "walkway_pads": {
-      "dependencies": ["walkway_pad_requested", "hvac_units", "maintenance_access"],
-      "required": false,
-      "priority": 10
+      "priority": 13
     },
     "warranty_and_maintenance": {
       "dependencies": ["membrane_type", "manufacturer", "warranty_requirements"],
       "required": true,
-      "priority": 11
+      "priority": 14
     }
   },
   "templateSections": {
-    "T6": {
-      "name": "tearoff-tpo-ma-insul-steel",
+    "T1": {
+      "name": "Recover-TPO(MA)-cvr bd-BUR-insul-steel",
+      "description": "Recover system with mechanically attached TPO over BUR with cover board on steel deck",
+      "project_type": "recover",
+      "deck_type": "Steel",
+      "existing_system": "BUR",
+      "attachment_method": "mechanical",
+      "cover_board": true,
+      "pages": "36+",
       "requiredSections": [
-        "project_scope",
-        "existing_conditions", 
-        "new_roof_system",
-        "wind_uplift_requirements",
-        "fastening_specifications",
-        "flashings_and_accessories",
-        "insulation_requirements",
-        "warranty_and_maintenance"
+        "project_scope", "existing_conditions", "new_roof_system", "wind_uplift_requirements",
+        "fastening_specifications", "submittal_requirements", "project_critical_submittals",
+        "pre_construction_submittals", "closeout_submittals", "flashings_and_accessories",
+        "insulation_requirements", "warranty_and_maintenance"
       ],
-      "optionalSections": [
-        "drainage_systems",
-        "vapor_barrier",
-        "walkway_pads"
-      ]
+      "optionalSections": ["drainage_systems", "in_progress_submittals"]
     },
-    "T7": {
-      "name": "tearoff-tpo-ma-insul-lwc-steel", 
+    "T2": {
+      "name": "Recover-TPO(MA)-cvr bd-BUR-lwc-steel",
+      "description": "Recover system with mechanically attached TPO over BUR with LWC cover board on steel deck",
+      "project_type": "recover",
+      "deck_type": "Steel",
+      "existing_system": "BUR",
+      "attachment_method": "mechanical",
+      "cover_board": "Lightweight Concrete",
+      "pages": "36+",
       "requiredSections": [
-        "project_scope",
-        "existing_conditions",
-        "new_roof_system", 
-        "wind_uplift_requirements",
-        "fastening_specifications",
-        "flashings_and_accessories",
-        "insulation_requirements",
-        "warranty_and_maintenance"
+        "project_scope", "existing_conditions", "new_roof_system", "wind_uplift_requirements",
+        "fastening_specifications", "submittal_requirements", "project_critical_submittals",
+        "pre_construction_submittals", "closeout_submittals", "flashings_and_accessories",
+        "insulation_requirements", "warranty_and_maintenance"
       ],
-      "optionalSections": [
-        "drainage_systems",
-        "vapor_barrier", 
-        "walkway_pads"
-      ]
+      "optionalSections": ["drainage_systems", "in_progress_submittals"]
     },
-    "T8": {
-      "name": "tearoff-tpo-adhered-insul-adhered-gypsum",
+    "T3": {
+      "name": "Recover-TPOfleece(MA)-BUR-insul-steel",
+      "description": "Recover system with mechanically attached TPO fleece-back over BUR with insulation on steel deck",
+      "project_type": "recover",
+      "deck_type": "Steel",
+      "existing_system": "BUR",
+      "attachment_method": "mechanical",
+      "membrane_type": "TPO Fleece-back",
+      "pages": "36+",
       "requiredSections": [
-        "project_scope",
-        "existing_conditions",
-        "new_roof_system",
-        "wind_uplift_requirements", 
-        "fastening_specifications",
-        "flashings_and_accessories",
-        "insulation_requirements",
-        "warranty_and_maintenance"
+        "project_scope", "existing_conditions", "new_roof_system", "wind_uplift_requirements",
+        "fastening_specifications", "submittal_requirements", "project_critical_submittals",
+        "pre_construction_submittals", "closeout_submittals", "flashings_and_accessories",
+        "insulation_requirements", "warranty_and_maintenance"
       ],
-      "optionalSections": [
-        "drainage_systems",
-        "vapor_barrier",
-        "walkway_pads"
-      ]
+      "optionalSections": ["drainage_systems", "in_progress_submittals"]
+    },
+    "T4": {
+      "name": "Recover-TPOfleece(MA)-BUR-lwc-steel",
+      "description": "Recover system with mechanically attached TPO fleece-back over BUR with LWC on steel deck",
+      "project_type": "recover",
+      "deck_type": "Steel",
+      "existing_system": "BUR",
+      "attachment_method": "mechanical",
+      "membrane_type": "TPO Fleece-back",
+      "cover_board": "Lightweight Concrete",
+      "pages": "36+",
+      "requiredSections": [
+        "project_scope", "existing_conditions", "new_roof_system", "wind_uplift_requirements",
+        "fastening_specifications", "submittal_requirements", "project_critical_submittals",
+        "pre_construction_submittals", "closeout_submittals", "flashings_and_accessories",
+        "insulation_requirements", "warranty_and_maintenance"
+      ],
+      "optionalSections": ["drainage_systems", "in_progress_submittals"]
     },
     "T5": {
-      "name": "recover-tpo-rhino-iso-eps-flute-fill-ssr",
+      "name": "Recover-TPO(Rhino)-iso-EPS flute fill-SSR",
+      "description": "Recover system with Rhino TPO over isocyanurate and EPS flute fill - SSR system",
+      "project_type": "recover",
+      "deck_type": "Steel",
+      "attachment_method": "SSR",
+      "membrane_type": "TPO Rhino",
+      "insulation_type": "Polyisocyanurate with EPS flute fill",
+      "pages": "36+",
       "requiredSections": [
-        "project_scope",
-        "existing_conditions",
-        "new_roof_system", 
-        "wind_uplift_requirements",
-        "fastening_specifications",
-        "flashings_and_accessories",
-        "insulation_requirements",
-        "warranty_and_maintenance"
+        "project_scope", "existing_conditions", "new_roof_system", "wind_uplift_requirements",
+        "fastening_specifications", "submittal_requirements", "project_critical_submittals",
+        "pre_construction_submittals", "closeout_submittals", "flashings_and_accessories",
+        "insulation_requirements", "warranty_and_maintenance"
       ],
-      "optionalSections": [
-        "drainage_systems",
-        "walkway_pads"
-      ]
+      "optionalSections": ["drainage_systems", "in_progress_submittals"]
+    },
+    "T6": {
+      "name": "Tearoff-TPO(MA)-insul-steel",
+      "description": "Tearoff system with mechanically attached TPO and insulation on steel deck",
+      "project_type": "tearoff",
+      "deck_type": "Steel",
+      "attachment_method": "mechanical",
+      "membrane_type": "TPO",
+      "pages": "36+",
+      "requiredSections": [
+        "project_scope", "existing_conditions", "new_roof_system", "wind_uplift_requirements",
+        "fastening_specifications", "submittal_requirements", "project_critical_submittals",
+        "pre_construction_submittals", "closeout_submittals", "flashings_and_accessories",
+        "insulation_requirements", "warranty_and_maintenance"
+      ],
+      "optionalSections": ["drainage_systems", "in_progress_submittals"]
+    },
+    "T7": {
+      "name": "Tearoff-TPO(MA)-insul-lwc-steel",
+      "description": "Tearoff system with mechanically attached TPO and insulation with LWC on steel deck",
+      "project_type": "tearoff",
+      "deck_type": "Steel",
+      "attachment_method": "mechanical",
+      "membrane_type": "TPO",
+      "cover_board": "Lightweight Concrete",
+      "pages": "36+",
+      "requiredSections": [
+        "project_scope", "existing_conditions", "new_roof_system", "wind_uplift_requirements",
+        "fastening_specifications", "submittal_requirements", "project_critical_submittals",
+        "pre_construction_submittals", "closeout_submittals", "flashings_and_accessories",
+        "insulation_requirements", "warranty_and_maintenance"
+      ],
+      "optionalSections": ["drainage_systems", "in_progress_submittals"]
+    },
+    "T8": {
+      "name": "Tearoff-TPO(adhered)-insul(adhered)-gypsum",
+      "description": "Tearoff system with fully adhered TPO and adhered insulation on gypsum deck",
+      "project_type": "tearoff",
+      "deck_type": "Gypsum",
+      "attachment_method": "fully_adhered",
+      "membrane_type": "TPO",
+      "insulation_attachment": "adhered",
+      "pages": "36+",
+      "requiredSections": [
+        "project_scope", "existing_conditions", "new_roof_system", "wind_uplift_requirements",
+        "fastening_specifications", "submittal_requirements", "project_critical_submittals",
+        "pre_construction_submittals", "closeout_submittals", "flashings_and_accessories",
+        "insulation_requirements", "warranty_and_maintenance"
+      ],
+      "optionalSections": ["drainage_systems", "in_progress_submittals"]
     }
   },
   "contentRules": {
@@ -170,8 +244,15 @@
         "80": "80-mil, TPO roof membrane system",
         "115": "115-mil TPO-FB (Fleece back) membrane"
       },
+      "TPO Fleece-back": {
+        "115": "115-mil TPO-FB (Fleece back) membrane system"
+      },
+      "TPO Rhino": {
+        "60": "60-mil TPO Rhino membrane system",
+        "80": "80-mil TPO Rhino membrane system"
+      },
       "EPDM": {
-        "60": "60-mil, EPDM roof membrane system", 
+        "60": "60-mil, EPDM roof membrane system",
         "90": "90-mil, EPDM roof membrane system"
       }
     },
@@ -182,10 +263,51 @@
         "3.0": "3.0\" (R-18) polyisocyanurate insulation board",
         "4.5": "4.5\" (R-25) polyisocyanurate insulation board"
       },
+      "Polyisocyanurate with EPS flute fill": {
+        "2.0": "2.0\" polyisocyanurate with EPS flute fill insulation system",
+        "3.0": "3.0\" polyisocyanurate with EPS flute fill insulation system"
+      },
       "EPS": {
         "2.0": "2.0\" EPS insulation board",
         "4.0": "4.0\" EPS insulation board"
       }
+    },
+    "submittal_categories": {
+      "project_critical": [
+        "MANUFACTURER'S SYSTEM APPROVAL LETTER",
+        "MANUFACTURER'S PRODUCT DATA SHEETS for PRIMARY ROOF SYSTEM COMPONENTS",
+        "ROOF SYSTEM FLORIDA PRODUCT APPROVAL (for Florida projects)",
+        "ENGINEERING & TESTING REPORTS",
+        "ROOF MEMBRANE LAYOUT / FASTENING PLAN (ROOF SPECIFIC)"
+      ],
+      "pre_construction": [
+        "PROJECT-SPECIFIC DETAILS",
+        "MANUFACTURER'S PRODUCT DATA SHEETS for ACCESSORY COMPONENTS",
+        "MANUFACTURER'S MATERIAL SAFETY DATA SHEETS (SDS)",
+        "SAMPLE CONTRACTOR'S WARRANTY (5-Year)",
+        "SAMPLE MANUFACTURER'S GUARANTY/WARRANTY",
+        "COPY OF BUILDING PERMIT",
+        "CRITICAL PATH SCHEDULE"
+      ],
+      "in_progress": [
+        "METAL COLOR SELECTIONS (BY OWNER)",
+        "SHOP FABRICATED METAL SHOP DRAWINGS"
+      ],
+      "closeout": [
+        "EXECUTED CONTRACTOR WARRANTY (5-Year)",
+        "EXECUTED MANUFACTURER'S GUARANTY/WARRANTY",
+        "EXECUTED UNIT SKYLIGHT WARRANTY (if applicable)",
+        "CONSENT OF SURETY TO FINAL PAYMENT",
+        "COPY OF CLOSED BUILDING PERMIT",
+        "VERIFICATION OF PUNCHLIST COMPLETION"
+      ]
     }
+  },
+  "targetOutput": {
+    "format": "36+ page revised SOW PDF",
+    "structure": "Complete project manual format",
+    "sections": "All submittal requirements with detailed checklists",
+    "formatting": "Character-for-character matching with original templates",
+    "content_depth": "Comprehensive professional scope of work documentation"
   }
 }
