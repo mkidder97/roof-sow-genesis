@@ -1,0 +1,131 @@
+{
+  "tools": [
+    {
+      "name": "generate_sow_summary",
+      "path": "mcp/tools/generate_sow_summary.py",
+      "description": "Generates SOW summary from takeoff data",
+      "type": "python_script",
+      "input_format": "json",
+      "output_format": "json",
+      "required_args": ["takeoff_data_file"],
+      "optional_args": ["output_file"],
+      "dependencies": ["json", "sys", "os", "datetime"],
+      "usage": "python mcp/tools/generate_sow_summary.py input.json [output.json]",
+      "examples": [
+        {
+          "description": "Generate SOW summary from takeoff data",
+          "command": "python mcp/tools/generate_sow_summary.py data/sample_takeoff.json output/sow_summary.json",
+          "input_sample": {
+            "project_name": "Sample Warehouse",
+            "address": "123 Industrial Blvd, City, State 12345",
+            "roof_area": 25000,
+            "membrane_type": "TPO",
+            "fastening_pattern": "Mechanically Attached"
+          }
+        }
+      ]
+    },
+    {
+      "name": "validate_takeoff_data",
+      "path": "mcp/tools/validate_takeoff_data.py",
+      "description": "Checks required takeoff fields and formats",
+      "type": "python_script",
+      "input_format": "json",
+      "output_format": "console",
+      "required_args": ["takeoff_data_file"],
+      "optional_args": [],
+      "dependencies": ["json", "sys", "re", "typing"],
+      "usage": "python mcp/tools/validate_takeoff_data.py input.json",
+      "validation_rules": {
+        "required_fields": [
+          "project_name",
+          "address", 
+          "roof_area",
+          "membrane_type",
+          "fastening_pattern"
+        ],
+        "optional_fields": [
+          "insulation_type",
+          "insulation_thickness",
+          "deck_type",
+          "building_height",
+          "wind_zone",
+          "hvhz_zone",
+          "county",
+          "state",
+          "building_code",
+          "asce_version"
+        ]
+      },
+      "examples": [
+        {
+          "description": "Validate takeoff data before SOW generation",
+          "command": "python mcp/tools/validate_takeoff_data.py data/takeoff.json",
+          "expected_output": "VALIDATION PASSED or detailed error messages"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-06-27",
+    "purpose": "MCP tool registry for roof-sow-genesis project",
+    "maintainer": "Southern Roof Consultants",
+    "workflow": [
+      {
+        "step": 1,
+        "action": "validate_takeoff_data",
+        "description": "Validate input data before processing"
+      },
+      {
+        "step": 2,
+        "action": "generate_sow_summary", 
+        "description": "Generate SOW summary from validated data"
+      },
+      {
+        "step": 3,
+        "action": "review_output",
+        "description": "Review generated summary for accuracy"
+      }
+    ]
+  },
+  "integration": {
+    "mcp_server": {
+      "enabled": true,
+      "port": 8001,
+      "endpoint": "/mcp/tools"
+    },
+    "docker": {
+      "base_path": "/app/mcp",
+      "python_version": "3.11",
+      "requirements": ["json", "sys", "os", "datetime", "re", "typing"]
+    },
+    "api_endpoints": [
+      {
+        "path": "/api/validate-takeoff",
+        "method": "POST",
+        "tool": "validate_takeoff_data",
+        "description": "Validate takeoff data via API"
+      },
+      {
+        "path": "/api/generate-sow",
+        "method": "POST", 
+        "tool": "generate_sow_summary",
+        "description": "Generate SOW summary via API"
+      }
+    ]
+  },
+  "configuration": {
+    "environment_variables": {
+      "MCP_TOOLS_PATH": "mcp/tools",
+      "MCP_CONFIG_PATH": "mcp/config",
+      "SOW_OUTPUT_PATH": "data/sow",
+      "VALIDATION_MODE": "strict"
+    },
+    "logging": {
+      "level": "INFO",
+      "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+      "file": "logs/mcp_tools.log"
+    }
+  }
+}
