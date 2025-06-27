@@ -14,6 +14,16 @@ if [ $? -eq 0 ]; then
     echo "   Response: $HEALTH_RESPONSE"
 else
     echo "❌ Backend is not running. Please start with: cd server && npm start"
+    echo ""
+    echo "🔧 To start the server properly:"
+    echo "   1. cd server"
+    echo "   2. Check .env file has all required variables"
+    echo "   3. npm start"
+    echo ""
+    echo "📋 Required environment variables:"
+    echo "   - SUPABASE_URL=https://dlnoitbisrpwnmdmbrwy.supabase.co"
+    echo "   - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    echo "   - PORT=3001"
     exit 1
 fi
 
@@ -25,6 +35,13 @@ echo "   📊 Testing /api/status..."
 STATUS_RESPONSE=$(curl -s http://localhost:3001/api/status)
 if [ $? -eq 0 ]; then
     echo "   ✅ Status endpoint working"
+    
+    # Check for Supabase connection in response
+    if [[ "$STATUS_RESPONSE" == *"supabase_connection"*"Connected"* ]]; then
+        echo "   ✅ Supabase connection verified"
+    else
+        echo "   ⚠️  Supabase connection may have issues"
+    fi
 else
     echo "   ❌ Status endpoint failed"
 fi
@@ -105,6 +122,15 @@ if [ $? -eq 0 ]; then
     else
         echo "   ❌ SOW generation failed"
         echo "   📝 Response: $SOW_RESPONSE"
+        
+        # Check for common error patterns
+        if [[ "$SOW_RESPONSE" == *"projectAddress"* ]]; then
+            echo "   🔍 Field mapping issue detected - check projectAddress vs address"
+        elif [[ "$SOW_RESPONSE" == *"supabase"* ]]; then
+            echo "   🔍 Database connection issue detected"
+        elif [[ "$SOW_RESPONSE" == *"timeout"* ]]; then
+            echo "   🔍 Timeout issue - server may be overloaded"
+        fi
     fi
 else
     echo "   ❌ SOW generation API failed"
@@ -181,7 +207,10 @@ else
     echo "   1. Ensure server is running: cd server && npm start"
     echo "   2. Check server logs for errors"
     echo "   3. Verify database connection (Supabase)"
-    echo "   4. Check environment variables"
+    echo "   4. Check environment variables in server/.env:"
+    echo "      - SUPABASE_URL"
+    echo "      - SUPABASE_SERVICE_ROLE_KEY"
+    echo "   5. Clear any cached processes: pkill -f tsx"
     
     exit 1
 fi
