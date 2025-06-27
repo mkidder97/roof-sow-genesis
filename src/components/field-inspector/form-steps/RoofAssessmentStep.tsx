@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,9 +7,10 @@ import { FieldInspection } from '@/types/fieldInspection';
 interface RoofAssessmentStepProps {
   data: Partial<FieldInspection>;
   onChange: (updates: Partial<FieldInspection>) => void;
+  readOnly?: boolean;
 }
 
-const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({ data, onChange }) => {
+const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({ data, onChange, readOnly = false }) => {
   const getConditionLabel = (value: number) => {
     if (value <= 3) return 'Poor';
     if (value <= 6) return 'Fair';
@@ -33,6 +33,7 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({ data, onChange 
           <Select
             value={data.deck_type || ''}
             onValueChange={(value) => onChange({ deck_type: value })}
+            disabled={readOnly}
           >
             <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
               <SelectValue placeholder="Select deck type" />
@@ -52,6 +53,7 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({ data, onChange 
           <Select
             value={data.existing_membrane_type || ''}
             onValueChange={(value) => onChange({ existing_membrane_type: value })}
+            disabled={readOnly}
           >
             <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
               <SelectValue placeholder="Select membrane type" />
@@ -82,6 +84,7 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({ data, onChange 
           min={1}
           step={1}
           className="w-full"
+          disabled={readOnly}
         />
         <div className="flex justify-between text-sm text-blue-200 mt-2">
           <span>1 - Poor</span>
@@ -95,6 +98,7 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({ data, onChange 
         <Select
           value={data.roof_age_years?.toString() || ''}
           onValueChange={(value) => onChange({ roof_age_years: parseInt(value) })}
+          disabled={readOnly}
         >
           <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
             <SelectValue placeholder="Select age range" />
@@ -114,6 +118,7 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({ data, onChange 
           <Select
             value={data.insulation_type || ''}
             onValueChange={(value) => onChange({ insulation_type: value })}
+            disabled={readOnly}
           >
             <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
               <SelectValue placeholder="Select insulation type" />
@@ -134,6 +139,7 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({ data, onChange 
           <Select
             value={data.insulation_condition || ''}
             onValueChange={(value) => onChange({ insulation_condition: value })}
+            disabled={readOnly}
           >
             <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
               <SelectValue placeholder="Select condition" />

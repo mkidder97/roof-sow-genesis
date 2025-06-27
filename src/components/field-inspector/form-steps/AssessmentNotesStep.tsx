@@ -9,9 +9,10 @@ import { FieldInspection } from '@/types/fieldInspection';
 interface AssessmentNotesStepProps {
   data: Partial<FieldInspection>;
   onChange: (updates: Partial<FieldInspection>) => void;
+  readOnly?: boolean;
 }
 
-const AssessmentNotesStep: React.FC<AssessmentNotesStepProps> = ({ data, onChange }) => {
+const AssessmentNotesStep: React.FC<AssessmentNotesStepProps> = ({ data, onChange, readOnly = false }) => {
   return (
     <div className="space-y-6">
       {/* Overall Condition Rating */}
@@ -23,6 +24,7 @@ const AssessmentNotesStep: React.FC<AssessmentNotesStepProps> = ({ data, onChang
           <Select
             value={data.overall_condition?.toString() || ''}
             onValueChange={(value) => onChange({ overall_condition: parseInt(value) })}
+            disabled={readOnly}
           >
             <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
               <SelectValue placeholder="Select overall condition (1-10)" />
@@ -47,6 +49,7 @@ const AssessmentNotesStep: React.FC<AssessmentNotesStepProps> = ({ data, onChang
           <Select
             value={data.priority_level || 'Standard'}
             onValueChange={(value) => onChange({ priority_level: value as any })}
+            disabled={readOnly}
           >
             <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
               <SelectValue />
@@ -71,6 +74,7 @@ const AssessmentNotesStep: React.FC<AssessmentNotesStepProps> = ({ data, onChang
             onChange={(e) => onChange({ notes: e.target.value })}
             className="bg-white/20 border-blue-400/30 text-white min-h-[120px]"
             placeholder="Add any additional observations, concerns, or recommendations..."
+            disabled={readOnly}
           />
         </CardContent>
       </Card>

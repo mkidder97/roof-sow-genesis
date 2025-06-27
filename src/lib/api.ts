@@ -46,7 +46,7 @@ export type SOWResponse = SOWGenerationResponse;
 export type SOWPayload = SOWGenerationRequest;
 
 // Re-export types for convenience
-export { SOWGenerationRequest, SOWGenerationResponse };
+export type { SOWGenerationRequest, SOWGenerationResponse } from '@/types/sow';
 
 /**
  * Generic API call utility

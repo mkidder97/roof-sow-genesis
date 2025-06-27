@@ -9,9 +9,10 @@ import { FieldInspection } from '@/types/fieldInspection';
 interface ProjectInfoStepProps {
   data: Partial<FieldInspection>;
   onChange: (updates: Partial<FieldInspection>) => void;
+  readOnly?: boolean;
 }
 
-const ProjectInfoStep: React.FC<ProjectInfoStepProps> = ({ data, onChange }) => {
+const ProjectInfoStep: React.FC<ProjectInfoStepProps> = ({ data, onChange, readOnly = false }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -20,6 +21,7 @@ const ProjectInfoStep: React.FC<ProjectInfoStepProps> = ({ data, onChange }) => 
           <Select 
             value={data.inspector_name || 'Michael Kidder'} 
             onValueChange={(value) => onChange({ inspector_name: value })}
+            disabled={readOnly}
           >
             <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
               <SelectValue placeholder="Select inspector" />
@@ -38,6 +40,7 @@ const ProjectInfoStep: React.FC<ProjectInfoStepProps> = ({ data, onChange }) => 
             value={data.inspection_date || ''}
             onChange={(e) => onChange({ inspection_date: e.target.value })}
             className="bg-white/20 border-blue-400/30 text-white"
+            disabled={readOnly}
             required
           />
         </div>
@@ -51,6 +54,7 @@ const ProjectInfoStep: React.FC<ProjectInfoStepProps> = ({ data, onChange }) => 
           onChange={(e) => onChange({ project_name: e.target.value })}
           className="bg-white/20 border-blue-400/30 text-white placeholder-blue-200"
           placeholder="Enter building name (e.g., Main Street Office Building)"
+          disabled={readOnly}
           required
         />
       </div>
@@ -64,6 +68,7 @@ const ProjectInfoStep: React.FC<ProjectInfoStepProps> = ({ data, onChange }) => 
           className="bg-white/20 border-blue-400/30 text-white placeholder-blue-200"
           placeholder="Enter complete building address including city, state, zip"
           rows={3}
+          disabled={readOnly}
           required
         />
       </div>

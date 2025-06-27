@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,11 +23,15 @@ interface PhotoMetadata {
 }
 
 interface PhotoCaptureSystemProps {
-  onPhotosAdded: (photos: PhotoMetadata[]) => void;
+  onPhotoCapture?: (photoUrl: any) => void;
+  onClose: () => void;
+  onPhotosAdded?: (photos: PhotoMetadata[]) => void;
   inspectionId?: string;
 }
 
 const PhotoCaptureSystem: React.FC<PhotoCaptureSystemProps> = ({ 
+  onPhotoCapture,
+  onClose,
   onPhotosAdded, 
   inspectionId 
 }) => {
@@ -208,6 +211,11 @@ const PhotoCaptureSystem: React.FC<PhotoCaptureSystemProps> = ({
           };
           
           newPhotos.push(photoMetadata);
+          
+          // Call the legacy onPhotoCapture if provided
+          if (onPhotoCapture) {
+            onPhotoCapture(url);
+          }
         } catch (error) {
           toast.error(`Failed to upload ${file.name}`);
           console.error('Upload error:', error);
@@ -216,7 +224,7 @@ const PhotoCaptureSystem: React.FC<PhotoCaptureSystemProps> = ({
 
       if (newPhotos.length > 0) {
         setPhotos(prev => [...prev, ...newPhotos]);
-        onPhotosAdded(newPhotos);
+        onPhotosAdded?.(newPhotos);
         toast.success(`${newPhotos.length} photo(s) added successfully`);
       }
     } finally {
@@ -235,183 +243,195 @@ const PhotoCaptureSystem: React.FC<PhotoCaptureSystemProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Photo Capture Controls */}
-      <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Camera className="w-5 h-5" />
-            Photo Capture
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Category Selection */}
-          <div>
-            <label className="text-blue-200 text-sm font-medium mb-2 block">
-              Photo Category
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {categories.map((category) => (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-slate-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Photo Capture System</h2>
+            <Button onClick={onClose} variant="ghost" size="sm">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Photo Capture Controls */}
+          <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Camera className="w-5 h-5" />
+                Photo Capture
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Category Selection */}
+              <div>
+                <label className="text-blue-200 text-sm font-medium mb-2 block">
+                  Photo Category
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id as PhotoMetadata['category'])}
+                      className={`p-3 rounded-lg text-white font-medium transition-all ${
+                        selectedCategory === category.id
+                          ? `${category.color} scale-105`
+                          : 'bg-white/20 hover:bg-white/30'
+                      }`}
+                    >
+                      {category.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Area Input */}
+              <div>
+                <label className="text-blue-200 text-sm font-medium mb-2 block">
+                  Roof Area/Location
+                </label>
+                <input
+                  type="text"
+                  value={currentArea}
+                  onChange={(e) => setCurrentArea(e.target.value)}
+                  placeholder="e.g., North Section, HVAC Area, Main Roof"
+                  className="w-full p-3 bg-white/20 border border-blue-400/30 rounded-lg text-white placeholder-blue-200"
+                />
+              </div>
+
+              {/* GPS Toggle */}
+              <div className="flex items-center justify-between">
+                <span className="text-blue-200 text-sm font-medium">Include GPS Coordinates</span>
                 <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id as PhotoMetadata['category'])}
-                  className={`p-3 rounded-lg text-white font-medium transition-all ${
-                    selectedCategory === category.id
-                      ? `${category.color} scale-105`
-                      : 'bg-white/20 hover:bg-white/30'
+                  onClick={() => setGpsEnabled(!gpsEnabled)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    gpsEnabled ? 'bg-green-600' : 'bg-gray-600'
                   }`}
                 >
-                  {category.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Area Input */}
-          <div>
-            <label className="text-blue-200 text-sm font-medium mb-2 block">
-              Roof Area/Location
-            </label>
-            <input
-              type="text"
-              value={currentArea}
-              onChange={(e) => setCurrentArea(e.target.value)}
-              placeholder="e.g., North Section, HVAC Area, Main Roof"
-              className="w-full p-3 bg-white/20 border border-blue-400/30 rounded-lg text-white placeholder-blue-200"
-            />
-          </div>
-
-          {/* GPS Toggle */}
-          <div className="flex items-center justify-between">
-            <span className="text-blue-200 text-sm font-medium">Include GPS Coordinates</span>
-            <button
-              onClick={() => setGpsEnabled(!gpsEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                gpsEnabled ? 'bg-green-600' : 'bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  gpsEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Capture Buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={uploading}
-              className="bg-blue-600 hover:bg-blue-700 h-12"
-            >
-              <Camera className="w-5 h-5 mr-2" />
-              Take Photo
-            </Button>
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              variant="outline"
-              className="border-blue-400 text-blue-200 hover:bg-blue-600 h-12"
-            >
-              <Upload className="w-5 h-5 mr-2" />
-              Upload
-            </Button>
-          </div>
-
-          {uploading && (
-            <div className="text-center text-blue-200">
-              <div className="animate-spin w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full mx-auto mb-2"></div>
-              Uploading photos...
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Photo Gallery */}
-      {photos.length > 0 && (
-        <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Image className="w-5 h-5" />
-              Captured Photos ({photos.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {photos.map((photo) => (
-                <div key={photo.id} className="relative group">
-                  <div className="aspect-square bg-white/5 rounded-lg overflow-hidden">
-                    <img
-                      src={photo.thumbnailUrl || photo.url}
-                      alt={`${photo.category} - ${photo.area}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  {/* Photo Metadata */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col justify-between p-2">
-                    <div className="flex justify-between items-start">
-                      <Badge className={`text-xs ${categories.find(c => c.id === photo.category)?.color || 'bg-gray-500'}`}>
-                        {photo.category}
-                      </Badge>
-                      <button
-                        onClick={() => removePhoto(photo.id)}
-                        className="bg-red-500 hover:bg-red-600 rounded-full p-1"
-                      >
-                        <X className="w-3 h-3 text-white" />
-                      </button>
-                    </div>
-                    
-                    <div className="text-white text-xs space-y-1">
-                      <div className="font-medium">{photo.area}</div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(photo.timestamp).toLocaleTimeString()}
-                      </div>
-                      {photo.gpsCoordinates && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          GPS
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Notes Input */}
-                  <textarea
-                    value={photo.notes}
-                    onChange={(e) => updatePhotoNotes(photo.id, e.target.value)}
-                    placeholder="Add notes..."
-                    className="mt-2 w-full p-2 text-xs bg-white/10 border border-blue-400/30 rounded text-white placeholder-blue-200"
-                    rows={2}
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      gpsEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                   />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                </button>
+              </div>
 
-      {/* Hidden File Inputs */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        multiple
-        onChange={(e) => handleFileUpload(e.target.files)}
-        style={{ display: 'none' }}
-      />
-      
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={(e) => handleFileUpload(e.target.files)}
-        style={{ display: 'none' }}
-      />
+              {/* Capture Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={uploading}
+                  className="bg-blue-600 hover:bg-blue-700 h-12"
+                >
+                  <Camera className="w-5 h-5 mr-2" />
+                  Take Photo
+                </Button>
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  variant="outline"
+                  className="border-blue-400 text-blue-200 hover:bg-blue-600 h-12"
+                >
+                  <Upload className="w-5 h-5 mr-2" />
+                  Upload
+                </Button>
+              </div>
+
+              {uploading && (
+                <div className="text-center text-blue-200">
+                  <div className="animate-spin w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full mx-auto mb-2"></div>
+                  Uploading photos...
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Photo Gallery */}
+          {photos.length > 0 && (
+            <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Image className="w-5 h-5" />
+                  Captured Photos ({photos.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {photos.map((photo) => (
+                    <div key={photo.id} className="relative group">
+                      <div className="aspect-square bg-white/5 rounded-lg overflow-hidden">
+                        <img
+                          src={photo.thumbnailUrl || photo.url}
+                          alt={`${photo.category} - ${photo.area}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      
+                      {/* Photo Metadata */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col justify-between p-2">
+                        <div className="flex justify-between items-start">
+                          <Badge className={`text-xs ${categories.find(c => c.id === photo.category)?.color || 'bg-gray-500'}`}>
+                            {photo.category}
+                          </Badge>
+                          <button
+                            onClick={() => removePhoto(photo.id)}
+                            className="bg-red-500 hover:bg-red-600 rounded-full p-1"
+                          >
+                            <X className="w-3 h-3 text-white" />
+                          </button>
+                        </div>
+                        
+                        <div className="text-white text-xs space-y-1">
+                          <div className="font-medium">{photo.area}</div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(photo.timestamp).toLocaleTimeString()}
+                          </div>
+                          {photo.gpsCoordinates && (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              GPS
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Notes Input */}
+                      <textarea
+                        value={photo.notes}
+                        onChange={(e) => updatePhotoNotes(photo.id, e.target.value)}
+                        placeholder="Add notes..."
+                        className="mt-2 w-full p-2 text-xs bg-white/10 border border-blue-400/30 rounded text-white placeholder-blue-200"
+                        rows={2}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Hidden File Inputs */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            onChange={(e) => handleFileUpload(e.target.files)}
+            style={{ display: 'none' }}
+          />
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => handleFileUpload(e.target.files)}
+            style={{ display: 'none' }}
+          />
+        </div>
+      </div>
     </div>
   );
 };
