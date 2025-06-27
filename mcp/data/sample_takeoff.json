@@ -1,0 +1,18 @@
+{
+  "project_name": "Sample Industrial Warehouse",
+  "address": "12345 Commerce Drive, Industrial City, TX 75001",
+  "roof_area": 45000,
+  "membrane_type": "TPO",
+  "fastening_pattern": "Mechanically Attached",
+  "insulation_type": "Polyiso",
+  "insulation_thickness": 3.0,
+  "deck_type": "Steel",
+  "building_height": 28,
+  "wind_zone": "II",
+  "hvhz_zone": false,
+  "county": "Dallas",
+  "state": "TX",
+  "building_code": "IBC2021",
+  "asce_version": "7-16",
+  "additional_notes": "This is a sample takeoff data file for testing the MCP tools"
+}
