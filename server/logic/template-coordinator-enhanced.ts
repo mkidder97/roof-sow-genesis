@@ -1,8 +1,8 @@
 // Enhanced Template Coordinator for Complete 36+ Page SOW Generation
 // Intelligently coordinates all 8 templates (T1-T8) with comprehensive submittal sections
-import { EnhancedSOWContentGenerator } from './content-generator-enhanced';
-import { SectionSelector, ProjectInputs, SelectedSection } from './section-selector';
-import { WindPressureCalculator } from './wind-pressure';
+import { EnhancedSOWContentGenerator } from './content-generator-enhanced.js';
+import { SectionSelector, ProjectInputs, SelectedSection } from './section-selector-enhanced.js';
+import { WindPressureCalculator } from './wind-pressure.js';
 import enhancedMapping from '../data/sow-section-mapping-enhanced.json';
 
 export interface TemplateCoordinationResult {
