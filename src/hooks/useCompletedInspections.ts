@@ -13,11 +13,12 @@ export function useCompletedInspections() {
       setLoading(true);
       console.log('Fetching completed inspections for Engineer Dashboard...');
       
-      // Query for inspections that are completed - use broader criteria
+      // IMPROVED: Query for inspections using BOTH status and boolean flags for robustness
+      // This handles edge cases where either field might be set but not the other
       const { data, error } = await supabase
         .from('field_inspections')
         .select('*')
-        .or('status.eq.Completed,completed.eq.true,status.eq.completed')
+        .or('status.eq.Completed,completed.eq.true,ready_for_handoff.eq.true')
         .order('completed_at', { ascending: false, nullsFirst: false });
 
       if (error) {
@@ -31,18 +32,26 @@ export function useCompletedInspections() {
         const convertedInspections = data.map(convertRowToInspection);
         console.log('Converted completed inspections:', convertedInspections);
         
-        // Debug each inspection
-        convertedInspections.forEach(inspection => {
-          console.log(`Inspection "${inspection.project_name}":`, {
+        // Filter to only include truly completed inspections
+        const filteredInspections = convertedInspections.filter(inspection => {
+          const isCompleted = inspection.status === 'Completed' || 
+                             inspection.completed === true || 
+                             inspection.ready_for_handoff === true;
+          
+          console.log(`Filtering inspection "${inspection.project_name}":`, {
             id: inspection.id,
             status: inspection.status,
             completed: inspection.completed,
+            ready_for_handoff: inspection.ready_for_handoff,
             sow_generated: inspection.sow_generated,
-            ready_for_sow: !inspection.sow_generated
+            isCompleted
           });
+          
+          return isCompleted;
         });
         
-        setCompletedInspections(convertedInspections);
+        console.log('Final filtered completed inspections:', filteredInspections);
+        setCompletedInspections(filteredInspections);
       } else {
         console.log('No completed inspections found');
         setCompletedInspections([]);

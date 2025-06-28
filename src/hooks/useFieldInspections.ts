@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FieldInspection, convertRowToInspection } from '@/types/fieldInspection';
@@ -98,14 +97,20 @@ export function useFieldInspections() {
   const completeInspection = async (inspectionId: string): Promise<void> => {
     try {
       console.log('Completing inspection:', inspectionId);
+      
+      // FIXED: Set BOTH status AND boolean flags for consistency
+      const updateData = { 
+        completed: true, 
+        completed_at: new Date().toISOString(),
+        status: 'Completed', // Ensure status is also set
+        ready_for_handoff: true // Ensure this is set for engineer workflow
+      };
+      
+      console.log('Update data for completion:', updateData);
+      
       const { error } = await supabase
         .from('field_inspections')
-        .update({ 
-          completed: true, 
-          completed_at: new Date().toISOString(),
-          status: 'Completed',
-          ready_for_handoff: true // Ensure this is set for engineer workflow
-        })
+        .update(updateData)
         .eq('id', inspectionId);
       
       if (error) {
@@ -113,7 +118,7 @@ export function useFieldInspections() {
         throw error;
       }
       
-      console.log('Inspection completed successfully');
+      console.log('Inspection completed successfully with both status and flags set');
       await fetchInspections();
     } catch (err) {
       console.error('Failed to complete inspection:', err);
