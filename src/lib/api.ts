@@ -2,6 +2,22 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SOWGenerationRequest, SOWGenerationResult } from '@/types/sow';
 
+// Export missing API utilities
+export const API_ENDPOINTS = {
+  GENERATE_SOW: '/generate-sow',
+  HEALTH_CHECK: '/health'
+};
+
+export async function apiCall(endpoint: string, data?: any) {
+  // Basic API call utility
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return response.json();
+}
+
 // Main SOW generation function
 export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOWGenerationResult> {
   try {
@@ -42,12 +58,12 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
       project_type: request.projectType || 'recover',
       roof_slope: request.roofSlope || 0,
       
-      // ASCE requirements
-      wind_speed: request.windSpeed || 140,
-      exposure_category: request.exposureCategory || 'C',
-      building_classification: request.buildingClassification || 'II',
-      asce_version: request.asceVersion || 'ASCE 7-22',
-      asce_requirements: request.asceRequirements,
+      // ASCE requirements - properly serialize
+      wind_speed: request.windSpeed || request.asceRequirements?.wind_speed || 140,
+      exposure_category: request.exposureCategory || request.asceRequirements?.exposure_category || 'C',
+      building_classification: request.buildingClassification || request.asceRequirements?.building_classification || 'II',
+      asce_version: request.asceVersion || request.asceRequirements?.version || 'ASCE 7-22',
+      asce_requirements: request.asceRequirements ? JSON.stringify(request.asceRequirements) : undefined,
       
       // Additional data
       custom_notes: request.customNotes || [],
@@ -58,7 +74,7 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
 
     console.log('Transformed payload:', payload);
 
-    // Call Supabase edge function (simulated for now)
+    // Call Supabase edge function
     const response = await supabase.functions.invoke('generate-sow', {
       body: payload
     });
@@ -89,3 +105,4 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
 
 // Export for compatibility
 export type SOWGenerationResponse = SOWGenerationResult;
+export { SOWGenerationRequest };

@@ -10,11 +10,11 @@ export interface FieldInspection {
   customer_phone?: string;
   inspection_date?: string;
   
-  // Location fields
+  // Location fields - Add missing county
   city?: string;
   state?: string;
   zip_code?: string;
-  county?: string;
+  county?: string; // Add this field
   
   // Building specifications
   building_height?: number;
@@ -103,7 +103,7 @@ export interface ASCERequirements {
   risk_category: string;
   importance_factor: number;
   hvhz_applicable?: boolean;
-  engineer_approved?: boolean;
+  engineer_approved?: boolean; // Add missing property
   approval_date?: string;
   approval_engineer?: string;
   notes?: string;
@@ -113,6 +113,9 @@ export interface ASCERequirements {
 export interface FieldInspectionData extends FieldInspection {
   id: string; // Required for database operations
 }
+
+// Alias for compatibility
+export type FieldInspectionRow = FieldInspection;
 
 // Conversion function for database rows
 export function convertRowToInspection(row: any): FieldInspection {
@@ -130,5 +133,10 @@ export function convertRowToInspection(row: any): FieldInspection {
     number_of_stories: row.number_of_stories ? Number(row.number_of_stories) : undefined,
     skylights: row.skylights ? Number(row.skylights) : undefined,
     roof_hatches: row.roof_hatches ? Number(row.roof_hatches) : undefined,
+    // Properly handle ASCE requirements JSON conversion
+    asce_requirements: row.asce_requirements ? 
+      (typeof row.asce_requirements === 'string' ? 
+        JSON.parse(row.asce_requirements) : 
+        row.asce_requirements) : undefined,
   };
 }

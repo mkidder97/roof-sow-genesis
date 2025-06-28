@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFieldInspections } from '@/hooks/useFieldInspections';
 import { FieldInspection } from '@/types/fieldInspection';
 
+// Fix the import paths for step components
 import ProjectInfoStep from './form-steps/ProjectInfoStep';
 import BuildingSpecsStep from './form-steps/BuildingSpecsStep';
 import RoofAssessmentStep from './form-steps/RoofAssessmentStep';
@@ -36,6 +37,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
   onComplete,
   readOnly = false
 }) => {
+  
   const { toast } = useToast();
   const {
     saveInspection,
@@ -77,6 +79,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     city: '',
     state: 'FL',
     zip_code: '',
+    county: '', // Add county field
     wind_speed: 140,
     exposure_category: 'C',
     building_classification: 'II'

@@ -1,8 +1,9 @@
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Wrench } from 'lucide-react';
 import { FieldInspection } from '@/types/fieldInspection';
 
 interface EquipmentInventoryStepProps {
@@ -11,138 +12,67 @@ interface EquipmentInventoryStepProps {
   readOnly?: boolean;
 }
 
-const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({ data, onChange, readOnly = false }) => {
+const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({
+  data,
+  onChange,
+  readOnly = false
+}) => {
+  const handleInputChange = (field: keyof FieldInspection, value: any) => {
+    onChange({ [field]: value });
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-white/10 border-blue-400/30">
-          <CardHeader>
-            <CardTitle className="text-white">HVAC Units</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label className="text-blue-200">Number of HVAC Units</Label>
-                <Input
-                  type="number"
-                  value={data.hvac_units?.length || 0}
-                  onChange={(e) => {
-                    const count = parseInt(e.target.value) || 0;
-                    const units = Array.from({ length: count }, (_, i) => ({
-                      type: 'Standard',
-                      count: 1,
-                      condition: 'Good'
-                    }));
-                    onChange({ hvac_units: units });
-                  }}
-                  className="bg-white/20 border-blue-400/30 text-white"
-                  disabled={readOnly}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/10 border-blue-400/30">
-          <CardHeader>
-            <CardTitle className="text-white">Skylights</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <Label className="text-blue-200">Number of Skylights</Label>
-              <Input
-                type="number"
-                value={data.skylights || 0}
-                onChange={(e) => onChange({ skylights: parseInt(e.target.value) || 0 })}
-                className="bg-white/20 border-blue-400/30 text-white"
-                disabled={readOnly}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-white/10 border-blue-400/30">
-          <CardHeader>
-            <CardTitle className="text-white">Roof Drains</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <Label className="text-blue-200">Number of Roof Drains</Label>
-              <Input
-                type="number"
-                value={data.roof_drains?.length || 0}
-                onChange={(e) => {
-                  const count = parseInt(e.target.value) || 0;
-                  const drains = Array.from({ length: count }, (_, i) => ({
-                    type: 'Standard',
-                    count: 1,
-                    condition: 'Good'
-                  }));
-                  onChange({ roof_drains: drains });
-                }}
-                className="bg-white/20 border-blue-400/30 text-white"
-                disabled={readOnly}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/10 border-blue-400/30">
-          <CardHeader>
-            <CardTitle className="text-white">Roof Hatches</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <Label className="text-blue-200">Number of Roof Hatches</Label>
-              <Input
-                type="number"
-                value={data.roof_hatches || 0}
-                onChange={(e) => onChange({ roof_hatches: parseInt(e.target.value) || 0 })}
-                className="bg-white/20 border-blue-400/30 text-white"
-                disabled={readOnly}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="bg-white/10 border-blue-400/30">
-        <CardHeader>
-          <CardTitle className="text-white">Penetrations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <Label className="text-blue-200">Number of Penetrations</Label>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Wrench className="w-5 h-5" />
+          Equipment Inventory
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="skylights">Skylights</Label>
             <Input
+              id="skylights"
               type="number"
-              value={data.penetrations?.length || 0}
-              onChange={(e) => {
-                const count = parseInt(e.target.value) || 0;
-                const penetrations = Array.from({ length: count }, (_, i) => ({
-                  type: 'Pipe',
-                  count: 1
-                }));
-                onChange({ penetrations });
-              }}
-              className="bg-white/20 border-blue-400/30 text-white"
-              disabled={readOnly}
+              value={data.skylights || ''}
+              onChange={(e) => handleInputChange('skylights', parseInt(e.target.value) || 0)}
+              placeholder="Number of skylights"
+              readOnly={readOnly}
             />
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="bg-blue-500/20 rounded-lg p-4">
-        <p className="text-blue-200 text-sm">
-          <strong>Equipment Documentation:</strong><br />
-          • Count all visible equipment on the roof<br />
-          • Note the condition of each item<br />
-          • Include any special requirements or modifications needed<br />
-          • This information helps determine SOW complexity and material requirements
-        </p>
-      </div>
-    </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="roof-hatches">Roof Hatches</Label>
+            <Input
+              id="roof-hatches"
+              type="number"
+              value={data.roof_hatches || ''}
+              onChange={(e) => handleInputChange('roof_hatches', parseInt(e.target.value) || 0)}
+              placeholder="Number of hatches"
+              readOnly={readOnly}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="hvac-units">HVAC Units</Label>
+            <Input
+              id="hvac-units"
+              type="number"
+              value={data.hvac_units?.length || ''}
+              onChange={(e) => {
+                const count = parseInt(e.target.value) || 0;
+                const units = Array(count).fill({}).map((_, i) => ({ id: i + 1, type: 'hvac' }));
+                handleInputChange('hvac_units', units);
+              }}
+              placeholder="Number of HVAC units"
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

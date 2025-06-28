@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FieldInspection, convertRowToInspection } from '@/types/fieldInspection';
@@ -29,11 +28,18 @@ export function useFieldInspections() {
 
   const saveInspection = async (inspectionData: Partial<FieldInspection>): Promise<string> => {
     try {
+      // Convert ASCE requirements to JSON for database storage
+      const dbData = {
+        ...inspectionData,
+        asce_requirements: inspectionData.asce_requirements ? 
+          JSON.stringify(inspectionData.asce_requirements) : null
+      };
+
       if (inspectionData.id) {
         // Update existing
         const { error } = await supabase
           .from('field_inspections')
-          .update(inspectionData)
+          .update(dbData)
           .eq('id', inspectionData.id);
         
         if (error) throw error;
@@ -43,7 +49,7 @@ export function useFieldInspections() {
         // Create new
         const { data, error } = await supabase
           .from('field_inspections')
-          .insert([inspectionData])
+          .insert([dbData])
           .select()
           .single();
         

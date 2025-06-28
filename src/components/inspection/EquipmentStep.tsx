@@ -15,7 +15,7 @@ export const EquipmentStep: React.FC<EquipmentStepProps> = ({
   data,
   onUpdate
 }) => {
-  const handleInputChange = (field: keyof FieldInspection, value: string | number) => {
+  const handleInputChange = (field: keyof FieldInspection, value: string | number | any[]) => {
     onUpdate({ [field]: value });
   };
 

@@ -1,3 +1,4 @@
+
 // Core interfaces for SOW generation and management
 export interface SOWGenerationData {
   id: string;
@@ -29,9 +30,15 @@ export interface SOWGenerationResult {
   downloadUrl?: string;
   message?: string;
   error?: string;
+  data?: {
+    sow?: string;
+    pdf?: string;
+    engineeringSummary?: any;
+    template?: string;
+  };
 }
 
-export type GenerationStatus = 'pending' | 'processing' | 'complete' | 'failed';
+export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface SOWGenerationRecord {
   id: string;
@@ -41,6 +48,7 @@ export interface SOWGenerationRecord {
   input_data: any;
   output_data?: any;
   pdf_url?: string;
+  output_file_path?: string; // Add missing property
   error_message?: string;
   generation_started_at?: string;
   generation_finished_at?: string;
@@ -112,7 +120,7 @@ export interface SOWGenerationRequest {
     length?: number;
     width?: number;
   };
-  deckType?: string;
+  deckType?: 'concrete' | 'metal' | 'wood' | 'gypsum';
   projectType?: 'recover' | 'tearoff' | 'new';
   roofSlope?: number;
   elevation?: number;
@@ -132,10 +140,11 @@ export interface SOWGenerationRequest {
   engineeringNotes?: string;
 
   // Membrane specifications
-  membraneType?: string;
+  membraneType?: 'tpo' | 'epdm' | 'pvc' | 'modified-bitumen';
   membraneThickness?: string;
   membraneMaterial?: string;
   selectedMembraneBrand?: string;
+  insulationType?: 'polyiso' | 'eps' | 'xps' | 'mineral-wool';
 
   // Takeoff data
   takeoffData?: any;
@@ -151,9 +160,19 @@ export interface SOWGenerationRequest {
   // Inspector information
   inspectorName?: string;
   inspectionDate?: string;
+  
+  // Equipment counts
+  numberOfDrains?: number;
+  numberOfPenetrations?: number;
+  
+  // Notes
+  notes?: string;
+  
+  // Inspection ID
+  inspectionId?: string;
 }
 
-interface ASCERequirements {
+export interface ASCERequirements {
   version: string;
   wind_speed?: number;
   exposure_category: string;
@@ -165,6 +184,60 @@ interface ASCERequirements {
   approval_date?: string;
   approval_engineer?: string;
   notes?: string;
+}
+
+// Error handling types
+export interface SOWGenerationError {
+  message: string;
+  code?: string;
+  details?: any;
+  type: 'network' | 'validation' | 'server' | 'unknown';
+}
+
+export function createSOWError(message: string, type: SOWGenerationError['type'] = 'unknown', details?: any): SOWGenerationError {
+  return {
+    message,
+    type,
+    details,
+    code: `SOW_${type.toUpperCase()}_ERROR`,
+  };
+}
+
+export function isNetworkError(error: any): boolean {
+  return error?.type === 'network' || 
+         error?.message?.includes('fetch') || 
+         error?.message?.includes('Load failed') ||
+         error?.name === 'TypeError';
+}
+
+// Section types for SOW components
+export interface ProjectMetadata {
+  projectName: string;
+  address: string;
+  customerName?: string;
+}
+
+export interface Environmental {
+  windSpeed: number;
+  exposureCategory: string;
+  asceVersion: string;
+}
+
+export interface Membrane {
+  type: string;
+  thickness: string;
+  color?: string;
+}
+
+export interface Takeoff {
+  squareFootage: number;
+  materials: any[];
+}
+
+export interface Notes {
+  general?: string;
+  special?: string;
+  engineering?: string;
 }
 
 export function transformInspectionToSOWRequest(inspection: FieldInspectionData): SOWGenerationRequest {
@@ -179,7 +252,7 @@ export function transformInspectionToSOWRequest(inspection: FieldInspectionData)
       length: inspection.building_length,
       width: inspection.building_width
     },
-    deckType: inspection.deck_type,
+    deckType: inspection.deck_type as any,
     roofSlope: typeof inspection.roof_slope === 'string' ? parseFloat(inspection.roof_slope) : inspection.roof_slope,
     
     // Location data
@@ -196,7 +269,8 @@ export function transformInspectionToSOWRequest(inspection: FieldInspectionData)
     buildingClassification: inspection.building_classification,
     
     // Membrane specifications
-    membraneType: inspection.existing_membrane_type,
+    membraneType: inspection.existing_membrane_type as any,
+    insulationType: inspection.insulation_type as any,
     
     // Inspector information
     inspectorName: inspection.inspector_name,
@@ -210,3 +284,6 @@ export function transformInspectionToSOWRequest(inspection: FieldInspectionData)
     ].filter(Boolean) as string[]
   };
 }
+
+// Export response type alias
+export type SOWResponse = SOWGenerationResult;
