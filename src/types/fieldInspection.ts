@@ -93,6 +93,75 @@ export interface FieldInspection {
   curbs_above_8?: boolean;
   gas_line_penetrating_deck?: boolean;
   project_id?: string;
+
+  // New Enhanced Equipment Inventory Fields
+  // Skylights
+  equipment_skylights?: SkylightItem[];
+  
+  // Access Points
+  equipment_access_points?: AccessPoint[];
+  
+  // HVAC Equipment
+  equipment_hvac_units?: HVACUnit[];
+  
+  // Drainage System
+  drainage_primary_type?: string;
+  drainage_condition?: string;
+  drainage_interior_drains?: number;
+  drainage_drain_size?: string;
+  drainage_scuppers?: number;
+  drainage_scupper_size?: string;
+  
+  // Penetrations
+  penetrations_gas_lines?: boolean;
+  penetrations_gas_line_count?: number;
+  penetrations_conduit_attached?: boolean;
+  penetrations_conduit_description?: string;
+  penetrations_other?: string;
+  
+  // Curbs & Equipment Platforms
+  curbs_8_inch_or_above?: boolean;
+  curbs_count?: number;
+  side_discharge_units?: boolean;
+  side_discharge_count?: number;
+  equipment_platforms?: number;
+  walkway_pads?: number;
+  
+  // Edge Details & Accessories
+  edge_detail_type?: string;
+  expansion_joints?: number;
+  
+  // Safety Equipment
+  safety_tie_off_points?: number;
+  safety_fall_protection_type?: string;
+  safety_warning_lines?: number;
+}
+
+// New equipment item types
+export interface SkylightItem {
+  id: string;
+  type: string;
+  quantity: number;
+  size: string;
+  condition: string;
+  notes?: string;
+}
+
+export interface AccessPoint {
+  id: string;
+  type: string;
+  quantity: number;
+  condition: string;
+  location: string;
+  notes?: string;
+}
+
+export interface HVACUnit {
+  id: string;
+  type: string;
+  quantity: number;
+  condition: string;
+  notes?: string;
 }
 
 export interface ASCERequirements {
@@ -138,5 +207,9 @@ export function convertRowToInspection(row: any): FieldInspection {
       (typeof row.asce_requirements === 'string' ? 
         JSON.parse(row.asce_requirements) : 
         row.asce_requirements) : undefined,
+    // Handle new equipment arrays
+    equipment_skylights: row.equipment_skylights || [],
+    equipment_access_points: row.equipment_access_points || [],
+    equipment_hvac_units: row.equipment_hvac_units || [],
   };
 }
