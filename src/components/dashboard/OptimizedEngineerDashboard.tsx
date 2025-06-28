@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ import { SOWGenerationRequest, transformInspectionToSOWRequest } from '@/types/s
 export const OptimizedEngineerDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { inspections, loading: inspectionsLoading } = useFieldInspections();
   const {
     generateSOW,
@@ -48,17 +50,35 @@ export const OptimizedEngineerDashboard = () => {
   const handleGenerateSOW = async (inspection: FieldInspection) => {
     if (!inspection.id) return;
 
-    const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest({
-      ...inspection,
-      id: inspection.id
-    });
+    try {
+      const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest({
+        ...inspection,
+        id: inspection.id
+      });
 
-    generateSOW(sowRequest);
+      await generateSOW(sowRequest);
 
-    toast({
-      title: "SOW Generation Started",
-      description: `Generating SOW for ${inspection.project_name}`,
-    });
+      toast({
+        title: "SOW Generation Started",
+        description: `Navigating to SOW Generator for ${inspection.project_name}`,
+      });
+
+      // Navigate to SOW Generation page with inspection data
+      navigate('/sow-generation', {
+        state: {
+          fromInspection: true,
+          inspectionData: inspection
+        }
+      });
+
+    } catch (error) {
+      console.error('SOW generation failed:', error);
+      toast({
+        title: "SOW Generation Failed",
+        description: "Failed to generate SOW. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadSOW = (generation: any) => {
