@@ -71,12 +71,56 @@ const SOWGeneration = () => {
     }
   }, [location.state]);
 
-  const handleSOWSubmit = async (data: SOWGenerationRequest) => {
-    console.log('SOW generation requested with validated data:', data);
+  const handleSOWSubmit = async (data: any) => {
+    console.log('SOW generation requested with form data:', data);
     
     try {
+      // Ensure required fields are present and properly typed
+      const sowRequest: SOWGenerationRequest = {
+        projectName: data.projectName || 'Untitled Project',
+        projectAddress: data.projectAddress || 'TBD',
+        companyName: data.companyName,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+        squareFootage: data.squareFootage,
+        buildingHeight: data.buildingHeight,
+        buildingDimensions: data.buildingDimensions,
+        deckType: data.deckType,
+        projectType: data.projectType,
+        roofSlope: data.roofSlope,
+        elevation: data.elevation,
+        city: data.city,
+        state: data.state,
+        county: data.county,
+        zipCode: data.zipCode,
+        asceRequirements: data.asceRequirements,
+        asceVersion: data.asceVersion,
+        windSpeed: data.windSpeed,
+        exposureCategory: data.exposureCategory,
+        buildingClassification: data.buildingClassification,
+        engineeringNotes: data.engineeringNotes,
+        membraneType: data.membraneType,
+        membraneThickness: data.membraneThickness,
+        membraneMaterial: data.membraneMaterial,
+        selectedMembraneBrand: data.selectedMembraneBrand,
+        insulationType: data.insulationType,
+        takeoffData: data.takeoffData,
+        takeoffFile: data.takeoffFile,
+        basicWindSpeed: data.basicWindSpeed,
+        preferredManufacturer: data.preferredManufacturer,
+        includesTaperedInsulation: data.includesTaperedInsulation,
+        userSelectedSystem: data.userSelectedSystem,
+        customNotes: data.customNotes ? [data.customNotes] : undefined,
+        inspectorName: data.inspectorName,
+        inspectionDate: data.inspectionDate,
+        numberOfDrains: data.numberOfDrains,
+        numberOfPenetrations: data.numberOfPenetrations,
+        notes: data.notes,
+        inspectionId: data.inspectionId
+      };
+      
       // Make the real API call with properly typed data
-      await generateSOW(data);
+      await generateSOW(sowRequest);
     } catch (error: any) {
       console.error('SOW submission error:', error);
       toast({
@@ -261,7 +305,6 @@ const SOWGeneration = () => {
             onRetry={handleRetry}
           />
 
-          {/* Enhanced Information Panel */}
           <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 mb-6">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
@@ -302,7 +345,6 @@ const SOWGeneration = () => {
             disabled={!isBackendOnline}
           />
 
-          {/* Enhanced Navigation Help */}
           <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 mt-6">
             <CardContent className="p-6">
               <h3 className="text-white font-semibold mb-4 text-center">Need More Data?</h3>

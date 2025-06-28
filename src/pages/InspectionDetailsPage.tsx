@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -6,12 +5,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import InspectionDetails from '@/components/field-inspector/InspectionDetails';
-import { FieldInspection, FieldInspectionRow } from '@/types/fieldInspection';
+import { FieldInspection, FieldInspectionRow, ASCERequirements } from '@/types/fieldInspection';
 
-// Convert database row to FieldInspection type
+// Convert database row to FieldInspection type with proper ASCE requirements handling
 const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
+  // Handle ASCE requirements JSON conversion
+  let asceRequirements: ASCERequirements | undefined;
+  if (row.asce_requirements) {
+    try {
+      asceRequirements = typeof row.asce_requirements === 'string' 
+        ? JSON.parse(row.asce_requirements) 
+        : row.asce_requirements as ASCERequirements;
+    } catch (error) {
+      console.warn('Failed to parse ASCE requirements:', error);
+      asceRequirements = undefined;
+    }
+  }
+
   return {
     ...row,
+    asce_requirements: asceRequirements,
     inspection_date: row.inspection_date || '',
     priority_level: (row.priority_level as 'Standard' | 'Expedited' | 'Emergency') || 'Standard',
     status: (row.status as 'Draft' | 'Completed' | 'Under Review' | 'Approved') || 'Draft',
