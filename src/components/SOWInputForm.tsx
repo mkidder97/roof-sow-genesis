@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck } from 'lucide-react';
+import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck, Info } from 'lucide-react';
 import { 
   SOWFormData, 
   FieldInspectionData, 
@@ -19,6 +18,7 @@ import {
   createSOWError,
   SOWGenerationRequestSchema 
 } from '@/types/sowGeneration';
+import { MEMBRANE_TYPES, INSULATION_TYPES, getTemplateCategory } from '@/types/roofingTypes';
 import { useToast } from '@/hooks/use-toast';
 
 interface SOWInputFormProps {
@@ -51,6 +51,8 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
   });
   const [activeTab, setActiveTab] = useState('project');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [selectedMembraneInfo, setSelectedMembraneInfo] = useState<string>('');
+  const [selectedInsulationInfo, setSelectedInsulationInfo] = useState<string>('');
 
   useEffect(() => {
     if (initialData) {
@@ -79,6 +81,17 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       ...prev,
       [field]: value
     }));
+    
+    // Update info displays for membrane and insulation types
+    if (field === 'membraneType') {
+      const membraneInfo = MEMBRANE_TYPES.find(m => m.value === value)?.description || '';
+      setSelectedMembraneInfo(membraneInfo);
+    }
+    
+    if (field === 'insulationType') {
+      const insulationInfo = INSULATION_TYPES.find(i => i.value === value)?.description || '';
+      setSelectedInsulationInfo(insulationInfo);
+    }
     
     // Clear validation error when user starts typing
     if (validationErrors[field]) {
@@ -157,6 +170,13 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     try {
       const sowRequest = transformFormDataToSOWRequest(formData);
       console.log('SOW generation requested with validated data:', sowRequest);
+      
+      // Log membrane type for template selection logic
+      if (formData.membraneType) {
+        const templateCategory = getTemplateCategory(formData.membraneType);
+        console.log('Selected membrane type for template logic:', formData.membraneType, 'Template category:', templateCategory);
+      }
+      
       onSubmit(sowRequest);
     } catch (error: any) {
       console.error('Form transformation error:', error);
@@ -311,8 +331,8 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               </div>
             </TabsContent>
 
-            {/* Building Specifications Tab */}
-            <TabsContent value="building" className="space-y-4">
+            {/* Enhanced Building Specifications Tab */}
+            <TabsContent value="building" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="buildingHeight" className="text-blue-200">Building Height (ft)</Label>
@@ -339,50 +359,97 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                       <SelectValue placeholder="Select deck type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="concrete">Concrete</SelectItem>
-                      <SelectItem value="metal">Metal</SelectItem>
-                      <SelectItem value="wood">Wood</SelectItem>
-                      <SelectItem value="gypsum">Gypsum</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="membraneType" className="text-blue-200">Membrane Type</Label>
-                  <Select 
-                    value={formData.membraneType} 
-                    onValueChange={(value) => handleInputChange('membraneType', value)}
-                    disabled={disabled}
-                  >
-                    <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                      <SelectValue placeholder="Select membrane type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tpo">TPO</SelectItem>
-                      <SelectItem value="epdm">EPDM</SelectItem>
-                      <SelectItem value="pvc">PVC</SelectItem>
-                      <SelectItem value="modified-bitumen">Modified Bitumen</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="insulationType" className="text-blue-200">Insulation Type</Label>
-                  <Select 
-                    value={formData.insulationType} 
-                    onValueChange={(value) => handleInputChange('insulationType', value)}
-                    disabled={disabled}
-                  >
-                    <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                      <SelectValue placeholder="Select insulation type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="polyiso">Polyiso</SelectItem>
-                      <SelectItem value="eps">EPS</SelectItem>
-                      <SelectItem value="xps">XPS</SelectItem>
-                      <SelectItem value="mineral-wool">Mineral Wool</SelectItem>
+                      <SelectItem value="steel">Steel Deck</SelectItem>
+                      <SelectItem value="concrete">Concrete Deck</SelectItem>
+                      <SelectItem value="wood">Wood Deck</SelectItem>
+                      <SelectItem value="gypsum">Gypsum Deck</SelectItem>
+                      <SelectItem value="loadmaster">Loadmaster Deck</SelectItem>
+                      <SelectItem value="composite">Composite Deck</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {/* Enhanced Membrane Type Selection */}
+              <div className="space-y-3">
+                <Label htmlFor="membraneType" className="text-blue-200 text-lg font-semibold">
+                  Membrane Type *
+                  <Badge className="ml-2 bg-yellow-600 text-white text-xs">
+                    Affects Template Selection
+                  </Badge>
+                </Label>
+                <Select 
+                  value={formData.membraneType} 
+                  onValueChange={(value) => handleInputChange('membraneType', value)}
+                  disabled={disabled}
+                >
+                  <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                    <SelectValue placeholder="Select membrane type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MEMBRANE_TYPES.map((membrane) => (
+                      <SelectItem key={membrane.value} value={membrane.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{membrane.label}</span>
+                          <span className="text-xs text-gray-500">{membrane.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedMembraneInfo && (
+                  <Alert className="bg-blue-900/50 border-blue-400/30">
+                    <Info className="h-4 w-4 text-blue-400" />
+                    <AlertDescription className="text-blue-200">
+                      <strong>Selected:</strong> {selectedMembraneInfo}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Enhanced Insulation Type Selection */}
+              <div className="space-y-3">
+                <Label htmlFor="insulationType" className="text-blue-200 text-lg font-semibold">
+                  Insulation Type
+                </Label>
+                <Select 
+                  value={formData.insulationType} 
+                  onValueChange={(value) => handleInputChange('insulationType', value)}
+                  disabled={disabled}
+                >
+                  <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                    <SelectValue placeholder="Select insulation type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INSULATION_TYPES.map((insulation) => (
+                      <SelectItem key={insulation.value} value={insulation.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{insulation.label}</span>
+                          <span className="text-xs text-gray-500">{insulation.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedInsulationInfo && (
+                  <Alert className="bg-green-900/50 border-green-400/30">
+                    <Info className="h-4 w-4 text-green-400" />
+                    <AlertDescription className="text-green-200">
+                      <strong>Selected:</strong> {selectedInsulationInfo}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Template Selection Notice */}
+              {formData.membraneType && (
+                <Alert className="bg-purple-900/50 border-purple-400/30">
+                  <Info className="h-4 w-4 text-purple-400" />
+                  <AlertDescription className="text-purple-200">
+                    <strong>Template Logic:</strong> Your selection of "{MEMBRANE_TYPES.find(m => m.value === formData.membraneType)?.label}" will determine the appropriate SOW template for generation.
+                  </AlertDescription>
+                </Alert>
+              )}
             </TabsContent>
 
             {/* Wind Parameters Tab */}
