@@ -1,0 +1,289 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-06-27",
+    "description": "State-based ASCE 7 defaults for intelligent auto-suggestions",
+    "source": "Research of state building code adoptions and AHJ preferences",
+    "confidence_scoring": {
+      "high": "90-100% - Well documented state adoption",
+      "medium": "70-89% - Common regional practice", 
+      "low": "50-69% - Estimated based on neighboring states"
+    }
+  },
+  "states": {
+    "FL": {
+      "name": "Florida",
+      "default_asce_version": "ASCE 7-16",
+      "confidence": "high",
+      "building_code": "Florida Building Code (FBC)",
+      "notes": "FBC specifically references ASCE 7-16. HVHZ requirements mandatory in southern counties.",
+      "regions": {
+        "south": {
+          "counties": ["Miami-Dade", "Broward", "Palm Beach", "Monroe", "Collier"],
+          "wind_speed": 180,
+          "exposure_category": "C",
+          "building_classification": "II",
+          "hvhz": true,
+          "special_notes": "High-Velocity Hurricane Zone - enhanced requirements"
+        },
+        "central": {
+          "counties": ["Orange", "Hillsborough", "Pinellas", "Polk", "Volusia"],
+          "wind_speed": 150,
+          "exposure_category": "C", 
+          "building_classification": "II",
+          "hvhz": false
+        },
+        "north": {
+          "counties": ["Duval", "Leon", "Alachua", "Clay", "St. Johns"],
+          "wind_speed": 140,
+          "exposure_category": "C",
+          "building_classification": "II", 
+          "hvhz": false
+        }
+      },
+      "default_region": "central"
+    },
+    "TX": {
+      "name": "Texas",
+      "default_asce_version": "ASCE 7-22",
+      "confidence": "high",
+      "building_code": "International Building Code (IBC) with state amendments",
+      "notes": "Most jurisdictions have adopted IBC 2021 which references ASCE 7-22",
+      "regions": {
+        "coastal": {
+          "counties": ["Harris", "Galveston", "Jefferson", "Orange", "Cameron"],
+          "wind_speed": 150,
+          "exposure_category": "C",
+          "building_classification": "II",
+          "special_notes": "Hurricane-prone coastal region"
+        },
+        "inland": {
+          "counties": ["Dallas", "Tarrant", "Travis", "Bexar", "Collin"],
+          "wind_speed": 115,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "inland"
+    },
+    "CA": {
+      "name": "California", 
+      "default_asce_version": "ASCE 7-22",
+      "confidence": "high",
+      "building_code": "California Building Code (CBC)",
+      "notes": "CBC 2022 adopted ASCE 7-22. Seismic considerations may affect wind requirements.",
+      "regions": {
+        "coastal": {
+          "counties": ["Los Angeles", "Orange", "San Diego", "Ventura"],
+          "wind_speed": 85,
+          "exposure_category": "C",
+          "building_classification": "II"
+        },
+        "inland": {
+          "counties": ["Riverside", "San Bernardino", "Fresno", "Sacramento"],
+          "wind_speed": 90,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "coastal"
+    },
+    "NY": {
+      "name": "New York",
+      "default_asce_version": "ASCE 7-16", 
+      "confidence": "high",
+      "building_code": "New York State Building Code",
+      "notes": "Based on IBC 2018 which references ASCE 7-16",
+      "regions": {
+        "nyc": {
+          "counties": ["New York", "Kings", "Queens", "Bronx", "Richmond"],
+          "wind_speed": 115,
+          "exposure_category": "B",
+          "building_classification": "II",
+          "special_notes": "Dense urban environment - Exposure B typical"
+        },
+        "upstate": {
+          "counties": ["Albany", "Erie", "Monroe", "Onondaga"],
+          "wind_speed": 110,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "upstate"
+    },
+    "GA": {
+      "name": "Georgia",
+      "default_asce_version": "ASCE 7-16",
+      "confidence": "medium",
+      "building_code": "International Building Code with state amendments", 
+      "notes": "Most jurisdictions use IBC 2018/ASCE 7-16",
+      "regions": {
+        "atlanta": {
+          "counties": ["Fulton", "DeKalb", "Gwinnett", "Cobb"],
+          "wind_speed": 115,
+          "exposure_category": "B",
+          "building_classification": "II"
+        },
+        "coastal": {
+          "counties": ["Chatham", "Glynn", "Camden"],
+          "wind_speed": 140,
+          "exposure_category": "C", 
+          "building_classification": "II"
+        },
+        "rural": {
+          "counties": ["Houston", "Laurens", "Telfair"],
+          "wind_speed": 110,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "atlanta"
+    },
+    "NC": {
+      "name": "North Carolina",
+      "default_asce_version": "ASCE 7-16",
+      "confidence": "high",
+      "building_code": "North Carolina Building Code",
+      "notes": "NCBC 2018 references ASCE 7-16",
+      "regions": {
+        "coastal": {
+          "counties": ["New Hanover", "Brunswick", "Dare", "Carteret"],
+          "wind_speed": 150,
+          "exposure_category": "C",
+          "building_classification": "II",
+          "special_notes": "Hurricane-prone coastal region"
+        },
+        "piedmont": {
+          "counties": ["Mecklenburg", "Wake", "Guilford", "Forsyth"],
+          "wind_speed": 115,
+          "exposure_category": "C",
+          "building_classification": "II"
+        },
+        "mountains": {
+          "counties": ["Buncombe", "Henderson", "Haywood"],
+          "wind_speed": 105,
+          "exposure_category": "B",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "piedmont"
+    },
+    "SC": {
+      "name": "South Carolina", 
+      "default_asce_version": "ASCE 7-16",
+      "confidence": "medium",
+      "building_code": "International Building Code with state amendments",
+      "notes": "Most jurisdictions adopted IBC 2018",
+      "regions": {
+        "coastal": {
+          "counties": ["Charleston", "Beaufort", "Georgetown", "Horry"],
+          "wind_speed": 150,
+          "exposure_category": "C",
+          "building_classification": "II"
+        },
+        "inland": {
+          "counties": ["Greenville", "Richland", "Spartanburg"],
+          "wind_speed": 115,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "inland"
+    },
+    "LA": {
+      "name": "Louisiana",
+      "default_asce_version": "ASCE 7-16",
+      "confidence": "medium", 
+      "building_code": "Louisiana State Uniform Construction Code",
+      "notes": "Hurricane-prone state with enhanced wind requirements",
+      "regions": {
+        "new_orleans": {
+          "counties": ["Orleans", "Jefferson", "St. Bernard", "Plaquemines"],
+          "wind_speed": 170,
+          "exposure_category": "C",
+          "building_classification": "II",
+          "special_notes": "Hurricane zone with special flooding considerations"
+        },
+        "baton_rouge": {
+          "counties": ["East Baton Rouge", "Livingston", "Ascension"],
+          "wind_speed": 150,
+          "exposure_category": "C",
+          "building_classification": "II"
+        },
+        "north": {
+          "counties": ["Caddo", "Ouachita", "Rapides"],
+          "wind_speed": 130,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "baton_rouge"
+    },
+    "AL": {
+      "name": "Alabama",
+      "default_asce_version": "ASCE 7-16",
+      "confidence": "medium",
+      "building_code": "International Building Code with state amendments",
+      "notes": "Varies by jurisdiction - many use IBC 2018",
+      "regions": {
+        "birmingham": {
+          "counties": ["Jefferson", "Shelby", "Walker"],
+          "wind_speed": 115,
+          "exposure_category": "C",
+          "building_classification": "II"
+        },
+        "mobile": {
+          "counties": ["Mobile", "Baldwin"],
+          "wind_speed": 150,
+          "exposure_category": "C",
+          "building_classification": "II",
+          "special_notes": "Coastal hurricane zone"
+        },
+        "huntsville": {
+          "counties": ["Madison", "Limestone", "Morgan"],
+          "wind_speed": 110,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "birmingham"
+    },
+    "MS": {
+      "name": "Mississippi",
+      "default_asce_version": "ASCE 7-16",
+      "confidence": "medium",
+      "building_code": "International Building Code",
+      "notes": "Hurricane-prone coastal areas",
+      "regions": {
+        "coast": {
+          "counties": ["Harrison", "Jackson", "Hancock"],
+          "wind_speed": 170,
+          "exposure_category": "C", 
+          "building_classification": "II",
+          "special_notes": "Hurricane-prone Gulf Coast"
+        },
+        "jackson": {
+          "counties": ["Hinds", "Madison", "Rankin"],
+          "wind_speed": 125,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "jackson"
+    }
+  },
+  "fallback_defaults": {
+    "asce_version": "ASCE 7-22",
+    "wind_speed": 115,
+    "exposure_category": "C",
+    "building_classification": "II",
+    "confidence": "low",
+    "notes": "Default values for states not specifically configured"
+  },
+  "confidence_factors": {
+    "state_adoption": 40,
+    "regional_data": 30,
+    "ahj_verification": 20,
+    "recent_projects": 10
+  }
+}
