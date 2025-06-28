@@ -11,16 +11,42 @@ export function useFieldInspections() {
   const fetchInspections = async () => {
     try {
       setLoading(true);
+      console.log('Fetching all field inspections...');
+      
       const { data, error } = await supabase
         .from('field_inspections')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching inspections:', error);
+        throw error;
+      }
 
-      const convertedInspections = data?.map(convertRowToInspection) || [];
-      setInspections(convertedInspections);
+      console.log('Raw inspections data:', data);
+      
+      if (data) {
+        const convertedInspections = data.map(convertRowToInspection);
+        console.log('Converted inspections:', convertedInspections);
+        
+        // Debug each inspection status
+        convertedInspections.forEach(inspection => {
+          console.log(`Inspection "${inspection.project_name}":`, {
+            id: inspection.id,
+            status: inspection.status,
+            completed: inspection.completed,
+            sow_generated: inspection.sow_generated,
+            completed_at: inspection.completed_at,
+            ready_for_handoff: inspection.ready_for_handoff
+          });
+        });
+        
+        setInspections(convertedInspections);
+      } else {
+        setInspections([]);
+      }
     } catch (err) {
+      console.error('Failed to fetch inspections:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
@@ -41,6 +67,7 @@ export function useFieldInspections() {
 
       if (inspectionData.id) {
         // Update existing
+        console.log('Updating inspection:', inspectionData.id, dbData);
         const { error } = await supabase
           .from('field_inspections')
           .update(dbData)
@@ -51,6 +78,7 @@ export function useFieldInspections() {
         return inspectionData.id;
       } else {
         // Create new - use single insert instead of array
+        console.log('Creating new inspection:', dbData);
         const { data, error } = await supabase
           .from('field_inspections')
           .insert(dbData)
@@ -62,24 +90,33 @@ export function useFieldInspections() {
         return data.id;
       }
     } catch (err) {
+      console.error('Failed to save inspection:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to save inspection');
     }
   };
 
   const completeInspection = async (inspectionId: string): Promise<void> => {
     try {
+      console.log('Completing inspection:', inspectionId);
       const { error } = await supabase
         .from('field_inspections')
         .update({ 
           completed: true, 
           completed_at: new Date().toISOString(),
-          status: 'Completed'
+          status: 'Completed',
+          ready_for_handoff: true // Ensure this is set for engineer workflow
         })
         .eq('id', inspectionId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error completing inspection:', error);
+        throw error;
+      }
+      
+      console.log('Inspection completed successfully');
       await fetchInspections();
     } catch (err) {
+      console.error('Failed to complete inspection:', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to complete inspection');
     }
   };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
-import { useFieldInspections } from '@/hooks/useFieldInspections';
+import { useCompletedInspections } from '@/hooks/useCompletedInspections';
 import { useToast } from '@/hooks/use-toast';
 import { FieldInspection } from '@/types/fieldInspection';
 import { SOWGenerationRequest, transformInspectionToSOWRequest } from '@/types/sow';
@@ -27,7 +28,7 @@ import { SOWGenerationRequest, transformInspectionToSOWRequest } from '@/types/s
 export const EngineerDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { inspections, loading: inspectionsLoading } = useFieldInspections();
+  const { completedInspections, loading: inspectionsLoading, error: inspectionsError, refetch } = useCompletedInspections();
   const {
     generateSOW,
     isGenerating,
@@ -38,27 +39,62 @@ export const EngineerDashboard = () => {
     isBackendOnline
   } = useSOWGeneration();
 
-  const completedInspections = inspections.filter(i => i.completed);
-  const readyForSOW = completedInspections.filter(i => !i.sow_generated);
+  // Debug logging
+  useEffect(() => {
+    console.log('Engineer Dashboard - Completed inspections:', completedInspections);
+    console.log('Engineer Dashboard - Loading:', inspectionsLoading);
+    console.log('Engineer Dashboard - Error:', inspectionsError);
+  }, [completedInspections, inspectionsLoading, inspectionsError]);
+
+  // Filter inspections that are ready for SOW (completed but no SOW generated yet)
+  const readyForSOW = completedInspections.filter(inspection => {
+    const isCompleted = inspection.completed || inspection.status === 'Completed';
+    const noSOWGenerated = !inspection.sow_generated;
+    
+    console.log(`Inspection ${inspection.project_name}:`, {
+      completed: inspection.completed,
+      status: inspection.status,
+      sow_generated: inspection.sow_generated,
+      isCompleted,
+      noSOWGenerated,
+      readyForSOW: isCompleted && noSOWGenerated
+    });
+    
+    return isCompleted && noSOWGenerated;
+  });
 
   const handleGenerateSOW = async (inspection: FieldInspection) => {
-    if (!inspection.id) return;
+    if (!inspection.id) {
+      console.error('Cannot generate SOW: inspection ID is missing');
+      return;
+    }
 
-    const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest({
-      ...inspection,
-      id: inspection.id
-    });
+    console.log('Generating SOW for inspection:', inspection);
 
-    generateSOW(sowRequest);
+    try {
+      const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest({
+        ...inspection,
+        id: inspection.id
+      });
 
-    toast({
-      title: "SOW Generation Started",
-      description: `Generating SOW for ${inspection.project_name}`,
-    });
+      console.log('SOW request:', sowRequest);
+      await generateSOW(sowRequest);
+
+      toast({
+        title: "SOW Generation Started",
+        description: `Generating SOW for ${inspection.project_name}`,
+      });
+    } catch (error) {
+      console.error('SOW generation error:', error);
+      toast({
+        title: "SOW Generation Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadSOW = (generation: any) => {
-    // Fix the status comparison - use string comparison instead of type mismatch
     if (generation.generation_status === 'completed' && generation.pdf_url) {
       const link = document.createElement('a');
       link.href = generation.pdf_url;
@@ -66,6 +102,17 @@ export const EngineerDashboard = () => {
       link.click();
     }
   };
+
+  if (inspectionsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-white">
+          <Clock className="w-6 h-6 animate-spin" />
+          Loading engineer dashboard...
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 p-6">
@@ -76,11 +123,32 @@ export const EngineerDashboard = () => {
       </div>
 
       {/* Backend Status */}
-      <Alert className={`mb-6 ${isBackendOnline ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
+      <Alert className={`mb-6 ${isBackendOnline ? 'bg-green-900/50 border-green-400/30' : 'bg-red-900/50 border-red-400/30'}`}>
         <AlertDescription className="text-white">
-          Backend Status: {isBackendOnline ? 'Connected' : 'Offline'}
+          <div className="flex items-center justify-between">
+            <div>
+              Backend Status: {isBackendOnline ? 'Connected' : 'Offline'}
+              {isBackendOnline && ' - Ready to generate SOW documents'}
+            </div>
+            <Badge className={isBackendOnline ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
+              {isBackendOnline ? 'Connected' : 'Offline'}
+            </Badge>
+          </div>
         </AlertDescription>
       </Alert>
+
+      {/* Debug Information */}
+      {inspectionsError && (
+        <Alert className="mb-6 bg-red-900/50 border-red-400/30">
+          <AlertTriangle className="h-4 w-4 text-red-400" />
+          <AlertDescription className="text-red-200">
+            Error loading inspections: {inspectionsError}
+            <Button onClick={refetch} className="ml-4 bg-red-600 hover:bg-red-700" size="sm">
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -89,7 +157,7 @@ export const EngineerDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-200 text-sm">Total Inspections</p>
-                <p className="text-white text-2xl font-bold">{inspections.length}</p>
+                <p className="text-white text-2xl font-bold">{completedInspections.length}</p>
               </div>
               <FileText className="h-8 w-8 text-blue-400" />
             </div>
@@ -147,7 +215,17 @@ export const EngineerDashboard = () => {
                 <CardContent className="p-8 text-center">
                   <FileText className="h-12 w-12 text-blue-400 mx-auto mb-4" />
                   <h3 className="text-white text-lg mb-2">No Inspections Ready</h3>
-                  <p className="text-blue-200">Complete field inspections will appear here for SOW generation.</p>
+                  <p className="text-blue-200 mb-4">
+                    Complete field inspections will appear here for SOW generation.
+                  </p>
+                  {completedInspections.length > 0 && (
+                    <div className="mt-4 p-4 bg-yellow-900/50 rounded-lg">
+                      <p className="text-yellow-200 text-sm">
+                        Debug: Found {completedInspections.length} completed inspections, but none are ready for SOW.
+                        This might indicate a status filtering issue.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -161,10 +239,15 @@ export const EngineerDashboard = () => {
                           {inspection.project_address}
                         </CardDescription>
                       </div>
-                      <Badge className="bg-green-600 text-white">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Completed
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Completed
+                        </Badge>
+                        <Badge className="bg-orange-600 text-white">
+                          Ready for SOW
+                        </Badge>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -188,6 +271,24 @@ export const EngineerDashboard = () => {
                         </span>
                       </div>
                     </div>
+                    
+                    {/* ASCE Requirements Preview */}
+                    {inspection.asce_requirements && (
+                      <div className="mb-4 p-3 bg-blue-900/30 rounded-lg">
+                        <p className="text-blue-200 text-sm font-medium mb-1">ASCE Requirements:</p>
+                        <p className="text-blue-100 text-sm">
+                          {inspection.asce_requirements.version} | 
+                          {inspection.asce_requirements.wind_speed || 'TBD'} mph | 
+                          Exposure {inspection.asce_requirements.exposure_category} | 
+                          Class {inspection.asce_requirements.building_classification}
+                        </p>
+                        {inspection.city === 'Orlando' && inspection.state === 'FL' && (
+                          <p className="text-green-300 text-xs mt-1">
+                            ✓ Orlando, FL location detected - ASCE auto-suggestions available
+                          </p>
+                        )}
+                      </div>
+                    )}
                     
                     <div className="flex justify-end">
                       <Button 
