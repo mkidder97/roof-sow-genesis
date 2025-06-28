@@ -1,10 +1,12 @@
-
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { generateSOWAPI, SOWGenerationRequest, SOWGenerationResponse } from '@/lib/api';
+import { SOWIntegrationEngine } from '@/engines/sowIntegrationEngine';
+import { FieldInspection } from '@/types/fieldInspection';
 
 export interface UseSOWGenerationReturn {
   generateSOW: (request: SOWGenerationRequest) => Promise<SOWGenerationResponse>;
+  generateSOWFromInspection: (inspectionData: FieldInspection) => Promise<SOWGenerationResponse>;
   isGenerating: boolean;
   error: string | null;
   clearError: () => void;
@@ -113,36 +115,154 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
     }
   }, [toast, options]);
 
-  // Helper function to generate SOW from inspection data
-  const generateSOWFromInspection = useCallback(async (inspectionData: any): Promise<SOWGenerationResponse> => {
-    const request: SOWGenerationRequest = {
-      projectName: inspectionData.project_name || inspectionData.projectName || 'Untitled Project',
-      projectAddress: inspectionData.project_address || inspectionData.projectAddress || '',
-      customerName: inspectionData.customer_name || inspectionData.customerName,
-      customerPhone: inspectionData.customer_phone || inspectionData.customerPhone,
-      buildingHeight: inspectionData.building_height || inspectionData.buildingHeight,
-      squareFootage: inspectionData.square_footage || inspectionData.squareFootage,
-      numberOfDrains: inspectionData.number_of_drains || inspectionData.numberOfDrains,
-      numberOfPenetrations: inspectionData.number_of_penetrations || inspectionData.numberOfPenetrations,
-      membraneType: inspectionData.existing_membrane_type || inspectionData.membraneType,
-      windSpeed: inspectionData.wind_speed || inspectionData.windSpeed,
-      exposureCategory: inspectionData.exposure_category || inspectionData.exposureCategory,
-      projectType: inspectionData.project_type || inspectionData.projectType || 'recover',
-      city: inspectionData.city,
-      state: inspectionData.state,
-      zipCode: inspectionData.zip_code || inspectionData.zipCode,
-      deckType: inspectionData.deck_type || inspectionData.deckType,
-      insulationType: inspectionData.insulation_type || inspectionData.insulationType,
-      buildingClassification: inspectionData.building_classification || inspectionData.buildingClassification,
-      notes: inspectionData.notes,
-      inspectionId: inspectionData.id
-    };
+  // Enhanced function to generate SOW from inspection data using integration engine
+  const generateSOWFromInspection = useCallback(async (inspectionData: FieldInspection): Promise<SOWGenerationResponse> => {
+    setIsGenerating(true);
+    setError(null);
+    setGenerationError(null);
+    setGenerationProgress(0);
+    setGenerationStatus('Processing field inspection data...');
 
-    return generateSOW(request);
-  }, [generateSOW]);
+    try {
+      console.log('🔧 Processing field inspection data with SOW Integration Engine:', inspectionData);
+
+      // Generate SOW configuration using the integration engine
+      setGenerationProgress(20);
+      setGenerationStatus('Analyzing field inspection data...');
+      
+      const sowConfig = SOWIntegrationEngine.generateSOWConfiguration(inspectionData);
+      const sectionInclusions = SOWIntegrationEngine.generateSectionInclusions(inspectionData);
+      
+      console.log('📋 SOW Configuration generated:', sowConfig);
+      console.log('📝 Section inclusions determined:', sectionInclusions);
+
+      setGenerationProgress(40);
+      setGenerationStatus('Building SOW request from inspection data...');
+
+      // Create enhanced SOW generation request with integration engine data
+      const request: SOWGenerationRequest = {
+        // Basic project information
+        projectName: inspectionData.project_name || 'Untitled Project',
+        projectAddress: inspectionData.project_address || '',
+        customerName: inspectionData.customer_name,
+        customerPhone: inspectionData.customer_phone,
+        city: inspectionData.city,
+        state: inspectionData.state,
+        zipCode: inspectionData.zip_code,
+        
+        // Building specifications from SOW config
+        buildingHeight: sowConfig.projectInfo.buildingHeight,
+        squareFootage: sowConfig.projectInfo.squareFootage,
+        
+        // Template selection from integration engine
+        templateId: sowConfig.templateId,
+        projectType: sowConfig.projectInfo.projectType,
+        
+        // Roof assembly specifications
+        deckType: sowConfig.roofAssembly.deckType,
+        membraneType: sowConfig.roofAssembly.newSystem.membraneType,
+        insulationType: sowConfig.roofAssembly.newSystem.insulationType,
+        attachmentMethod: sowConfig.roofAssembly.newSystem.attachmentMethod,
+        
+        // ASCE requirements
+        windSpeed: inspectionData.wind_speed,
+        exposureCategory: inspectionData.exposure_category,
+        buildingClassification: inspectionData.building_classification,
+        
+        // Enhanced drainage specifications from integration engine
+        drainageConfiguration: {
+          primaryType: sowConfig.drainageConfig.primary_type,
+          overflowType: sowConfig.drainageConfig.overflow_type,
+          specifications: sowConfig.drainageConfig.specifications,
+          additionalDrainage: sowConfig.drainageConfig.additional_drainage
+        },
+        
+        // Equipment specifications from integration engine
+        equipmentSpecs: {
+          skylights: sowConfig.equipmentSpecs.skylights,
+          hvacUnits: sowConfig.equipmentSpecs.hvacUnits,
+          accessPoints: sowConfig.equipmentSpecs.accessPoints,
+          walkwayPads: sowConfig.equipmentSpecs.walkwayPads,
+          equipmentPlatforms: sowConfig.equipmentSpecs.equipmentPlatforms
+        },
+        
+        // Penetration specifications from integration engine
+        penetrationSpecs: {
+          gasLines: sowConfig.penetrationSpecs.gasLines,
+          conduit: sowConfig.penetrationSpecs.conduit,
+          other: sowConfig.penetrationSpecs.other
+        },
+        
+        // Section inclusions based on inspection data
+        sectionInclusions: {
+          tearoffAndDisposal: sectionInclusions.tearoffAndDisposal,
+          newRoofSystem: sectionInclusions.newRoofSystem,
+          flashing: sectionInclusions.flashing,
+          drainageModifications: sectionInclusions.drainageModifications,
+          scupperWork: sectionInclusions.scupperWork,
+          gutterInstallation: sectionInclusions.gutterInstallation,
+          equipmentCurbs: sectionInclusions.equipmentCurbs,
+          skylightFlashing: sectionInclusions.skylightFlashing,
+          walkwayPads: sectionInclusions.walkwayPads,
+          equipmentPlatforms: sectionInclusions.equipmentPlatforms,
+          gasLinePenetrations: sectionInclusions.gasLinePenetrations,
+          conduitProtection: sectionInclusions.conduitProtection,
+          interiorProtection: sectionInclusions.interiorProtection,
+          safetyRequirements: sectionInclusions.safetyRequirements,
+          accessRequirements: sectionInclusions.accessRequirements
+        },
+        
+        // Special requirements and modifications
+        specialRequirements: sowConfig.specialRequirements.modifications,
+        
+        // Legacy fields for backward compatibility
+        numberOfDrains: (sowConfig.drainageConfig.specifications.deck_drains?.count || 0) + 
+                       (sowConfig.drainageConfig.specifications.scuppers?.count || 0),
+        numberOfPenetrations: (sowConfig.penetrationSpecs.gasLines.count || 0) + 
+                             (sowConfig.penetrationSpecs.other.requiresCustomFlashing ? 1 : 0),
+        
+        // Additional metadata
+        notes: inspectionData.notes,
+        inspectionId: inspectionData.id
+      };
+
+      setGenerationProgress(60);
+      setGenerationStatus('Generating SOW document...');
+      
+      console.log('📤 Enhanced SOW request prepared:', request);
+
+      // Generate the SOW using the enhanced request
+      const response = await generateSOW(request);
+      
+      console.log('✅ SOW generated successfully from field inspection data');
+      
+      return response;
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate SOW from inspection data';
+      const errorObj = err instanceof Error ? err : new Error(errorMessage);
+      
+      console.error('❌ SOW generation from inspection failed:', errorMessage);
+      
+      setError(errorMessage);
+      setGenerationError(errorObj);
+      
+      toast({
+        title: "SOW Generation Failed",
+        description: `Failed to generate SOW from inspection data: ${errorMessage}`,
+        variant: "destructive",
+      });
+
+      options?.onError?.(errorObj);
+      throw err;
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [generateSOW, toast, options]);
 
   return {
     generateSOW,
+    generateSOWFromInspection,
     isGenerating,
     error,
     clearError,
@@ -155,7 +275,6 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
     backendStatus,
     isStatusLoading,
     isBackendOnline,
-    reset,
-    generateSOWFromInspection
-  } as UseSOWGenerationReturn & { generateSOWFromInspection: typeof generateSOWFromInspection };
+    reset
+  };
 }
