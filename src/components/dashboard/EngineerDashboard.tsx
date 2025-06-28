@@ -47,14 +47,15 @@ export const EngineerDashboard = () => {
 
   // Filter inspections that are ready for SOW (completed and no SOW generated yet)
   const readyForSOW = completedInspections.filter(inspection => {
+    // Fixed: Use the boolean completed field instead of status comparison
     const isCompleted = inspection.completed === true || 
-                       inspection.status === 'Completed' || 
-                       inspection.status === 'completed';
+                       inspection.ready_for_handoff === true;
     const noSOWGenerated = !inspection.sow_generated;
     
     console.log(`Inspection "${inspection.project_name}":`, {
       completed: inspection.completed,
       status: inspection.status,
+      ready_for_handoff: inspection.ready_for_handoff,
       sow_generated: inspection.sow_generated,
       isCompleted,
       noSOWGenerated,
@@ -126,16 +127,33 @@ export const EngineerDashboard = () => {
         <p className="text-blue-200">Review completed inspections and generate SOW documents</p>
       </div>
 
-      {/* Debug Information */}
+      {/* Enhanced Debug Information */}
       <Alert className="mb-6 bg-yellow-900/50 border-yellow-400/30">
         <AlertDescription className="text-yellow-200">
           <div className="space-y-2 text-sm">
-            <div>Debug Info:</div>
+            <div className="font-medium">Debug Info:</div>
             <div>• Total completed inspections: {completedInspections.length}</div>
             <div>• Ready for SOW: {readyForSOW.length}</div>
             <div>• Loading: {inspectionsLoading ? 'Yes' : 'No'}</div>
             {completedInspections.length > 0 && (
-              <div>• Found inspections: {completedInspections.map(i => `${i.project_name} (${i.status})`).join(', ')}</div>
+              <div>
+                <div className="font-medium mt-2">Found inspections:</div>
+                {completedInspections.map(i => (
+                  <div key={i.id} className="ml-2">
+                    • {i.project_name} - Status: {i.status}, Completed: {i.completed ? 'Yes' : 'No'}, Ready: {i.ready_for_handoff ? 'Yes' : 'No'}, SOW: {i.sow_generated ? 'Yes' : 'No'}
+                  </div>
+                ))}
+              </div>
+            )}
+            {readyForSOW.length > 0 && (
+              <div>
+                <div className="font-medium mt-2">Ready for SOW:</div>
+                {readyForSOW.map(i => (
+                  <div key={i.id} className="ml-2 text-green-300">
+                    ✓ {i.project_name} - {i.city}, {i.state}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </AlertDescription>
