@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import asceConfig from '../data/asce-7-config.json';
+
+import { useState, useCallback, useMemo } from 'react';
 
 export interface ASCEVersion {
   version: string;
@@ -7,197 +7,142 @@ export interface ASCEVersion {
   description: string;
   isDefault: boolean;
   isActive: boolean;
-  wind_provisions: {
-    chapter: string;
-    method: string;
-    pressure_zones: string[];
-    special_provisions: string[];
-  };
 }
 
 export interface ExposureCategory {
   category: string;
   description: string;
-  ground_elevation_factor: number;
-  common_locations: string[];
+  windMultiplier: number;
 }
 
 export interface BuildingClassification {
   class: string;
   description: string;
   importance_factor: number;
-  examples: string[];
-  isDefault?: boolean;
+  isDefault: boolean;
 }
 
 export interface ASCERequirements {
   version: string;
+  wind_speed?: number;
   exposure_category: string;
   building_classification: string;
   risk_category: string;
   importance_factor: number;
-  wind_speed?: number;
   hvhz_applicable?: boolean;
-  notes?: string;
   engineer_approved?: boolean;
   approval_date?: string;
   approval_engineer?: string;
+  notes?: string;
 }
 
-export interface ASCEConfigState {
+export interface ASCEConfig {
   versions: ASCEVersion[];
   exposureCategories: ExposureCategory[];
   buildingClassifications: BuildingClassification[];
-  riskCategories: BuildingClassification[];
-  hvhzRegions: any;
-  defaultValues: any;
-  manualOverride: any;
 }
 
-export interface UseASCEConfigReturn {
-  config: ASCEConfigState;
-  selectedRequirements: ASCERequirements | null;
-  updateRequirements: (requirements: Partial<ASCERequirements>) => void;
-  resetToDefaults: () => void;
-  validateRequirements: (requirements: ASCERequirements) => { isValid: boolean; errors: string[] };
-  getImportanceFactorForClass: (classification: string) => number;
-  isHVHZLocation: (state: string, county?: string) => boolean;
-  getRecommendedASCEVersion: (year?: number) => ASCEVersion;
-  requiresEngineerApproval: boolean;
-}
+const defaultConfig: ASCEConfig = {
+  versions: [
+    { version: 'ASCE 7-22', year: 2022, description: 'Latest ASCE 7-22 Standard', isDefault: true, isActive: true },
+    { version: 'ASCE 7-16', year: 2016, description: 'ASCE 7-16 Standard', isDefault: false, isActive: true },
+    { version: 'ASCE 7-10', year: 2010, description: 'ASCE 7-10 Standard', isDefault: false, isActive: true },
+    { version: 'ASCE 7-05', year: 2005, description: 'ASCE 7-05 Standard', isDefault: false, isActive: false }
+  ],
+  exposureCategories: [
+    { category: 'B', description: 'Urban and suburban areas with numerous closely spaced obstructions', windMultiplier: 0.7 },
+    { category: 'C', description: 'Open terrain with scattered obstructions', windMultiplier: 1.0 },
+    { category: 'D', description: 'Flat, unobstructed areas and water surfaces', windMultiplier: 1.15 }
+  ],
+  buildingClassifications: [
+    { class: 'I', description: 'Low hazard to human life', importance_factor: 0.87, isDefault: false },
+    { class: 'II', description: 'Standard occupancy', importance_factor: 1.0, isDefault: true },
+    { class: 'III', description: 'Substantial hazard to human life', importance_factor: 1.15, isDefault: false },
+    { class: 'IV', description: 'Essential facilities', importance_factor: 1.15, isDefault: false }
+  ]
+};
 
-export function useASCEConfig(): UseASCEConfigReturn {
-  const [config] = useState<ASCEConfigState>({
-    versions: asceConfig.asce_versions as ASCEVersion[],
-    exposureCategories: asceConfig.exposure_categories as ExposureCategory[],
-    buildingClassifications: asceConfig.building_classifications as BuildingClassification[],
-    riskCategories: asceConfig.risk_categories as BuildingClassification[],
-    hvhzRegions: asceConfig.hvhz_regions,
-    defaultValues: asceConfig.default_values,
-    manualOverride: asceConfig.manual_override
+export function useASCEConfig() {
+  const [config] = useState<ASCEConfig>(defaultConfig);
+  const [selectedRequirements, setSelectedRequirements] = useState<ASCERequirements>({
+    version: 'ASCE 7-22',
+    exposure_category: 'C',
+    building_classification: 'II',
+    risk_category: 'II',
+    importance_factor: 1.0,
+    engineer_approved: false
   });
 
-  const [selectedRequirements, setSelectedRequirements] = useState<ASCERequirements | null>(null);
-
-  // Initialize with default values
-  useEffect(() => {
-    const defaultRequirements: ASCERequirements = {
-      version: config.defaultValues.asce_version,
-      exposure_category: config.defaultValues.exposure_category,
-      building_classification: config.defaultValues.building_classification,
-      risk_category: config.defaultValues.risk_category,
-      importance_factor: config.defaultValues.importance_factor,
-      engineer_approved: false
-    };
-    setSelectedRequirements(defaultRequirements);
-  }, [config]);
-
-  const updateRequirements = (updates: Partial<ASCERequirements>) => {
+  const updateRequirements = useCallback((updates: Partial<ASCERequirements>) => {
     setSelectedRequirements(prev => {
-      if (!prev) return null;
-      
-      const updated = { ...prev, ...updates };
+      const newRequirements = { ...prev, ...updates };
       
       // Auto-update importance factor when building classification changes
       if (updates.building_classification) {
-        const importanceFactor = getImportanceFactorForClass(updates.building_classification);
-        updated.importance_factor = importanceFactor;
-        updated.risk_category = updates.building_classification; // Risk category aligns with building class
+        const classification = config.buildingClassifications.find(c => c.class === updates.building_classification);
+        if (classification) {
+          newRequirements.importance_factor = classification.importance_factor;
+          newRequirements.risk_category = updates.building_classification;
+        }
       }
       
-      // Reset engineer approval when requirements change
-      if (Object.keys(updates).some(key => key !== 'engineer_approved' && key !== 'approval_date' && key !== 'approval_engineer')) {
-        updated.engineer_approved = false;
-        updated.approval_date = undefined;
-        updated.approval_engineer = undefined;
-      }
-      
-      return updated;
+      return newRequirements;
     });
-  };
+  }, [config]);
 
-  const resetToDefaults = () => {
-    const defaultRequirements: ASCERequirements = {
-      version: config.defaultValues.asce_version,
-      exposure_category: config.defaultValues.exposure_category,
-      building_classification: config.defaultValues.building_classification,
-      risk_category: config.defaultValues.risk_category,
-      importance_factor: config.defaultValues.importance_factor,
+  const resetToDefaults = useCallback(() => {
+    setSelectedRequirements({
+      version: 'ASCE 7-22',
+      exposure_category: 'C',
+      building_classification: 'II',
+      risk_category: 'II',
+      importance_factor: 1.0,
       engineer_approved: false
-    };
-    setSelectedRequirements(defaultRequirements);
-  };
+    });
+  }, []);
 
-  const validateRequirements = (requirements: ASCERequirements): { isValid: boolean; errors: string[] } => {
+  const validateRequirements = useCallback((requirements: ASCERequirements) => {
     const errors: string[] = [];
-
+    
     if (!requirements.version) {
       errors.push('ASCE version is required');
     }
-
+    
     if (!requirements.exposure_category) {
       errors.push('Exposure category is required');
     }
-
+    
     if (!requirements.building_classification) {
       errors.push('Building classification is required');
     }
-
-    if (!requirements.risk_category) {
-      errors.push('Risk category is required');
-    }
-
-    if (requirements.importance_factor <= 0) {
-      errors.push('Importance factor must be greater than 0');
-    }
-
-    if (config.manualOverride.validation_required && !requirements.engineer_approved) {
-      errors.push('Engineer approval required for ASCE requirements');
+    
+    if (!requirements.importance_factor || requirements.importance_factor <= 0) {
+      errors.push('Valid importance factor is required');
     }
 
     return {
       isValid: errors.length === 0,
       errors
     };
-  };
+  }, []);
 
-  const getImportanceFactorForClass = (classification: string): number => {
+  const getImportanceFactorForClass = useCallback((classification: string): number => {
     const classConfig = config.buildingClassifications.find(c => c.class === classification);
     return classConfig?.importance_factor || 1.0;
-  };
+  }, [config]);
 
-  const isHVHZLocation = (state: string, county?: string): boolean => {
-    if (!config.hvhzRegions.states.includes(state)) {
-      return false;
+  const isHVHZLocation = useCallback((state: string, county?: string): boolean => {
+    // HVHZ detection for Florida
+    if (state?.toUpperCase() === 'FL') {
+      const hvhzCounties = ['Miami-Dade', 'Broward', 'Palm Beach', 'Monroe'];
+      return county ? hvhzCounties.some(c => county.toLowerCase().includes(c.toLowerCase())) : false;
     }
-
-    if (county && config.hvhzRegions.counties[state]) {
-      return config.hvhzRegions.counties[state].includes(county);
-    }
-
-    // If no county specified but state is in HVHZ states, assume it might be HVHZ
-    return true;
-  };
-
-  const getRecommendedASCEVersion = (year?: number): ASCEVersion => {
-    if (year) {
-      // Find the most recent ASCE version that was available in the given year
-      const availableVersions = config.versions
-        .filter(v => v.year <= year && v.isActive)
-        .sort((a, b) => b.year - a.year);
-      
-      if (availableVersions.length > 0) {
-        return availableVersions[0];
-      }
-    }
-
-    // Return default version
-    return config.versions.find(v => v.isDefault) || config.versions[0];
-  };
+    return false;
+  }, []);
 
   const requiresEngineerApproval = useMemo(() => {
-    return config.manualOverride.enabled && config.manualOverride.validation_required;
-  }, [config]);
+    return selectedRequirements.wind_speed ? selectedRequirements.wind_speed > 130 : true;
+  }, [selectedRequirements.wind_speed]);
 
   return {
     config,
@@ -207,36 +152,26 @@ export function useASCEConfig(): UseASCEConfigReturn {
     validateRequirements,
     getImportanceFactorForClass,
     isHVHZLocation,
-    getRecommendedASCEVersion,
     requiresEngineerApproval
   };
 }
 
-// Helper function to format ASCE requirements for display
 export function formatASCERequirements(requirements: ASCERequirements): string {
-  return `${requirements.version} | ${requirements.exposure_category} | Class ${requirements.building_classification} | I=${requirements.importance_factor}`;
+  return `${requirements.version} | ${requirements.wind_speed || 'TBD'} mph | Exposure ${requirements.exposure_category} | Class ${requirements.building_classification} (I=${requirements.importance_factor})`;
 }
 
-// Helper function to generate ASCE requirements summary for SOW
-export function generateASCERequirementsSummary(requirements: ASCERequirements): string {
+export function generateASCERequirementsSummary(requirements?: ASCERequirements): string {
+  if (!requirements) return 'ASCE requirements not specified';
+  
   const parts = [
-    `Design performed in accordance with ${requirements.version}`,
-    `Exposure Category ${requirements.exposure_category}`,
-    `Risk Category ${requirements.risk_category}`,
-    `Importance Factor I = ${requirements.importance_factor}`
-  ];
-
-  if (requirements.wind_speed) {
-    parts.push(`Design Wind Speed: ${requirements.wind_speed} mph`);
-  }
-
-  if (requirements.hvhz_applicable) {
-    parts.push('High-Velocity Hurricane Zone (HVHZ) requirements applicable');
-  }
-
-  if (requirements.engineer_approved && requirements.approval_engineer) {
-    parts.push(`Engineer Approved: ${requirements.approval_engineer} (${requirements.approval_date})`);
-  }
-
-  return parts.join('; ');
+    `ASCE Version: ${requirements.version}`,
+    `Wind Speed: ${requirements.wind_speed || 'TBD'} mph`,
+    `Exposure Category: ${requirements.exposure_category}`,
+    `Building Classification: ${requirements.building_classification}`,
+    `Importance Factor: ${requirements.importance_factor}`,
+    requirements.hvhz_applicable ? 'HVHZ Requirements Apply' : null,
+    requirements.engineer_approved ? `Engineer Approved: ${requirements.approval_engineer || 'Yes'}` : 'Pending Engineer Approval'
+  ].filter(Boolean);
+  
+  return parts.join('\n');
 }
