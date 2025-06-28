@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,12 +45,14 @@ export const EngineerDashboard = () => {
     console.log('Engineer Dashboard - Error:', inspectionsError);
   }, [completedInspections, inspectionsLoading, inspectionsError]);
 
-  // Filter inspections that are ready for SOW (completed but no SOW generated yet)
+  // Filter inspections that are ready for SOW (completed and no SOW generated yet)
   const readyForSOW = completedInspections.filter(inspection => {
-    const isCompleted = inspection.completed || inspection.status === 'Completed';
+    const isCompleted = inspection.completed === true || 
+                       inspection.status === 'Completed' || 
+                       inspection.status === 'completed';
     const noSOWGenerated = !inspection.sow_generated;
     
-    console.log(`Inspection ${inspection.project_name}:`, {
+    console.log(`Inspection "${inspection.project_name}":`, {
       completed: inspection.completed,
       status: inspection.status,
       sow_generated: inspection.sow_generated,
@@ -62,6 +63,9 @@ export const EngineerDashboard = () => {
     
     return isCompleted && noSOWGenerated;
   });
+
+  console.log('Final readyForSOW count:', readyForSOW.length);
+  console.log('ReadyForSOW inspections:', readyForSOW.map(i => ({ name: i.project_name, status: i.status, completed: i.completed })));
 
   const handleGenerateSOW = async (inspection: FieldInspection) => {
     if (!inspection.id) {
@@ -122,6 +126,21 @@ export const EngineerDashboard = () => {
         <p className="text-blue-200">Review completed inspections and generate SOW documents</p>
       </div>
 
+      {/* Debug Information */}
+      <Alert className="mb-6 bg-yellow-900/50 border-yellow-400/30">
+        <AlertDescription className="text-yellow-200">
+          <div className="space-y-2 text-sm">
+            <div>Debug Info:</div>
+            <div>• Total completed inspections: {completedInspections.length}</div>
+            <div>• Ready for SOW: {readyForSOW.length}</div>
+            <div>• Loading: {inspectionsLoading ? 'Yes' : 'No'}</div>
+            {completedInspections.length > 0 && (
+              <div>• Found inspections: {completedInspections.map(i => `${i.project_name} (${i.status})`).join(', ')}</div>
+            )}
+          </div>
+        </AlertDescription>
+      </Alert>
+
       {/* Backend Status */}
       <Alert className={`mb-6 ${isBackendOnline ? 'bg-green-900/50 border-green-400/30' : 'bg-red-900/50 border-red-400/30'}`}>
         <AlertDescription className="text-white">
@@ -137,7 +156,7 @@ export const EngineerDashboard = () => {
         </AlertDescription>
       </Alert>
 
-      {/* Debug Information */}
+      {/* Error Display */}
       {inspectionsError && (
         <Alert className="mb-6 bg-red-900/50 border-red-400/30">
           <AlertTriangle className="h-4 w-4 text-red-400" />
@@ -221,9 +240,12 @@ export const EngineerDashboard = () => {
                   {completedInspections.length > 0 && (
                     <div className="mt-4 p-4 bg-yellow-900/50 rounded-lg">
                       <p className="text-yellow-200 text-sm">
-                        Debug: Found {completedInspections.length} completed inspections, but none are ready for SOW.
-                        This might indicate a status filtering issue.
+                        Debug: Found {completedInspections.length} completed inspections, but filtering shows none ready for SOW.
+                        Check console for detailed filtering logic.
                       </p>
+                      <Button onClick={refetch} className="mt-2 bg-yellow-600 hover:bg-yellow-700" size="sm">
+                        Refresh Data
+                      </Button>
                     </div>
                   )}
                 </CardContent>

@@ -13,13 +13,12 @@ export function useCompletedInspections() {
       setLoading(true);
       console.log('Fetching completed inspections for Engineer Dashboard...');
       
-      // Query for inspections that are completed and ready for SOW generation
+      // Query for inspections that are completed - use broader criteria
       const { data, error } = await supabase
         .from('field_inspections')
         .select('*')
-        .or('status.eq.Completed,completed.eq.true')
-        .eq('sow_generated', false)
-        .order('completed_at', { ascending: false });
+        .or('status.eq.Completed,completed.eq.true,status.eq.completed')
+        .order('completed_at', { ascending: false, nullsFirst: false });
 
       if (error) {
         console.error('Error fetching completed inspections:', error);
@@ -31,6 +30,18 @@ export function useCompletedInspections() {
       if (data && data.length > 0) {
         const convertedInspections = data.map(convertRowToInspection);
         console.log('Converted completed inspections:', convertedInspections);
+        
+        // Debug each inspection
+        convertedInspections.forEach(inspection => {
+          console.log(`Inspection "${inspection.project_name}":`, {
+            id: inspection.id,
+            status: inspection.status,
+            completed: inspection.completed,
+            sow_generated: inspection.sow_generated,
+            ready_for_sow: !inspection.sow_generated
+          });
+        });
+        
         setCompletedInspections(convertedInspections);
       } else {
         console.log('No completed inspections found');
