@@ -16,7 +16,6 @@ import {
   User,
   Building,
   MapPin,
-  Download,
   RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,17 +39,19 @@ export const EngineerDashboard = () => {
     isBackendOnline
   } = useSOWGeneration();
 
-  // Debug logging with more detail
+  // Enhanced debug logging for troubleshooting
   useEffect(() => {
-    console.log('=== ENGINEER DASHBOARD DEBUG ===');
-    console.log('Engineer Dashboard - Completed inspections:', completedInspections);
-    console.log('Engineer Dashboard - Loading:', inspectionsLoading);
-    console.log('Engineer Dashboard - Error:', inspectionsError);
+    console.log('🔧 === ENGINEER DASHBOARD DEBUG SESSION ===');
+    console.log('🔧 Total completed inspections found:', completedInspections.length);
+    console.log('🔧 Loading state:', inspectionsLoading);
+    console.log('🔧 Error state:', inspectionsError);
+    console.log('🔧 Backend online:', isBackendOnline);
     
     if (completedInspections.length > 0) {
-      console.log('=== DETAILED INSPECTION DATA ===');
+      console.log('🔧 === DETAILED INSPECTION ANALYSIS ===');
       completedInspections.forEach((inspection, index) => {
-        console.log(`Inspection ${index + 1}: "${inspection.project_name}"`, {
+        console.log(`🔧 Inspection ${index + 1}:`, {
+          name: inspection.project_name,
           id: inspection.id,
           status: inspection.status,
           completed: inspection.completed,
@@ -59,17 +60,18 @@ export const EngineerDashboard = () => {
           completed_at: inspection.completed_at
         });
       });
+    } else {
+      console.log('🔧 ❌ NO COMPLETED INSPECTIONS FOUND - This is the problem!');
     }
-  }, [completedInspections, inspectionsLoading, inspectionsError]);
+  }, [completedInspections, inspectionsLoading, inspectionsError, isBackendOnline]);
 
-  // More robust filtering for ready for SOW
   const readyForSOW = completedInspections.filter(inspection => {
     const isCompleted = inspection.status === 'Completed' || 
                        inspection.completed === true || 
                        inspection.ready_for_handoff === true;
     const noSOWGenerated = !inspection.sow_generated;
     
-    console.log(`SOW Filter - "${inspection.project_name}":`, {
+    console.log(`🎯 SOW Filter - "${inspection.project_name}":`, {
       isCompleted,
       noSOWGenerated,
       readyForSOW: isCompleted && noSOWGenerated
@@ -78,18 +80,23 @@ export const EngineerDashboard = () => {
     return isCompleted && noSOWGenerated;
   });
 
-  console.log('=== SOW READY SUMMARY ===');
-  console.log('Total completed inspections:', completedInspections.length);
-  console.log('Ready for SOW count:', readyForSOW.length);
-  console.log('Ready for SOW list:', readyForSOW.map(i => i.project_name));
+  console.log('📊 === ENGINEER DASHBOARD SUMMARY ===');
+  console.log('📊 Total completed inspections:', completedInspections.length);
+  console.log('📊 Ready for SOW count:', readyForSOW.length);
+  console.log('📊 Ready for SOW inspections:', readyForSOW.map(i => i.project_name));
 
   const handleGenerateSOW = async (inspection: FieldInspection) => {
     if (!inspection.id) {
-      console.error('Cannot generate SOW: inspection ID is missing');
+      console.error('❌ Cannot generate SOW: inspection ID is missing');
+      toast({
+        title: "Error",
+        description: "Cannot generate SOW: inspection ID is missing",
+        variant: "destructive",
+      });
       return;
     }
 
-    console.log('Generating SOW for inspection:', inspection);
+    console.log('🚀 Generating SOW for inspection:', inspection.project_name);
 
     try {
       const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest({
@@ -97,7 +104,7 @@ export const EngineerDashboard = () => {
         id: inspection.id
       });
 
-      console.log('SOW request:', sowRequest);
+      console.log('📄 SOW request:', sowRequest);
       await generateSOW(sowRequest);
 
       toast({
@@ -105,7 +112,7 @@ export const EngineerDashboard = () => {
         description: `Generating SOW for ${inspection.project_name}`,
       });
     } catch (error) {
-      console.error('SOW generation error:', error);
+      console.error('💥 SOW generation error:', error);
       toast({
         title: "SOW Generation Failed",
         description: error instanceof Error ? error.message : 'Unknown error',
@@ -115,11 +122,11 @@ export const EngineerDashboard = () => {
   };
 
   const handleForceRefresh = () => {
-    console.log('Force refreshing completed inspections...');
+    console.log('🔄 Engineer Dashboard: Force refreshing completed inspections...');
     refetch();
     toast({
       title: "Refreshing Data",
-      description: "Fetching latest inspection data...",
+      description: "Fetching latest completed inspection data...",
     });
   };
 
@@ -152,18 +159,19 @@ export const EngineerDashboard = () => {
         </Button>
       </div>
 
-      {/* Real-time Status Display */}
+      {/* Debug Panel - Shows current state */}
       <Alert className="mb-6 bg-blue-900/50 border-blue-400/30">
         <AlertDescription className="text-blue-200">
           <div className="space-y-2 text-sm">
-            <div className="font-medium">Live Dashboard Status:</div>
-            <div>• Total completed inspections found: {completedInspections.length}</div>
+            <div className="font-medium">🔧 Engineer Dashboard Debug Info:</div>
+            <div>• Completed inspections found: {completedInspections.length}</div>
             <div>• Ready for SOW generation: {readyForSOW.length}</div>
             <div>• Data loading: {inspectionsLoading ? 'Yes' : 'No'}</div>
-            <div>• Backend status: {isBackendOnline ? 'Connected' : 'Offline'}</div>
+            <div>• Backend status: {isBackendOnline ? 'Connected ✅' : 'Offline ❌'}</div>
+            {inspectionsError && <div className="text-red-300">• Error: {inspectionsError}</div>}
             {completedInspections.length > 0 && (
               <div>
-                <div className="font-medium mt-2">Found inspections:</div>
+                <div className="font-medium mt-2">Found completed inspections:</div>
                 {completedInspections.map(i => (
                   <div key={i.id} className="ml-2 text-xs">
                     • "{i.project_name}" - Status: {i.status} | Completed: {i.completed ? 'Yes' : 'No'} | SOW: {i.sow_generated ? 'Generated' : 'Pending'}
@@ -180,7 +188,7 @@ export const EngineerDashboard = () => {
         <AlertDescription className="text-white">
           <div className="flex items-center justify-between">
             <div>
-              Backend Status: {isBackendOnline ? 'Connected' : 'Offline'}
+              Backend Status: {isBackendOnline ? 'Connected ✅' : 'Offline ❌'}
               {isBackendOnline && ' - Ready to generate SOW documents'}
             </div>
             <Badge className={isBackendOnline ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
@@ -195,7 +203,7 @@ export const EngineerDashboard = () => {
         <Alert className="mb-6 bg-red-900/50 border-red-400/30">
           <AlertTriangle className="h-4 w-4 text-red-400" />
           <AlertDescription className="text-red-200">
-            Error loading inspections: {inspectionsError}
+            Error loading completed inspections: {inspectionsError}
             <Button onClick={refetch} className="ml-4 bg-red-600 hover:bg-red-700" size="sm">
               Retry
             </Button>
@@ -270,13 +278,13 @@ export const EngineerDashboard = () => {
                   <h3 className="text-white text-lg mb-2">No Inspections Ready for SOW</h3>
                   <p className="text-blue-200 mb-4">
                     {completedInspections.length === 0 
-                      ? 'No completed inspections found. Complete field inspections will appear here for SOW generation.'
-                      : `Found ${completedInspections.length} completed inspection(s), but they may already have SOW generated or need status sync.`
+                      ? 'No completed inspections found. Waiting for field inspectors to complete inspections.'
+                      : `Found ${completedInspections.length} completed inspection(s), but they already have SOW generated.`
                     }
                   </p>
                   <Button onClick={handleForceRefresh} className="bg-blue-600 hover:bg-blue-700" size="sm">
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh & Sync Data
+                    Refresh & Check for New Inspections
                   </Button>
                 </CardContent>
               </Card>
