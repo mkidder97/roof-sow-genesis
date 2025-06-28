@@ -116,7 +116,7 @@ export const TakeoffSection: React.FC<TakeoffSectionProps> = ({ data, onChange }
           <Checkbox
             id="expansionJoints"
             checked={!!data.expansionJoints}
-            onCheckedChange={(checked) => onChange({ expansionJoints: !!checked })}
+            onCheckedChange={(checked) => onChange({ expansionJoints: checked ? 1 : 0 })}
           />
           <Label htmlFor="expansionJoints" className="text-sm font-medium text-slate-700">
             Expansion Joints Present

@@ -13,9 +13,12 @@ const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
   let asceRequirements: ASCERequirements | undefined;
   if (row.asce_requirements) {
     try {
-      asceRequirements = typeof row.asce_requirements === 'string' 
-        ? JSON.parse(row.asce_requirements) 
-        : row.asce_requirements as ASCERequirements;
+      if (typeof row.asce_requirements === 'string') {
+        asceRequirements = JSON.parse(row.asce_requirements);
+      } else if (typeof row.asce_requirements === 'object' && row.asce_requirements !== null) {
+        // Handle both plain object and already parsed JSON
+        asceRequirements = row.asce_requirements as ASCERequirements;
+      }
     } catch (error) {
       console.warn('Failed to parse ASCE requirements:', error);
       asceRequirements = undefined;

@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { SOWGenerationRequest, SOWGenerationRecord, DashboardMetrics } from '@/types/sow';
+import { SOWGenerationRequest, SOWGenerationRecord, DashboardMetrics, GenerationStatus } from '@/types/sow';
 
 export async function createSOWGeneration(data: { 
   inspectionId?: string; 
@@ -8,17 +7,26 @@ export async function createSOWGeneration(data: {
   inputData: SOWGenerationRequest 
 }) {
   try {
+    // Create a clean serializable copy without File objects
+    const { takeoffFile, ...serializableData } = data.inputData;
+    
     // Serialize complex objects for database storage
     const serializedInputData = {
-      ...data.inputData,
+      ...serializableData,
       // Convert ASCERequirements to plain object for JSON storage
-      asceRequirements: data.inputData.asceRequirements ? JSON.stringify(data.inputData.asceRequirements) : null
+      asceRequirements: data.inputData.asceRequirements ? JSON.stringify(data.inputData.asceRequirements) : null,
+      // Store takeoff file metadata if present
+      takeoffFileMetadata: takeoffFile ? {
+        name: takeoffFile.name,
+        size: takeoffFile.size,
+        type: takeoffFile.type
+      } : null
     };
 
     const { data: result, error } = await supabase
       .from('sow_generations')
       .insert({
-        inspection_id: data.inspectionId, // Use correct column name
+        inspectionId: data.inspectionId, // Use correct column name
         template_type: data.templateType,
         input_data: serializedInputData,
         generation_status: 'pending'
@@ -85,7 +93,14 @@ export async function getSOWHistory(limit: number = 10) {
       .limit(limit);
 
     if (error) throw error;
-    return { data: data || [], error: null };
+    
+    // Cast the data to correct type with proper GenerationStatus
+    const typedData = (data || []).map(item => ({
+      ...item,
+      generation_status: item.generation_status as GenerationStatus
+    })) as SOWGenerationRecord[];
+    
+    return { data: typedData, error: null };
   } catch (error) {
     console.error('Failed to get SOW history:', error);
     return { 
@@ -129,12 +144,18 @@ export async function getDashboardMetrics(): Promise<{ data: DashboardMetrics | 
 
     if (recentError) throw recentError;
 
+    // Cast to proper types
+    const typedRecentGenerations = (recentGenerations || []).map(item => ({
+      ...item,
+      generation_status: item.generation_status as GenerationStatus
+    })) as SOWGenerationRecord[];
+
     const metrics: DashboardMetrics = {
       totalInspections: totalInspections || 0,
       totalSOWsGenerated,
       pendingSOWs,
       avgGenerationTime,
-      recentGenerations: recentGenerations || []
+      recentGenerations: typedRecentGenerations
     };
 
     return { data: metrics, error: null };
