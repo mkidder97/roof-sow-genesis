@@ -152,6 +152,104 @@ export interface SOWGenerationRequest {
   membraneMaterial?: string;
   selectedMembraneBrand?: string;
   insulationType?: 'polyiso' | 'eps' | 'xps' | 'mineral-wool';
+  attachmentMethod?: string;
+
+  // Template Selection from Integration Engine
+  templateId?: string;
+  
+  // Enhanced Drainage Configuration from Integration Engine
+  drainageConfiguration?: {
+    primaryType: 'Deck Drains' | 'Scuppers' | 'Gutters';
+    overflowType?: string;
+    specifications: {
+      deck_drains?: {
+        count: number;
+        diameter: number;
+        type: 'primary' | 'secondary' | 'overflow';
+      };
+      scuppers?: {
+        count: number;
+        length: number;
+        width: number;
+        height_above_roof: number;
+        type: 'primary' | 'overflow';
+      };
+      gutters?: {
+        linear_feet: number;
+        height: number;
+        width: number;
+        depth: number;
+      };
+    };
+    additionalDrainage?: {
+      count: number;
+      type: string;
+      specifications: string;
+    };
+  };
+  
+  // Equipment Specifications from Integration Engine
+  equipmentSpecs?: {
+    skylights: {
+      count: number;
+      requiresFlashing: boolean;
+      details: any[];
+    };
+    hvacUnits: {
+      count: number;
+      requiresCurbs: boolean;
+      details: any[];
+    };
+    accessPoints: {
+      count: number;
+      roofHatches: number;
+      details: any[];
+    };
+    walkwayPads: number;
+    equipmentPlatforms: number;
+  };
+  
+  // Penetration Specifications from Integration Engine
+  penetrationSpecs?: {
+    gasLines: {
+      present: boolean;
+      count: number;
+      requiresSpecialFlashing: boolean;
+    };
+    conduit: {
+      attachedToUnderside: boolean;
+      description: string;
+      requiresProtection: boolean;
+    };
+    other: {
+      description: string;
+      requiresCustomFlashing: boolean;
+    };
+  };
+  
+  // Section Inclusions based on Field Inspection Data
+  sectionInclusions?: {
+    // Core sections
+    tearoffAndDisposal: boolean;
+    newRoofSystem: boolean;
+    flashing: boolean;
+    
+    // Conditional sections
+    drainageModifications: boolean;
+    scupperWork: boolean;
+    gutterInstallation: boolean;
+    equipmentCurbs: boolean;
+    skylightFlashing: boolean;
+    walkwayPads: boolean;
+    equipmentPlatforms: boolean;
+    gasLinePenetrations: boolean;
+    conduitProtection: boolean;
+    interiorProtection: boolean;
+    
+    // Safety and access
+    safetyRequirements: string[];
+    accessRequirements: boolean;
+  };
 
   // Takeoff data
   takeoffData?: any;
@@ -163,12 +261,13 @@ export interface SOWGenerationRequest {
   includesTaperedInsulation?: boolean;
   userSelectedSystem?: string;
   customNotes?: string[];
+  specialRequirements?: string[];
 
   // Inspector information
   inspectorName?: string;
   inspectionDate?: string;
   
-  // Equipment counts
+  // Legacy equipment counts (for backward compatibility)
   numberOfDrains?: number;
   numberOfPenetrations?: number;
   
