@@ -152,29 +152,41 @@ export const EngineerDashboard = () => {
         <Button 
           onClick={handleForceRefresh}
           className="bg-blue-600 hover:bg-blue-700"
-          size="sm"
+          size="lg"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh Data
         </Button>
       </div>
 
-      {/* Debug Panel - Shows current state */}
+      {/* CRITICAL DEBUG PANEL - Always visible for troubleshooting */}
       <Alert className="mb-6 bg-blue-900/50 border-blue-400/30">
         <AlertDescription className="text-blue-200">
           <div className="space-y-2 text-sm">
-            <div className="font-medium">🔧 Engineer Dashboard Debug Info:</div>
+            <div className="font-medium">🔧 CRITICAL DEBUG INFO:</div>
+            <div>• Database query completed: {inspectionsLoading ? 'No' : 'Yes'}</div>
             <div>• Completed inspections found: {completedInspections.length}</div>
             <div>• Ready for SOW generation: {readyForSOW.length}</div>
-            <div>• Data loading: {inspectionsLoading ? 'Yes' : 'No'}</div>
             <div>• Backend status: {isBackendOnline ? 'Connected ✅' : 'Offline ❌'}</div>
             {inspectionsError && <div className="text-red-300">• Error: {inspectionsError}</div>}
+            
             {completedInspections.length > 0 && (
-              <div>
-                <div className="font-medium mt-2">Found completed inspections:</div>
+              <div className="mt-3">
+                <div className="font-medium">✅ FOUND THESE COMPLETED INSPECTIONS:</div>
                 {completedInspections.map(i => (
-                  <div key={i.id} className="ml-2 text-xs">
-                    • "{i.project_name}" - Status: {i.status} | Completed: {i.completed ? 'Yes' : 'No'} | SOW: {i.sow_generated ? 'Generated' : 'Pending'}
+                  <div key={i.id} className="ml-2 text-xs bg-green-900/30 p-1 rounded">
+                    📋 "{i.project_name}" - Status: {i.status} | Completed: {i.completed ? 'Yes' : 'No'} | SOW: {i.sow_generated ? 'Generated' : 'Pending'}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {readyForSOW.length > 0 && (
+              <div className="mt-2">
+                <div className="font-medium">🎯 READY FOR SOW GENERATION:</div>
+                {readyForSOW.map(i => (
+                  <div key={i.id} className="ml-2 text-xs bg-orange-900/30 p-1 rounded">
+                    🚀 "{i.project_name}" - Ready to generate SOW!
                   </div>
                 ))}
               </div>
@@ -278,7 +290,7 @@ export const EngineerDashboard = () => {
                   <h3 className="text-white text-lg mb-2">No Inspections Ready for SOW</h3>
                   <p className="text-blue-200 mb-4">
                     {completedInspections.length === 0 
-                      ? 'No completed inspections found. Waiting for field inspectors to complete inspections.'
+                      ? 'No completed inspections found. Check the debug panel above for details.'
                       : `Found ${completedInspections.length} completed inspection(s), but they already have SOW generated.`
                     }
                   </p>
