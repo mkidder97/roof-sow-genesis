@@ -29,7 +29,7 @@ import Settings from "./pages/Settings";
 import Dashboard from "./pages/Dashboard";
 import FieldInspector from "./pages/FieldInspector";
 import InspectorDashboard from "./components/field-inspector/InspectorDashboard";
-import FieldInspectionForm from "./components/field-inspector/FieldInspectionForm";
+import { FieldInspectionForm } from "./components/field-inspector/FieldInspectionForm";
 import InspectionDetailsPage from "./pages/InspectionDetailsPage";
 import SOWGeneration from "./pages/SOWGeneration";
 import { AuthProvider } from "./contexts/AuthContext";

@@ -1,57 +1,61 @@
-export interface UseSOWGenerationProps {
-  onSuccess?: (data: SOWGenerationResponse) => void;
-  onError?: (error: Error) => void;
+// Core interfaces for SOW generation and management
+export interface SOWGenerationData {
+  id: string;
+  project_name: string;
+  project_address: string;
+  customer_name?: string;
+  customer_phone?: string;
+  status: 'processing' | 'complete' | 'failed';
+  error_message?: string;
+  request_data: any;
+  inspection_id?: string;
+  file_uploaded: boolean;
+  file_name?: string;
+  extraction_confidence?: number;
+  pdf_url?: string;
+  pdf_data?: string;
+  engineering_summary?: any;
+  template_used?: string;
+  created_at: string;
+  completed_at?: string;
+  generation_time_ms?: number;
+  created_by?: string;
+  updated_at: string;
 }
 
-export interface SOWGenerationResponse {
+export interface SOWGenerationResult {
   success: boolean;
   sowId?: string;
   downloadUrl?: string;
-  generationStatus?: GenerationStatus;
+  message?: string;
+  error?: string;
+  // Add missing properties
+  filename?: string;
+  outputPath?: string;
+  generationTime?: number;
   data?: {
+    sow?: string;
     pdf?: string;
-  };
-  metadata?: {
-    generationTime?: number;
-    fileProcessed?: boolean;
-    extractionConfidence?: number;
-    fileSize?: number;
+    engineeringSummary?: any;
+    template?: string;
   };
 }
 
-export interface SOWGenerationRequest {
-  projectName?: string;
-  projectAddress?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  buildingHeight?: number;
-  deckType?: string;
-  membraneType?: string;
-  insulationType?: string;
-  windSpeed?: number;
-  exposureCategory?: string;
-  buildingClassification?: string;
-  notes?: string;
-  inspectionId?: string;
-  takeoffFile?: File;
-}
-
-export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface SOWGenerationRecord {
   id: string;
   inspection_id?: string;
-  user_id?: string;
   template_type: string;
   generation_status: GenerationStatus;
   input_data: any;
+  output_data?: any;
+  pdf_url?: string;
   output_file_path?: string;
-  file_size_bytes?: number;
-  generation_started_at: string;
-  generation_completed_at?: string;
-  generation_duration_seconds?: number;
   error_message?: string;
+  generation_started_at?: string;
+  generation_finished_at?: string;
+  generation_duration_seconds?: number;
   created_at: string;
   updated_at: string;
 }
@@ -65,117 +69,257 @@ export interface DashboardMetrics {
 }
 
 export interface FieldInspectionData {
-  projectName?: string;
-  project_name?: string;
-  projectAddress?: string;
-  project_address?: string;
+  id: string;
+  project_name: string;
+  project_address: string;
+  customer_name?: string;
+  customer_phone?: string;
+  building_height?: number;
+  building_length?: number;
+  building_width?: number;
+  square_footage?: number;
+  number_of_stories?: number;
+  roof_slope?: string;
+  deck_type?: string;
+  existing_membrane_type?: string;
+  existing_membrane_condition?: number;
+  roof_age_years?: number;
+  insulation_type?: string;
+  insulation_condition?: string;
+  cover_board_type?: string;
+  overall_condition?: number;
+  priority_level?: string;
+  photos?: string[];
+  notes?: string;
+  status?: string;
+  sow_generated?: boolean;
+  sow_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  completed_at?: string;
   city?: string;
   state?: string;
-  zipCode?: string;
   zip_code?: string;
-  buildingHeight?: number;
-  building_height?: number;
-  deckType?: string;
-  deck_type?: string;
-  membraneType?: string;
-  membrane_type?: string;
-  insulationType?: string;
-  insulation_type?: string;
-  windSpeed?: number;
+  county?: string;
+  asce_requirements?: ASCERequirements;
+  asce_version?: string;
   wind_speed?: number;
-  exposureCategory?: string;
   exposure_category?: string;
-  buildingClassification?: string;
   building_classification?: string;
+  inspector_name?: string;
+  inspection_date?: string;
+  recommendations?: string;
+  concerns?: string;
+}
+
+export interface SOWGenerationRequest {
+  // Basic project information
+  projectName: string;
+  projectAddress: string;
+  companyName?: string;
+  customerName?: string;
+  customerPhone?: string;
+
+  // Building specifications
+  squareFootage?: number;
+  buildingHeight?: number;
+  buildingDimensions?: {
+    length?: number;
+    width?: number;
+  };
+  deckType?: 'concrete' | 'metal' | 'wood' | 'gypsum';
+  projectType?: 'recover' | 'tearoff' | 'new';
+  roofSlope?: number;
+  elevation?: number;
+
+  // Location data for jurisdiction analysis
+  city?: string;
+  state?: string;
+  county?: string;
+  zipCode?: string;
+
+  // ASCE 7 requirements (enhanced)
+  asceRequirements?: ASCERequirements;
+  asceVersion?: string;
+  windSpeed?: number;
+  exposureCategory?: string;
+  buildingClassification?: string;
+  engineeringNotes?: string;
+
+  // Membrane specifications
+  membraneType?: 'tpo' | 'epdm' | 'pvc' | 'modified-bitumen';
+  membraneThickness?: string;
+  membraneMaterial?: string;
+  selectedMembraneBrand?: string;
+  insulationType?: 'polyiso' | 'eps' | 'xps' | 'mineral-wool';
+
+  // Takeoff data
+  takeoffData?: any;
+  takeoffFile?: File;
+
+  // Optional overrides
+  basicWindSpeed?: number;
+  preferredManufacturer?: string;
+  includesTaperedInsulation?: boolean;
+  userSelectedSystem?: string;
+  customNotes?: string[];
+
+  // Inspector information
+  inspectorName?: string;
+  inspectionDate?: string;
+  
+  // Equipment counts
+  numberOfDrains?: number;
+  numberOfPenetrations?: number;
+  
+  // Notes
+  notes?: string;
+  
+  // Inspection ID
+  inspectionId?: string;
+}
+
+export interface ASCERequirements {
+  version: string;
+  wind_speed?: number;
+  exposure_category: string;
+  building_classification: string;
+  risk_category: string;
+  importance_factor: number;
+  hvhz_applicable?: boolean;
+  engineer_approved?: boolean;
+  approval_date?: string;
+  approval_engineer?: string;
   notes?: string;
 }
 
-// SOW Form Section Types
+// Error handling types
+export interface SOWGenerationError {
+  message: string;
+  code?: string;
+  details?: any;
+  type: 'network' | 'validation' | 'server' | 'unknown';
+}
+
+export function createSOWError(message: string, type: SOWGenerationError['type'] = 'unknown', details?: any): SOWGenerationError {
+  return {
+    message,
+    type,
+    details,
+    code: `SOW_${type.toUpperCase()}_ERROR`,
+  };
+}
+
+export function isNetworkError(error: any): boolean {
+  return error?.type === 'network' || 
+         error?.message?.includes('fetch') || 
+         error?.message?.includes('Load failed') ||
+         error?.name === 'TypeError';
+}
+
+// Section types for SOW components - Updated with missing properties
 export interface ProjectMetadata {
   projectName: string;
-  companyName: string;
   address: string;
+  customerName?: string;
+  companyName?: string;
   squareFootage?: number;
-  projectType: 'Recover' | 'Tear-Off' | 'Replacement';
-  deckType: 'Steel' | 'Wood' | 'Concrete';
+  projectType?: string;
+  deckType?: string;
   buildingHeight?: number;
   length?: number;
-  width?: number;
+  width?: number; // Add missing width property
 }
 
 export interface Environmental {
-  city: string;
-  state: string;
-  zip: string;
+  windSpeed: number;
+  exposureCategory: string;
+  asceVersion: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   elevation?: number;
-  jurisdiction: string;
-  exposureCategory: 'B' | 'C' | 'D';
-  asceVersion: '7-10' | '7-16' | '7-22';
-  hvhzZone: boolean;
+  jurisdiction?: string;
+  hvhzZone?: boolean;
 }
 
 export interface Membrane {
-  manufacturer: string;
-  productName: string;
-  membraneType: 'TPO' | 'PVC';
-  thickness: 45 | 60 | 80 | 115;
-  warrantyTerm: 20 | 25 | 30;
-  attachmentMethod: 'Induction Welded' | 'Fully Adhered' | 'Mechanically Attached';
+  type: string;
+  thickness: string;
+  color?: string;
+  manufacturer?: string;
+  productName?: string;
+  membraneType?: string;
+  warrantyTerm?: string;
+  attachmentMethod?: string;
 }
 
 export interface Takeoff {
+  squareFootage: number;
+  materials: any[];
+  // Add missing properties
   drains?: number;
   pipePenetrations?: number;
   curbs?: number;
   hvacUnits?: number;
   skylights?: number;
   scuppers?: number;
-  expansionJoints: boolean;
+  expansionJoints?: number;
 }
 
 export interface Notes {
-  contractorName: string;
-  addendaNotes: string;
-  warrantyNotes: string;
+  general?: string;
+  special?: string;
+  engineering?: string;
+  contractorName?: string;
+  addendaNotes?: string;
+  warrantyNotes?: string;
 }
 
-// Error handling types
-export interface SOWGenerationError extends Error {
-  type: 'network' | 'server' | 'validation' | 'unknown';
-  code?: string;
-  details?: any;
-}
-
-export function createSOWError(message: string, type: SOWGenerationError['type'], code?: string, details?: any): SOWGenerationError {
-  const error = new Error(message) as SOWGenerationError;
-  error.type = type;
-  error.code = code;
-  error.details = details;
-  return error;
-}
-
-export function isNetworkError(error: Error): boolean {
-  return error.message.includes('fetch') || 
-         error.message.includes('network') || 
-         error.message.includes('connection') ||
-         error.name === 'NetworkError' ||
-         error.name === 'TypeError';
-}
-
-export function transformInspectionToSOWRequest(inspectionData: FieldInspectionData): SOWGenerationRequest {
+export function transformInspectionToSOWRequest(inspection: FieldInspectionData): SOWGenerationRequest {
   return {
-    projectName: inspectionData.projectName || inspectionData.project_name || '',
-    projectAddress: inspectionData.projectAddress || inspectionData.project_address || '',
-    city: inspectionData.city,
-    state: inspectionData.state,
-    zipCode: inspectionData.zipCode || inspectionData.zip_code,
-    buildingHeight: inspectionData.buildingHeight || inspectionData.building_height,
-    deckType: inspectionData.deckType || inspectionData.deck_type,
-    membraneType: inspectionData.membraneType || inspectionData.membrane_type,
-    insulationType: inspectionData.insulationType || inspectionData.insulation_type,
-    windSpeed: inspectionData.windSpeed || inspectionData.wind_speed,
-    exposureCategory: inspectionData.exposureCategory || inspectionData.exposure_category,
-    buildingClassification: inspectionData.buildingClassification || inspectionData.building_classification,
-    notes: inspectionData.notes,
+    projectName: inspection.project_name,
+    projectAddress: inspection.project_address,
+    customerName: inspection.customer_name,
+    customerPhone: inspection.customer_phone,
+    squareFootage: inspection.square_footage,
+    buildingHeight: inspection.building_height,
+    buildingDimensions: {
+      length: inspection.building_length,
+      width: inspection.building_width
+    },
+    deckType: inspection.deck_type as any,
+    roofSlope: typeof inspection.roof_slope === 'string' ? parseFloat(inspection.roof_slope) : inspection.roof_slope,
+    
+    // Location data
+    city: inspection.city,
+    state: inspection.state,
+    county: inspection.county,
+    zipCode: inspection.zip_code,
+    
+    // ASCE requirements (enhanced)
+    asceRequirements: inspection.asce_requirements,
+    asceVersion: inspection.asce_version,
+    windSpeed: inspection.wind_speed,
+    exposureCategory: inspection.exposure_category,
+    buildingClassification: inspection.building_classification,
+    
+    // Membrane specifications
+    membraneType: inspection.existing_membrane_type as any,
+    insulationType: inspection.insulation_type as any,
+    
+    // Inspector information
+    inspectorName: inspection.inspector_name,
+    inspectionDate: inspection.inspection_date,
+    
+    // Additional notes
+    customNotes: [
+      inspection.notes,
+      inspection.recommendations,
+      inspection.concerns
+    ].filter(Boolean) as string[]
   };
 }
+
+// Export response type alias
+export type SOWResponse = SOWGenerationResult;

@@ -131,6 +131,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "consultant_reviews_field_inspection_id_fkey"
+            columns: ["field_inspection_id"]
+            isOneToOne: false
+            referencedRelation: "sow_generation_data"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "consultant_reviews_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -166,14 +173,19 @@ export type Database = {
       field_inspections: {
         Row: {
           access_method: string | null
+          asce_requirements: Json | null
+          asce_version: string | null
+          building_classification: string | null
           building_height: number | null
           building_length: number | null
           building_width: number | null
+          city: string | null
           completed: boolean | null
           completed_at: string | null
           concerns: string | null
           conditions: Json | null
           conduit_attached: boolean | null
+          county: string | null
           cover_board_type: string | null
           created_at: string | null
           curbs_above_8: boolean | null
@@ -183,6 +195,7 @@ export type Database = {
           drainage_options: Json | null
           existing_membrane_condition: number | null
           existing_membrane_type: string | null
+          exposure_category: string | null
           gas_line_penetrating_deck: boolean | null
           handoff_notes: string | null
           hvac_units: Json | null
@@ -220,22 +233,30 @@ export type Database = {
           sow_id: string | null
           special_requirements: string | null
           square_footage: number | null
+          state: string | null
           status: string | null
           takeoff_items: Json | null
           updated_at: string | null
           upgraded_lighting: boolean | null
           weather_conditions: string | null
+          wind_speed: number | null
+          zip_code: string | null
         }
         Insert: {
           access_method?: string | null
+          asce_requirements?: Json | null
+          asce_version?: string | null
+          building_classification?: string | null
           building_height?: number | null
           building_length?: number | null
           building_width?: number | null
+          city?: string | null
           completed?: boolean | null
           completed_at?: string | null
           concerns?: string | null
           conditions?: Json | null
           conduit_attached?: boolean | null
+          county?: string | null
           cover_board_type?: string | null
           created_at?: string | null
           curbs_above_8?: boolean | null
@@ -245,6 +266,7 @@ export type Database = {
           drainage_options?: Json | null
           existing_membrane_condition?: number | null
           existing_membrane_type?: string | null
+          exposure_category?: string | null
           gas_line_penetrating_deck?: boolean | null
           handoff_notes?: string | null
           hvac_units?: Json | null
@@ -282,22 +304,30 @@ export type Database = {
           sow_id?: string | null
           special_requirements?: string | null
           square_footage?: number | null
+          state?: string | null
           status?: string | null
           takeoff_items?: Json | null
           updated_at?: string | null
           upgraded_lighting?: boolean | null
           weather_conditions?: string | null
+          wind_speed?: number | null
+          zip_code?: string | null
         }
         Update: {
           access_method?: string | null
+          asce_requirements?: Json | null
+          asce_version?: string | null
+          building_classification?: string | null
           building_height?: number | null
           building_length?: number | null
           building_width?: number | null
+          city?: string | null
           completed?: boolean | null
           completed_at?: string | null
           concerns?: string | null
           conditions?: Json | null
           conduit_attached?: boolean | null
+          county?: string | null
           cover_board_type?: string | null
           created_at?: string | null
           curbs_above_8?: boolean | null
@@ -307,6 +337,7 @@ export type Database = {
           drainage_options?: Json | null
           existing_membrane_condition?: number | null
           existing_membrane_type?: string | null
+          exposure_category?: string | null
           gas_line_penetrating_deck?: boolean | null
           handoff_notes?: string | null
           hvac_units?: Json | null
@@ -344,11 +375,14 @@ export type Database = {
           sow_id?: string | null
           special_requirements?: string | null
           square_footage?: number | null
+          state?: string | null
           status?: string | null
           takeoff_items?: Json | null
           updated_at?: string | null
           upgraded_lighting?: boolean | null
           weather_conditions?: string | null
+          wind_speed?: number | null
+          zip_code?: string | null
         }
         Relationships: [
           {
@@ -745,6 +779,13 @@ export type Database = {
             referencedRelation: "field_inspections"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sow_generations_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "sow_generation_data"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sow_outputs: {
@@ -978,6 +1019,263 @@ export type Database = {
         }
         Relationships: []
       }
+      sow_generation_data: {
+        Row: {
+          access_method: string | null
+          asce_approval_date: string | null
+          asce_approval_engineer: string | null
+          asce_engineer_approved: boolean | null
+          asce_requirements: Json | null
+          asce_version: string | null
+          building_classification: string | null
+          building_height: number | null
+          building_length: number | null
+          building_width: number | null
+          city: string | null
+          completed: boolean | null
+          completed_at: string | null
+          concerns: string | null
+          conditions: Json | null
+          conduit_attached: boolean | null
+          county: string | null
+          cover_board_type: string | null
+          created_at: string | null
+          curbs_above_8: boolean | null
+          customer_name: string | null
+          customer_phone: string | null
+          deck_type: string | null
+          drainage_options: Json | null
+          existing_membrane_condition: number | null
+          existing_membrane_type: string | null
+          exposure_category: string | null
+          gas_line_penetrating_deck: boolean | null
+          handoff_notes: string | null
+          hvac_units: Json | null
+          id: string | null
+          inspection_date: string | null
+          inspector_id: string | null
+          inspector_name: string | null
+          insulation_condition: string | null
+          insulation_layers: Json | null
+          insulation_type: string | null
+          interior_fall_protection: boolean | null
+          interior_protection_needed: boolean | null
+          interior_protection_sqft: number | null
+          measurements: Json | null
+          notes: string | null
+          number_of_stories: number | null
+          observations: Json | null
+          overall_condition: number | null
+          penetrations: Json | null
+          photos: string[] | null
+          priority_level: string | null
+          project_address: string | null
+          project_asce_version: string | null
+          project_building_classification: string | null
+          project_city: string | null
+          project_county: string | null
+          project_exposure_category: string | null
+          project_id: string | null
+          project_name: string | null
+          project_state: string | null
+          project_wind_speed: number | null
+          project_zip: string | null
+          ready_for_handoff: boolean | null
+          recommendations: string | null
+          roof_age_years: number | null
+          roof_drains: Json | null
+          roof_hatches: number | null
+          roof_slope: string | null
+          skylights: number | null
+          skylights_detailed: Json | null
+          sow_generated: boolean | null
+          sow_generation_count: number | null
+          sow_id: string | null
+          special_requirements: string | null
+          square_footage: number | null
+          state: string | null
+          status: string | null
+          takeoff_items: Json | null
+          updated_at: string | null
+          upgraded_lighting: boolean | null
+          weather_conditions: string | null
+          wind_speed: number | null
+          zip_code: string | null
+        }
+        Insert: {
+          access_method?: string | null
+          asce_approval_date?: never
+          asce_approval_engineer?: never
+          asce_engineer_approved?: never
+          asce_requirements?: Json | null
+          asce_version?: string | null
+          building_classification?: string | null
+          building_height?: number | null
+          building_length?: number | null
+          building_width?: number | null
+          city?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
+          concerns?: string | null
+          conditions?: Json | null
+          conduit_attached?: boolean | null
+          county?: string | null
+          cover_board_type?: string | null
+          created_at?: string | null
+          curbs_above_8?: boolean | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          deck_type?: string | null
+          drainage_options?: Json | null
+          existing_membrane_condition?: number | null
+          existing_membrane_type?: string | null
+          exposure_category?: string | null
+          gas_line_penetrating_deck?: boolean | null
+          handoff_notes?: string | null
+          hvac_units?: Json | null
+          id?: string | null
+          inspection_date?: string | null
+          inspector_id?: string | null
+          inspector_name?: string | null
+          insulation_condition?: string | null
+          insulation_layers?: Json | null
+          insulation_type?: string | null
+          interior_fall_protection?: boolean | null
+          interior_protection_needed?: boolean | null
+          interior_protection_sqft?: number | null
+          measurements?: Json | null
+          notes?: string | null
+          number_of_stories?: number | null
+          observations?: Json | null
+          overall_condition?: number | null
+          penetrations?: Json | null
+          photos?: string[] | null
+          priority_level?: string | null
+          project_address?: string | null
+          project_asce_version?: never
+          project_building_classification?: never
+          project_city?: never
+          project_county?: never
+          project_exposure_category?: never
+          project_id?: string | null
+          project_name?: string | null
+          project_state?: never
+          project_wind_speed?: never
+          project_zip?: never
+          ready_for_handoff?: boolean | null
+          recommendations?: string | null
+          roof_age_years?: number | null
+          roof_drains?: Json | null
+          roof_hatches?: number | null
+          roof_slope?: string | null
+          skylights?: number | null
+          skylights_detailed?: Json | null
+          sow_generated?: boolean | null
+          sow_generation_count?: number | null
+          sow_id?: string | null
+          special_requirements?: string | null
+          square_footage?: number | null
+          state?: string | null
+          status?: string | null
+          takeoff_items?: Json | null
+          updated_at?: string | null
+          upgraded_lighting?: boolean | null
+          weather_conditions?: string | null
+          wind_speed?: number | null
+          zip_code?: string | null
+        }
+        Update: {
+          access_method?: string | null
+          asce_approval_date?: never
+          asce_approval_engineer?: never
+          asce_engineer_approved?: never
+          asce_requirements?: Json | null
+          asce_version?: string | null
+          building_classification?: string | null
+          building_height?: number | null
+          building_length?: number | null
+          building_width?: number | null
+          city?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
+          concerns?: string | null
+          conditions?: Json | null
+          conduit_attached?: boolean | null
+          county?: string | null
+          cover_board_type?: string | null
+          created_at?: string | null
+          curbs_above_8?: boolean | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          deck_type?: string | null
+          drainage_options?: Json | null
+          existing_membrane_condition?: number | null
+          existing_membrane_type?: string | null
+          exposure_category?: string | null
+          gas_line_penetrating_deck?: boolean | null
+          handoff_notes?: string | null
+          hvac_units?: Json | null
+          id?: string | null
+          inspection_date?: string | null
+          inspector_id?: string | null
+          inspector_name?: string | null
+          insulation_condition?: string | null
+          insulation_layers?: Json | null
+          insulation_type?: string | null
+          interior_fall_protection?: boolean | null
+          interior_protection_needed?: boolean | null
+          interior_protection_sqft?: number | null
+          measurements?: Json | null
+          notes?: string | null
+          number_of_stories?: number | null
+          observations?: Json | null
+          overall_condition?: number | null
+          penetrations?: Json | null
+          photos?: string[] | null
+          priority_level?: string | null
+          project_address?: string | null
+          project_asce_version?: never
+          project_building_classification?: never
+          project_city?: never
+          project_county?: never
+          project_exposure_category?: never
+          project_id?: string | null
+          project_name?: string | null
+          project_state?: never
+          project_wind_speed?: never
+          project_zip?: never
+          ready_for_handoff?: boolean | null
+          recommendations?: string | null
+          roof_age_years?: number | null
+          roof_drains?: Json | null
+          roof_hatches?: number | null
+          roof_slope?: string | null
+          skylights?: number | null
+          skylights_detailed?: Json | null
+          sow_generated?: boolean | null
+          sow_generation_count?: number | null
+          sow_id?: string | null
+          special_requirements?: string | null
+          square_footage?: number | null
+          state?: string | null
+          status?: string | null
+          takeoff_items?: Json | null
+          updated_at?: string | null
+          upgraded_lighting?: boolean | null
+          weather_conditions?: string | null
+          wind_speed?: number | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_inspections_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       archive_old_sows: {
@@ -999,6 +1297,10 @@ export type Database = {
       refresh_dashboard_metrics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      validate_asce_requirements: {
+        Args: { requirements: Json }
+        Returns: boolean
       }
     }
     Enums: {

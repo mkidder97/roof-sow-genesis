@@ -1,235 +1,445 @@
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileText, Clock, AlertCircle, CheckCircle2, User, MapPin } from "lucide-react";
-import { useDashboardMetrics, useSOWHistory } from '@/hooks/useSOWDatabase';
-import { useRealTimeSOWUpdates } from '@/hooks/useRealTimeSOW';
-import { format } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  FileText, 
+  Clock, 
+  CheckCircle, 
+  AlertTriangle, 
+  Wrench, 
+  TrendingUp,
+  Calendar,
+  User,
+  Building,
+  MapPin,
+  RefreshCw
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSOWGeneration } from '@/hooks/useSOWGeneration';
+import { useCompletedInspections } from '@/hooks/useCompletedInspections';
+import { useToast } from '@/hooks/use-toast';
+import { FieldInspection } from '@/types/fieldInspection';
+import { SOWGenerationRequest, transformInspectionToSOWRequest } from '@/types/sow';
 
-const EngineerDashboard = () => {
-  // Real-time data hooks
-  const { data: metrics, isLoading: metricsLoading, error: metricsError } = useDashboardMetrics();
-  const { data: sowHistory, isLoading: historyLoading } = useSOWHistory(10);
-  const { isConnected: realtimeConnected } = useRealTimeSOWUpdates();
+export const EngineerDashboard = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { completedInspections, loading: inspectionsLoading, error: inspectionsError, refetch } = useCompletedInspections();
+  const {
+    generateSOW,
+    isGenerating,
+    generationData,
+    generationError,
+    generationStatus,
+    healthStatus,
+    isBackendOnline
+  } = useSOWGeneration();
 
-  const handleDownloadSOW = (sowId: string) => {
-    // Implementation for downloading SOW
-    window.open(`/api/sow/download/${sowId}`, '_blank');
-  };
+  // Enhanced debug logging for troubleshooting
+  useEffect(() => {
+    console.log('🔧 === ENGINEER DASHBOARD DEBUG SESSION ===');
+    console.log('🔧 Total completed inspections found:', completedInspections.length);
+    console.log('🔧 Loading state:', inspectionsLoading);
+    console.log('🔧 Error state:', inspectionsError);
+    console.log('🔧 Backend online:', isBackendOnline);
+    
+    if (completedInspections.length > 0) {
+      console.log('🔧 === DETAILED INSPECTION ANALYSIS ===');
+      completedInspections.forEach((inspection, index) => {
+        console.log(`🔧 Inspection ${index + 1}:`, {
+          name: inspection.project_name,
+          id: inspection.id,
+          status: inspection.status,
+          completed: inspection.completed,
+          ready_for_handoff: inspection.ready_for_handoff,
+          sow_generated: inspection.sow_generated,
+          completed_at: inspection.completed_at
+        });
+      });
+    } else {
+      console.log('🔧 ❌ NO COMPLETED INSPECTIONS FOUND - This is the problem!');
+    }
+  }, [completedInspections, inspectionsLoading, inspectionsError, isBackendOnline]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const readyForSOW = completedInspections.filter(inspection => {
+    const isCompleted = inspection.status === 'Completed' || 
+                       inspection.completed === true || 
+                       inspection.ready_for_handoff === true;
+    const noSOWGenerated = !inspection.sow_generated;
+    
+    console.log(`🎯 SOW Filter - "${inspection.project_name}":`, {
+      isCompleted,
+      noSOWGenerated,
+      readyForSOW: isCompleted && noSOWGenerated
+    });
+    
+    return isCompleted && noSOWGenerated;
+  });
+
+  console.log('📊 === ENGINEER DASHBOARD SUMMARY ===');
+  console.log('📊 Total completed inspections:', completedInspections.length);
+  console.log('📊 Ready for SOW count:', readyForSOW.length);
+  console.log('📊 Ready for SOW inspections:', readyForSOW.map(i => i.project_name));
+
+  const handleGenerateSOW = async (inspection: FieldInspection) => {
+    if (!inspection.id) {
+      console.error('❌ Cannot generate SOW: inspection ID is missing');
+      toast({
+        title: "Error",
+        description: "Cannot generate SOW: inspection ID is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('🚀 Generating SOW for inspection:', inspection.project_name);
+
+    try {
+      const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest({
+        ...inspection,
+        id: inspection.id
+      });
+
+      console.log('📄 SOW request:', sowRequest);
+      await generateSOW(sowRequest);
+
+      toast({
+        title: "SOW Generation Started",
+        description: `Generating SOW for ${inspection.project_name}`,
+      });
+    } catch (error) {
+      console.error('💥 SOW generation error:', error);
+      toast({
+        title: "SOW Generation Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive",
+      });
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle2 className="h-4 w-4" />;
-      case 'processing': return <Clock className="h-4 w-4" />;
-      case 'pending': return <Clock className="h-4 w-4" />;
-      case 'failed': return <AlertCircle className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
-    }
+  const handleForceRefresh = () => {
+    console.log('🔄 Engineer Dashboard: Force refreshing completed inspections...');
+    refetch();
+    toast({
+      title: "Refreshing Data",
+      description: "Fetching latest completed inspection data...",
+    });
   };
 
-  if (metricsError) {
+  if (inspectionsLoading) {
     return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <span>Error loading dashboard data: {metricsError.message}</span>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-white">
+          <Clock className="w-6 h-6 animate-spin" />
+          Loading engineer dashboard...
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 p-6">
+      {/* Header */}
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Engineer Dashboard</h1>
+          <p className="text-blue-200">Review completed inspections and generate SOW documents</p>
+        </div>
+        <Button 
+          onClick={handleForceRefresh}
+          className="bg-blue-600 hover:bg-blue-700"
+          size="lg"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh Data
+        </Button>
+      </div>
+
+      {/* CRITICAL DEBUG PANEL - Always visible for troubleshooting */}
+      <Alert className="mb-6 bg-blue-900/50 border-blue-400/30">
+        <AlertDescription className="text-blue-200">
+          <div className="space-y-2 text-sm">
+            <div className="font-medium">🔧 CRITICAL DEBUG INFO:</div>
+            <div>• Database query completed: {inspectionsLoading ? 'No' : 'Yes'}</div>
+            <div>• Completed inspections found: {completedInspections.length}</div>
+            <div>• Ready for SOW generation: {readyForSOW.length}</div>
+            <div>• Backend status: {isBackendOnline ? 'Connected ✅' : 'Offline ❌'}</div>
+            {inspectionsError && <div className="text-red-300">• Error: {inspectionsError}</div>}
+            
+            {completedInspections.length > 0 && (
+              <div className="mt-3">
+                <div className="font-medium">✅ FOUND THESE COMPLETED INSPECTIONS:</div>
+                {completedInspections.map(i => (
+                  <div key={i.id} className="ml-2 text-xs bg-green-900/30 p-1 rounded">
+                    📋 "{i.project_name}" - Status: {i.status} | Completed: {i.completed ? 'Yes' : 'No'} | SOW: {i.sow_generated ? 'Generated' : 'Pending'}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {readyForSOW.length > 0 && (
+              <div className="mt-2">
+                <div className="font-medium">🎯 READY FOR SOW GENERATION:</div>
+                {readyForSOW.map(i => (
+                  <div key={i.id} className="ml-2 text-xs bg-orange-900/30 p-1 rounded">
+                    🚀 "{i.project_name}" - Ready to generate SOW!
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </AlertDescription>
+      </Alert>
+
+      {/* Backend Status */}
+      <Alert className={`mb-6 ${isBackendOnline ? 'bg-green-900/50 border-green-400/30' : 'bg-red-900/50 border-red-400/30'}`}>
+        <AlertDescription className="text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              Backend Status: {isBackendOnline ? 'Connected ✅' : 'Offline ❌'}
+              {isBackendOnline && ' - Ready to generate SOW documents'}
+            </div>
+            <Badge className={isBackendOnline ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
+              {isBackendOnline ? 'Connected' : 'Offline'}
+            </Badge>
+          </div>
+        </AlertDescription>
+      </Alert>
+
+      {/* Error Display */}
+      {inspectionsError && (
+        <Alert className="mb-6 bg-red-900/50 border-red-400/30">
+          <AlertTriangle className="h-4 w-4 text-red-400" />
+          <AlertDescription className="text-red-200">
+            Error loading completed inspections: {inspectionsError}
+            <Button onClick={refetch} className="ml-4 bg-red-600 hover:bg-red-700" size="sm">
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card className="bg-white/10 backdrop-blur border-blue-400/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-200 text-sm">Total Inspections</p>
+                <p className="text-white text-2xl font-bold">{completedInspections.length}</p>
+              </div>
+              <FileText className="h-8 w-8 text-blue-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/10 backdrop-blur border-green-400/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-200 text-sm">Completed</p>
+                <p className="text-white text-2xl font-bold">{completedInspections.length}</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/10 backdrop-blur border-orange-400/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-200 text-sm">Ready for SOW</p>
+                <p className="text-white text-2xl font-bold">{readyForSOW.length}</p>
+              </div>
+              <Wrench className="h-8 w-8 text-orange-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/10 backdrop-blur border-purple-400/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-200 text-sm">Generation Status</p>
+                <p className="text-white text-sm">{generationStatus || 'Ready'}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-purple-400" />
             </div>
           </CardContent>
         </Card>
       </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Engineer Dashboard</h1>
-            <p className="text-gray-600">Monitor SOW generation and manage projects</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
-              realtimeConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${realtimeConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span>{realtimeConnected ? 'Live' : 'Offline'}</span>
-            </div>
-          </div>
-        </div>
+      {/* Main Content */}
+      <Tabs defaultValue="ready" className="space-y-6">
+        <TabsList className="bg-white/10 backdrop-blur">
+          <TabsTrigger value="ready">Ready for SOW ({readyForSOW.length})</TabsTrigger>
+          <TabsTrigger value="completed">All Completed ({completedInspections.length})</TabsTrigger>
+        </TabsList>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Inspections</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metricsLoading ? '...' : metrics?.totalInspections || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Available for SOW generation
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">SOWs Generated</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metricsLoading ? '...' : metrics?.totalSOWsGenerated || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Successfully completed
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending SOWs</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metricsLoading ? '...' : metrics?.pendingSOWs || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                In queue or processing
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg. Generation Time</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metricsLoading ? '...' : `${metrics?.avgGenerationTime || 0}s`}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Average completion time
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <Tabs defaultValue="recent" className="w-full">
-          <TabsList>
-            <TabsTrigger value="recent">Recent SOW Generations</TabsTrigger>
-            <TabsTrigger value="all">All History</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="recent" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent SOW Generations</CardTitle>
-                <CardDescription>
-                  Latest SOW generation requests and their status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {historyLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="animate-pulse">
-                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+        <TabsContent value="ready">
+          <div className="grid gap-6">
+            {readyForSOW.length === 0 ? (
+              <Card className="bg-white/10 backdrop-blur border-blue-400/30">
+                <CardContent className="p-8 text-center">
+                  <FileText className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+                  <h3 className="text-white text-lg mb-2">No Inspections Ready for SOW</h3>
+                  <p className="text-blue-200 mb-4">
+                    {completedInspections.length === 0 
+                      ? 'No completed inspections found. Check the debug panel above for details.'
+                      : `Found ${completedInspections.length} completed inspection(s), but they already have SOW generated.`
+                    }
+                  </p>
+                  <Button onClick={handleForceRefresh} className="bg-blue-600 hover:bg-blue-700" size="sm">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh & Check for New Inspections
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              readyForSOW.map((inspection) => (
+                <Card key={inspection.id} className="bg-white/10 backdrop-blur border-blue-400/30">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-white">{inspection.project_name}</CardTitle>
+                        <CardDescription className="text-blue-200">
+                          {inspection.project_address}
+                        </CardDescription>
                       </div>
-                    ))}
-                  </div>
-                ) : sowHistory && sowHistory.length > 0 ? (
-                  <div className="space-y-4">
-                    {sowHistory.map((sow) => (
-                      <div key={sow.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          {getStatusIcon(sow.generation_status)}
-                          <div>
-                            <div className="font-medium">
-                              {(sow.input_data as any)?.projectData?.projectName || 'Unnamed Project'}
-                            </div>
-                            <div className="text-sm text-gray-500 flex items-center space-x-2">
-                              <span>{format(new Date(sow.created_at), 'MMM dd, yyyy HH:mm')}</span>
-                              <span>•</span>
-                              <span>{sow.template_type}</span>
-                              {sow.generation_duration_seconds && (
-                                <>
-                                  <span>•</span>
-                                  <span>{sow.generation_duration_seconds}s</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getStatusColor(sow.generation_status)}>
-                            {sow.generation_status}
-                          </Badge>
-                          {sow.generation_status === 'completed' && sow.output_file_path && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDownloadSOW(sow.id)}
-                            >
-                              <Download className="h-4 w-4 mr-1" />
-                              PDF
-                            </Button>
-                          )}
-                        </div>
+                      <div className="flex gap-2">
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Completed
+                        </Badge>
+                        <Badge className="bg-orange-600 text-white">
+                          Ready for SOW
+                        </Badge>
                       </div>
-                    ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="flex items-center gap-2 text-blue-200">
+                        <User className="h-4 w-4" />
+                        <span className="text-sm">{inspection.inspector_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-blue-200">
+                        <Building className="h-4 w-4" />
+                        <span className="text-sm">{inspection.square_footage?.toLocaleString()} sq ft</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-blue-200">
+                        <MapPin className="h-4 w-4" />
+                        <span className="text-sm">{inspection.city}, {inspection.state}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-blue-200">
+                        <Calendar className="h-4 w-4" />
+                        <span className="text-sm">
+                          {inspection.completed_at ? new Date(inspection.completed_at).toLocaleDateString() : 'Recently'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* ASCE Requirements Preview */}
+                    {inspection.asce_requirements && (
+                      <div className="mb-4 p-3 bg-blue-900/30 rounded-lg">
+                        <p className="text-blue-200 text-sm font-medium mb-1">ASCE Requirements:</p>
+                        <p className="text-blue-100 text-sm">
+                          {inspection.asce_requirements.version} | 
+                          {inspection.asce_requirements.wind_speed || inspection.wind_speed || 'TBD'} mph | 
+                          Exposure {inspection.asce_requirements.exposure_category || inspection.exposure_category} | 
+                          Class {inspection.asce_requirements.building_classification || inspection.building_classification}
+                        </p>
+                        {inspection.city === 'Orlando' && inspection.state === 'FL' && (
+                          <p className="text-green-300 text-xs mt-1">
+                            ✓ Orlando, FL location detected - ASCE auto-suggestions available
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-end">
+                      <Button 
+                        onClick={() => handleGenerateSOW(inspection)}
+                        disabled={isGenerating || !isBackendOnline}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Clock className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Generate SOW
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="completed">
+          <div className="grid gap-6">
+            {completedInspections.map((inspection) => (
+              <Card key={inspection.id} className="bg-white/10 backdrop-blur border-blue-400/30">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-white">{inspection.project_name}</CardTitle>
+                      <CardDescription className="text-blue-200">
+                        {inspection.project_address}
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge className="bg-green-600 text-white">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Completed
+                      </Badge>
+                      {inspection.sow_generated && (
+                        <Badge className="bg-purple-600 text-white">
+                          SOW Generated
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No SOW generations yet</p>
-                    <p className="text-sm">Generate your first SOW from a field inspection</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="flex items-center gap-2 text-blue-200">
+                      <User className="h-4 w-4" />
+                      <span className="text-sm">{inspection.inspector_name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-200">
+                      <Building className="h-4 w-4" />
+                      <span className="text-sm">{inspection.square_footage?.toLocaleString()} sq ft</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-200">
+                      <MapPin className="h-4 w-4" />
+                      <span className="text-sm">{inspection.city}, {inspection.state}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-200">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-sm">
+                        {inspection.completed_at ? new Date(inspection.completed_at).toLocaleDateString() : 'Recently'}
+                      </span>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="all" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Complete SOW History</CardTitle>
-                <CardDescription>
-                  All SOW generations with detailed information
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Similar structure but with more detailed view */}
-                <p className="text-gray-500">Complete history view - implement as needed</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

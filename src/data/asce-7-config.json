@@ -1,0 +1,159 @@
+{
+  "asce_versions": [
+    {
+      "version": "ASCE 7-22",
+      "year": 2022,
+      "description": "Minimum Design Loads and Associated Criteria for Buildings and Other Structures",
+      "isDefault": true,
+      "isActive": true,
+      "wind_provisions": {
+        "chapter": "Chapter 26-31",
+        "method": "Analytical Method and Wind Tunnel Method",
+        "pressure_zones": ["Zone 1", "Zone 2", "Zone 3", "Corner Zone"],
+        "special_provisions": ["HVHZ", "Non-HVHZ"]
+      }
+    },
+    {
+      "version": "ASCE 7-16",
+      "year": 2016,
+      "description": "Minimum Design Loads and Associated Criteria for Buildings and Other Structures",
+      "isDefault": false,
+      "isActive": true,
+      "wind_provisions": {
+        "chapter": "Chapter 26-31",
+        "method": "Analytical Method and Wind Tunnel Method",
+        "pressure_zones": ["Zone 1", "Zone 2", "Zone 3", "Corner Zone"],
+        "special_provisions": ["HVHZ", "Non-HVHZ"]
+      }
+    },
+    {
+      "version": "ASCE 7-10",
+      "year": 2010,
+      "description": "Minimum Design Loads and Associated Criteria for Buildings and Other Structures",
+      "isDefault": false,
+      "isActive": true,
+      "wind_provisions": {
+        "chapter": "Chapter 26-31",
+        "method": "Analytical Method and Wind Tunnel Method",
+        "pressure_zones": ["Zone 1", "Zone 2", "Zone 3", "Corner Zone"],
+        "special_provisions": ["HVHZ", "Non-HVHZ"]
+      }
+    },
+    {
+      "version": "ASCE 7-05",
+      "year": 2005,
+      "description": "Minimum Design Loads and Associated Criteria for Buildings and Other Structures",
+      "isDefault": false,
+      "isActive": false,
+      "wind_provisions": {
+        "chapter": "Chapter 6",
+        "method": "Analytical Method",
+        "pressure_zones": ["Zone 1", "Zone 2", "Zone 3", "Corner Zone"],
+        "special_provisions": ["HVHZ", "Non-HVHZ"]
+      }
+    }
+  ],
+  "exposure_categories": [
+    {
+      "category": "B",
+      "description": "Urban and suburban areas, wooded areas, or other terrain with numerous closely spaced obstructions",
+      "ground_elevation_factor": 0.7,
+      "common_locations": ["Cities", "Suburbs", "Wooded areas"]
+    },
+    {
+      "category": "C",
+      "description": "Open terrain with scattered obstructions having heights generally less than 30 feet",
+      "ground_elevation_factor": 1.0,
+      "common_locations": ["Flat open country", "Grasslands", "Open areas with scattered obstructions"]
+    },
+    {
+      "category": "D",
+      "description": "Flat, unobstructed areas and water surfaces outside hurricane-prone regions",
+      "ground_elevation_factor": 1.15,
+      "common_locations": ["Large bodies of water", "Mudflats", "Salt flats", "Unbroken ice"]
+    }
+  ],
+  "building_classifications": [
+    {
+      "class": "I",
+      "description": "Buildings and other structures that represent a low hazard to human life in the event of failure",
+      "importance_factor": 0.87,
+      "examples": ["Agricultural facilities", "Minor storage facilities", "Temporary facilities"]
+    },
+    {
+      "class": "II",
+      "description": "Buildings and other structures except those listed in Risk Categories I, III, and IV",
+      "importance_factor": 1.0,
+      "examples": ["Most buildings", "Residential", "Commercial", "Industrial"],
+      "isDefault": true
+    },
+    {
+      "class": "III",
+      "description": "Buildings and other structures that represent a substantial hazard to human life in the event of failure",
+      "importance_factor": 1.15,
+      "examples": ["Schools", "Hospitals", "Jails", "Assembly buildings with occupancy > 300"]
+    },
+    {
+      "class": "IV",
+      "description": "Buildings and other structures designated as essential facilities",
+      "importance_factor": 1.15,
+      "examples": ["Hospitals", "Fire stations", "Emergency response facilities", "Power generating stations"]
+    }
+  ],
+  "risk_categories": [
+    {
+      "category": "I",
+      "description": "Buildings and other structures that represent a low hazard to human life in the event of failure",
+      "importance_factor": 0.87
+    },
+    {
+      "category": "II",
+      "description": "Buildings and other structures except those listed in Risk Categories I, III, and IV",
+      "importance_factor": 1.0,
+      "isDefault": true
+    },
+    {
+      "category": "III",
+      "description": "Buildings and other structures that represent a substantial hazard to human life in the event of failure",
+      "importance_factor": 1.15
+    },
+    {
+      "category": "IV",
+      "description": "Buildings and other structures designated as essential facilities",
+      "importance_factor": 1.15
+    }
+  ],
+  "hvhz_regions": {
+    "description": "High-Velocity Hurricane Zones as defined by ASCE 7",
+    "states": ["FL"],
+    "counties": {
+      "FL": [
+        "Broward County",
+        "Collier County", 
+        "Miami-Dade County",
+        "Monroe County",
+        "Palm Beach County"
+      ]
+    },
+    "wind_speed_threshold": 180,
+    "special_requirements": [
+      "Enhanced testing requirements",
+      "Impact-resistant design",
+      "Special fastening requirements",
+      "Missile impact resistance"
+    ]
+  },
+  "default_values": {
+    "asce_version": "ASCE 7-22",
+    "exposure_category": "C",
+    "building_classification": "II",
+    "risk_category": "II",
+    "importance_factor": 1.0
+  },
+  "manual_override": {
+    "enabled": true,
+    "reason": "API costs not approved by management - engineer manual selection required",
+    "validation_required": true,
+    "approval_notes": "Engineer must validate ASCE requirements based on project location and building type"
+  }
+}

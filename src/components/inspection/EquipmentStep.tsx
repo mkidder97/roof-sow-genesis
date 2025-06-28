@@ -6,19 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Wrench } from 'lucide-react';
 import { FieldInspection } from '@/types/fieldInspection';
 
-interface EquipmentInventoryStepProps {
+interface EquipmentStepProps {
   data: Partial<FieldInspection>;
-  onChange: (updates: Partial<FieldInspection>) => void;
-  readOnly?: boolean;
+  onUpdate: (updates: Partial<FieldInspection>) => void;
 }
 
-const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({
+export const EquipmentStep: React.FC<EquipmentStepProps> = ({
   data,
-  onChange,
-  readOnly = false
+  onUpdate
 }) => {
-  const handleInputChange = (field: keyof FieldInspection, value: any) => {
-    onChange({ [field]: value });
+  const handleInputChange = (field: keyof FieldInspection, value: string | number | any[]) => {
+    onUpdate({ [field]: value });
   };
 
   return (
@@ -26,7 +24,7 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wrench className="w-5 h-5" />
-          Equipment Inventory
+          Roof Equipment & Features
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -39,7 +37,6 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({
               value={data.skylights || ''}
               onChange={(e) => handleInputChange('skylights', parseInt(e.target.value) || 0)}
               placeholder="Number of skylights"
-              readOnly={readOnly}
             />
           </div>
           
@@ -51,7 +48,6 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({
               value={data.roof_hatches || ''}
               onChange={(e) => handleInputChange('roof_hatches', parseInt(e.target.value) || 0)}
               placeholder="Number of hatches"
-              readOnly={readOnly}
             />
           </div>
           
@@ -67,7 +63,6 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({
                 handleInputChange('hvac_units', units);
               }}
               placeholder="Number of HVAC units"
-              readOnly={readOnly}
             />
           </div>
         </div>
@@ -75,5 +70,3 @@ const EquipmentInventoryStep: React.FC<EquipmentInventoryStepProps> = ({
     </Card>
   );
 };
-
-export default EquipmentInventoryStep;

@@ -1,0 +1,101 @@
+
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-06-27",
+    "description": "State-based ASCE 7 defaults for intelligent auto-suggestions",
+    "source": "Research of state building code adoptions and AHJ preferences",
+    "confidence_scoring": {
+      "high": "90-100% - Well documented state adoption",
+      "medium": "70-89% - Common regional practice", 
+      "low": "50-69% - Estimated based on neighboring states"
+    }
+  },
+  "states": {
+    "FL": {
+      "name": "Florida",
+      "default_asce_version": "ASCE 7-16",
+      "confidence": "high",
+      "building_code": "Florida Building Code (FBC)",
+      "notes": "FBC specifically references ASCE 7-16. HVHZ requirements mandatory in southern counties.",
+      "regions": {
+        "south": {
+          "counties": ["Miami-Dade", "Broward", "Palm Beach", "Monroe", "Collier"],
+          "wind_speed": 180,
+          "exposure_category": "C",
+          "building_classification": "II",
+          "hvhz": true,
+          "special_notes": "High-Velocity Hurricane Zone - enhanced requirements"
+        },
+        "central": {
+          "counties": ["Orange", "Hillsborough", "Pinellas", "Polk", "Volusia"],
+          "wind_speed": 150,
+          "exposure_category": "C", 
+          "building_classification": "II",
+          "hvhz": false
+        },
+        "north": {
+          "counties": ["Duval", "Leon", "Alachua", "Clay", "St. Johns"],
+          "wind_speed": 140,
+          "exposure_category": "C",
+          "building_classification": "II", 
+          "hvhz": false
+        }
+      },
+      "default_region": "central"
+    },
+    "TX": {
+      "name": "Texas",
+      "default_asce_version": "ASCE 7-22",
+      "confidence": "high",
+      "building_code": "International Building Code (IBC) with state amendments",
+      "notes": "Most jurisdictions have adopted IBC 2021 which references ASCE 7-22",
+      "regions": {
+        "coastal": {
+          "counties": ["Harris", "Galveston", "Jefferson", "Orange", "Cameron"],
+          "wind_speed": 150,
+          "exposure_category": "C",
+          "building_classification": "II",
+          "special_notes": "Hurricane-prone coastal region"
+        },
+        "inland": {
+          "counties": ["Dallas", "Tarrant", "Travis", "Bexar", "Collin"],
+          "wind_speed": 115,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "inland"
+    },
+    "CA": {
+      "name": "California", 
+      "default_asce_version": "ASCE 7-22",
+      "confidence": "high",
+      "building_code": "California Building Code (CBC)",
+      "notes": "CBC 2022 adopted ASCE 7-22. Seismic considerations may affect wind requirements.",
+      "regions": {
+        "coastal": {
+          "counties": ["Los Angeles", "Orange", "San Diego", "Ventura"],
+          "wind_speed": 85,
+          "exposure_category": "C",
+          "building_classification": "II"
+        },
+        "inland": {
+          "counties": ["Riverside", "San Bernardino", "Fresno", "Sacramento"],
+          "wind_speed": 90,
+          "exposure_category": "C",
+          "building_classification": "II"
+        }
+      },
+      "default_region": "coastal"
+    }
+  },
+  "fallback_defaults": {
+    "asce_version": "ASCE 7-22",
+    "wind_speed": 115,
+    "exposure_category": "C",
+    "building_classification": "II",
+    "confidence": "low",
+    "notes": "Default values for states not specifically configured"
+  }
+}

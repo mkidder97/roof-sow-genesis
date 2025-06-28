@@ -24,7 +24,28 @@ const RoleBasedNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const userRole = user?.user_metadata?.role || 'inspector';
+  // FIXED: Improved role detection with proper fallback logic
+  const getUserRole = (): string => {
+    // First, try to get role from user metadata
+    if (user?.user_metadata?.role) {
+      console.log('Role from user_metadata:', user.user_metadata.role);
+      return user.user_metadata.role;
+    }
+    
+    // Fallback: Check current route to infer role
+    const currentPath = location.pathname;
+    if (currentPath.includes('/sow-generation') || currentPath.includes('/engineer')) {
+      console.log('Role inferred from path (engineer):', currentPath);
+      return 'engineer';
+    }
+    
+    // Default to inspector
+    console.log('Defaulting to inspector role');
+    return 'inspector';
+  };
+
+  const userRole = getUserRole();
+  console.log('Final determined role:', userRole);
 
   // Role-specific navigation items
   const navigationItems: NavigationItem[] = [

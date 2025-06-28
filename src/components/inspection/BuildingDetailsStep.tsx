@@ -3,22 +3,21 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building } from 'lucide-react';
 import { FieldInspection } from '@/types/fieldInspection';
 
-interface BuildingSpecsStepProps {
+interface BuildingDetailsStepProps {
   data: Partial<FieldInspection>;
-  onChange: (updates: Partial<FieldInspection>) => void;
-  readOnly?: boolean;
+  onUpdate: (updates: Partial<FieldInspection>) => void;
 }
 
-const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
+export const BuildingDetailsStep: React.FC<BuildingDetailsStepProps> = ({
   data,
-  onChange,
-  readOnly = false
+  onUpdate
 }) => {
-  const handleInputChange = (field: keyof FieldInspection, value: any) => {
-    onChange({ [field]: value });
+  const handleInputChange = (field: keyof FieldInspection, value: string | number) => {
+    onUpdate({ [field]: value });
   };
 
   return (
@@ -26,7 +25,7 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Building className="w-5 h-5" />
-          Building Specifications
+          Building Details
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -39,7 +38,6 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
               value={data.building_height || ''}
               onChange={(e) => handleInputChange('building_height', parseFloat(e.target.value) || 0)}
               placeholder="Enter building height"
-              readOnly={readOnly}
               required
             />
           </div>
@@ -52,7 +50,6 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
               value={data.square_footage || ''}
               onChange={(e) => handleInputChange('square_footage', parseFloat(e.target.value) || 0)}
               placeholder="Enter square footage"
-              readOnly={readOnly}
               required
             />
           </div>
@@ -67,7 +64,6 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
               value={data.building_length || ''}
               onChange={(e) => handleInputChange('building_length', parseFloat(e.target.value) || 0)}
               placeholder="Enter length"
-              readOnly={readOnly}
             />
           </div>
           
@@ -79,7 +75,6 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
               value={data.building_width || ''}
               onChange={(e) => handleInputChange('building_width', parseFloat(e.target.value) || 0)}
               placeholder="Enter width"
-              readOnly={readOnly}
             />
           </div>
           
@@ -91,7 +86,6 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
               value={data.number_of_stories || ''}
               onChange={(e) => handleInputChange('number_of_stories', parseInt(e.target.value) || 1)}
               placeholder="Enter stories"
-              readOnly={readOnly}
             />
           </div>
         </div>
@@ -99,5 +93,3 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
     </Card>
   );
 };
-
-export default BuildingSpecsStep;

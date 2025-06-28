@@ -7,19 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Home } from 'lucide-react';
 import { FieldInspection } from '@/types/fieldInspection';
 
-interface RoofAssessmentStepProps {
+interface RoofSystemStepProps {
   data: Partial<FieldInspection>;
-  onChange: (updates: Partial<FieldInspection>) => void;
-  readOnly?: boolean;
+  onUpdate: (updates: Partial<FieldInspection>) => void;
 }
 
-const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({
+export const RoofSystemStep: React.FC<RoofSystemStepProps> = ({
   data,
-  onChange,
-  readOnly = false
+  onUpdate
 }) => {
-  const handleInputChange = (field: keyof FieldInspection, value: any) => {
-    onChange({ [field]: value });
+  const handleInputChange = (field: keyof FieldInspection, value: string | number) => {
+    onUpdate({ [field]: value });
   };
 
   return (
@@ -33,11 +31,10 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="deck-type">Deck Type</Label>
+            <Label htmlFor="deck-type">Deck Type *</Label>
             <Select
               value={data.deck_type || ''}
               onValueChange={(value) => handleInputChange('deck_type', value)}
-              disabled={readOnly}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select deck type" />
@@ -52,11 +49,10 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="existing-membrane-type">Existing Membrane Type</Label>
+            <Label htmlFor="existing-membrane-type">Existing Membrane Type *</Label>
             <Select
               value={data.existing_membrane_type || ''}
               onValueChange={(value) => handleInputChange('existing_membrane_type', value)}
-              disabled={readOnly}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select membrane type" />
@@ -78,7 +74,6 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({
             <Select
               value={data.insulation_type || ''}
               onValueChange={(value) => handleInputChange('insulation_type', value)}
-              disabled={readOnly}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select insulation type" />
@@ -100,27 +95,10 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({
               value={data.roof_age_years || ''}
               onChange={(e) => handleInputChange('roof_age_years', parseInt(e.target.value) || 0)}
               placeholder="Enter roof age"
-              readOnly={readOnly}
             />
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="overall-condition">Overall Condition (1-10)</Label>
-          <Input
-            id="overall-condition"
-            type="number"
-            min="1"
-            max="10"
-            value={data.overall_condition || ''}
-            onChange={(e) => handleInputChange('overall_condition', parseInt(e.target.value) || 5)}
-            placeholder="Rate overall condition"
-            readOnly={readOnly}
-          />
         </div>
       </CardContent>
     </Card>
   );
 };
-
-export default RoofAssessmentStep;

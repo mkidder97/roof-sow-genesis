@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -6,30 +5,47 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import InspectionDetails from '@/components/field-inspector/InspectionDetails';
-import { FieldInspection, FieldInspectionRow } from '@/types/fieldInspection';
+import { FieldInspection, FieldInspectionRow, ASCERequirements } from '@/types/fieldInspection';
 
-// Convert database row to FieldInspection type
-const convertRowToInspection = (row: FieldInspectionRow): FieldInspection => {
+// Helper function to convert database row to FieldInspection with proper type handling
+const convertDatabaseToInspection = (data: any): FieldInspection => {
+  // Handle ASCE requirements JSON conversion
+  let asceRequirements: ASCERequirements | undefined;
+  if (data.asce_requirements) {
+    try {
+      if (typeof data.asce_requirements === 'string') {
+        asceRequirements = JSON.parse(data.asce_requirements);
+      } else if (typeof data.asce_requirements === 'object' && data.asce_requirements !== null) {
+        // Handle both plain object and already parsed JSON
+        asceRequirements = data.asce_requirements as ASCERequirements;
+      }
+    } catch (error) {
+      console.warn('Failed to parse ASCE requirements:', error);
+      asceRequirements = undefined;
+    }
+  }
+
   return {
-    ...row,
-    inspection_date: row.inspection_date || '',
-    priority_level: (row.priority_level as 'Standard' | 'Expedited' | 'Emergency') || 'Standard',
-    status: (row.status as 'Draft' | 'Completed' | 'Under Review' | 'Approved') || 'Draft',
-    hvac_units: Array.isArray(row.hvac_units) ? row.hvac_units : [],
-    roof_drains: Array.isArray(row.roof_drains) ? row.roof_drains : [],
-    penetrations: Array.isArray(row.penetrations) ? row.penetrations : [],
-    insulation_layers: Array.isArray(row.insulation_layers) ? row.insulation_layers : [],
-    skylights: row.skylights || 0,
-    photos: row.photos || [],
-    sow_generated: row.sow_generated || false,
-    drainage_options: row.drainage_options ? (Array.isArray(row.drainage_options) ? row.drainage_options : []) : [],
-    interior_protection_needed: row.interior_protection_needed || false,
-    interior_protection_sqft: row.interior_protection_sqft || 0,
-    conduit_attached: row.conduit_attached || false,
-    upgraded_lighting: row.upgraded_lighting || false,
-    interior_fall_protection: row.interior_fall_protection || false,
-    access_method: (row.access_method as 'internal_hatch' | 'external_ladder' | 'extension_ladder') || 'internal_hatch',
-  };
+    ...data,
+    asce_requirements: asceRequirements,
+    inspection_date: data.inspection_date || '',
+    priority_level: (data.priority_level as 'Standard' | 'Expedited' | 'Emergency') || 'Standard',
+    status: (data.status as 'Draft' | 'Completed' | 'Under Review' | 'Approved') || 'Draft',
+    hvac_units: Array.isArray(data.hvac_units) ? data.hvac_units : [],
+    roof_drains: Array.isArray(data.roof_drains) ? data.roof_drains : [],
+    penetrations: Array.isArray(data.penetrations) ? data.penetrations : [],
+    insulation_layers: Array.isArray(data.insulation_layers) ? data.insulation_layers : [],
+    skylights: data.skylights || 0,
+    photos: data.photos || [],
+    sow_generated: data.sow_generated || false,
+    drainage_options: data.drainage_options ? (Array.isArray(data.drainage_options) ? data.drainage_options : []) : [],
+    interior_protection_needed: data.interior_protection_needed || false,
+    interior_protection_sqft: data.interior_protection_sqft || 0,
+    conduit_attached: data.conduit_attached || false,
+    upgraded_lighting: data.upgraded_lighting || false,
+    interior_fall_protection: data.interior_fall_protection || false,
+    access_method: (data.access_method as 'internal_hatch' | 'external_ladder' | 'extension_ladder') || 'internal_hatch',
+  } as FieldInspection;
 };
 
 const InspectionDetailsPage = () => {
@@ -48,7 +64,7 @@ const InspectionDetailsPage = () => {
         .single();
 
       if (error) throw error;
-      return convertRowToInspection(data);
+      return convertDatabaseToInspection(data);
     },
     enabled: !!id,
   });
