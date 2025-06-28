@@ -9,14 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, AlertTriangle, Clock, Upload, Camera, Save, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock, Upload, Camera, Save, FileText, Loader2, Ruler, Home, Wrench } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFieldInspections } from '@/hooks/useFieldInspections';
 import { FieldInspection } from '@/types/fieldInspection';
 
-// Fix the import paths for step components
+// Import the updated workflow components
 import ProjectInfoStep from './form-steps/ProjectInfoStep';
-import BuildingSpecsStep from './form-steps/BuildingSpecsStep';
+import BuildingDimensionsStep from './form-steps/BuildingDimensionsStep';
 import RoofAssessmentStep from './form-steps/RoofAssessmentStep';
 import EquipmentInventoryStep from './form-steps/EquipmentInventoryStep';
 import PhotoDocumentationStep from './form-steps/PhotoDocumentationStep';
@@ -54,17 +54,17 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     priority_level: 'Standard',
     weather_conditions: 'Clear',
     access_method: 'internal_hatch',
-    deck_type: 'steel',
-    existing_membrane_type: 'tpo',
-    insulation_type: 'polyiso',
-    roof_slope: 'flat',
-    insulation_condition: 'good',
+    deck_type: '',
+    existing_membrane_type: '',
+    insulation_type: '',
+    roof_slope: '',
+    insulation_condition: '',
     existing_membrane_condition: 5,
-    roof_age_years: 10,
-    building_height: 20,
-    building_length: 100,
-    building_width: 100,
-    square_footage: 10000,
+    roof_age_years: 0,
+    building_height: 0,
+    building_length: 0,
+    building_width: 0,
+    square_footage: 0,
     number_of_stories: 1,
     hvac_units: [],
     roof_drains: [],
@@ -75,14 +75,21 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     photos: [],
     completed: false,
     ready_for_handoff: false,
-    // New required fields with defaults
+    // Location fields (set by engineer)
     city: '',
-    state: 'FL',
+    state: '',
     zip_code: '',
-    county: '', // Add county field
-    wind_speed: 140,
-    exposure_category: 'C',
-    building_classification: 'II'
+    // Enhanced equipment inventory arrays
+    equipment_skylights: [],
+    equipment_access_points: [],
+    equipment_hvac_units: [],
+    // New takeoff fields
+    drainage_primary_type: '',
+    drainage_condition: '',
+    penetrations_gas_lines: false,
+    penetrations_conduit_attached: false,
+    curbs_8_inch_or_above: false,
+    side_discharge_units: false
   });
 
   const [activeTab, setActiveTab] = useState('project-info');
@@ -116,19 +123,14 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
 
     switch (activeTab) {
       case 'project-info':
-        if (!formData.project_name?.trim()) errors.push('Project name is required');
-        if (!formData.project_address?.trim()) errors.push('Project address is required');
         if (!formData.inspector_name?.trim()) errors.push('Inspector name is required');
-        if (!formData.city?.trim()) errors.push('City is required');
-        if (!formData.state?.trim()) errors.push('State is required');
-        if (!formData.zip_code?.trim()) errors.push('Zip code is required');
-        if (!formData.wind_speed || formData.wind_speed <= 0) errors.push('Wind speed is required');
-        if (!formData.exposure_category?.trim()) errors.push('Exposure category is required');
-        if (!formData.building_classification?.trim()) errors.push('Building classification is required');
         break;
-      case 'building-specs':
+      case 'building-dimensions':
         if (!formData.building_height || formData.building_height <= 0) errors.push('Building height must be greater than 0');
-        if (!formData.square_footage || formData.square_footage <= 0) errors.push('Square footage must be greater than 0');
+        break;
+      case 'roof-assessment':
+        if (!formData.deck_type?.trim()) errors.push('Deck type is required');
+        if (!formData.existing_membrane_type?.trim()) errors.push('Existing membrane type is required');
         break;
     }
 
@@ -227,9 +229,9 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
 
   const tabs = [
     { id: 'project-info', label: 'Project Info', icon: FileText },
-    { id: 'building-specs', label: 'Building Specs', icon: CheckCircle },
-    { id: 'roof-assessment', label: 'Roof Assessment', icon: AlertTriangle },
-    { id: 'equipment-inventory', label: 'Equipment', icon: Clock },
+    { id: 'building-dimensions', label: 'Dimensions', icon: Ruler },
+    { id: 'roof-assessment', label: 'Roof Assessment', icon: Home },
+    { id: 'equipment-inventory', label: 'Equipment', icon: Wrench },
     { id: 'photo-documentation', label: 'Photos', icon: Camera },
     { id: 'assessment-notes', label: 'Notes', icon: FileText },
   ];
@@ -238,12 +240,13 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     // Enhanced validation logic for tab status
     switch (tabId) {
       case 'project-info':
-        return (formData.project_name && formData.project_address && formData.inspector_name && 
-                formData.city && formData.state && formData.zip_code && 
-                formData.wind_speed && formData.exposure_category && formData.building_classification) 
-                ? 'complete' : 'incomplete';
-      case 'building-specs':
-        return formData.building_height && formData.square_footage ? 'complete' : 'incomplete';
+        return formData.inspector_name ? 'complete' : 'incomplete';
+      case 'building-dimensions':
+        return formData.building_height && formData.building_height > 0 ? 'complete' : 'incomplete';
+      case 'roof-assessment':
+        return formData.deck_type && formData.existing_membrane_type ? 'complete' : 'incomplete';
+      case 'equipment-inventory':
+        return 'optional'; // This is now comprehensive and optional
       default:
         return 'optional';
     }
@@ -364,8 +367,8 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                 />
               </TabsContent>
 
-              <TabsContent value="building-specs" className="mt-0">
-                <BuildingSpecsStep
+              <TabsContent value="building-dimensions" className="mt-0">
+                <BuildingDimensionsStep
                   data={formData}
                   onChange={handleInputChange}
                   readOnly={readOnly}
