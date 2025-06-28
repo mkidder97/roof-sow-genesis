@@ -1,4 +1,3 @@
-
 // Core interfaces for SOW generation and management
 export interface SOWGenerationData {
   id: string;
@@ -210,23 +209,40 @@ export function isNetworkError(error: any): boolean {
          error?.name === 'TypeError';
 }
 
-// Section types for SOW components
+// Section types for SOW components - Updated with missing properties
 export interface ProjectMetadata {
   projectName: string;
   address: string;
   customerName?: string;
+  companyName?: string;
+  squareFootage?: number;
+  projectType?: string;
+  deckType?: string;
+  buildingHeight?: number;
+  length?: number;
 }
 
 export interface Environmental {
   windSpeed: number;
   exposureCategory: string;
   asceVersion: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  elevation?: number;
+  jurisdiction?: string;
+  hvhzZone?: boolean;
 }
 
 export interface Membrane {
   type: string;
   thickness: string;
   color?: string;
+  manufacturer?: string;
+  productName?: string;
+  membraneType?: string;
+  warrantyTerm?: string;
+  attachmentMethod?: string;
 }
 
 export interface Takeoff {
@@ -238,6 +254,9 @@ export interface Notes {
   general?: string;
   special?: string;
   engineering?: string;
+  contractorName?: string;
+  addendaNotes?: string;
+  warrantyNotes?: string;
 }
 
 export function transformInspectionToSOWRequest(inspection: FieldInspectionData): SOWGenerationRequest {

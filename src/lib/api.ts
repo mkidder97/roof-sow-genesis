@@ -5,7 +5,11 @@ import { SOWGenerationRequest, SOWGenerationResult } from '@/types/sow';
 // Export missing API utilities
 export const API_ENDPOINTS = {
   GENERATE_SOW: '/generate-sow',
-  HEALTH_CHECK: '/health'
+  HEALTH_CHECK: '/health',
+  health: '/health',
+  status: '/status',
+  docs: '/docs',
+  templateMap: '/template-map'
 };
 
 export async function apiCall(endpoint: string, data?: any) {
@@ -105,4 +109,5 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
 
 // Export for compatibility
 export type SOWGenerationResponse = SOWGenerationResult;
+export type SOWResponse = SOWGenerationResult;
 export { SOWGenerationRequest };

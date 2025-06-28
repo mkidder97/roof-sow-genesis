@@ -40,6 +40,7 @@ export interface ASCEConfig {
   versions: ASCEVersion[];
   exposureCategories: ExposureCategory[];
   buildingClassifications: BuildingClassification[];
+  manualOverride?: boolean;
 }
 
 const defaultConfig: ASCEConfig = {
@@ -59,11 +60,12 @@ const defaultConfig: ASCEConfig = {
     { class: 'II', description: 'Standard occupancy', importance_factor: 1.0, isDefault: true },
     { class: 'III', description: 'Substantial hazard to human life', importance_factor: 1.15, isDefault: false },
     { class: 'IV', description: 'Essential facilities', importance_factor: 1.15, isDefault: false }
-  ]
+  ],
+  manualOverride: false
 };
 
 export function useASCEConfig() {
-  const [config] = useState<ASCEConfig>(defaultConfig);
+  const [config, setConfig] = useState<ASCEConfig>(defaultConfig);
   const [selectedRequirements, setSelectedRequirements] = useState<ASCERequirements>({
     version: 'ASCE 7-22',
     exposure_category: 'C',
@@ -72,6 +74,17 @@ export function useASCEConfig() {
     importance_factor: 1.0,
     engineer_approved: false
   });
+
+  const getRecommendedASCEVersion = useCallback((location?: { state?: string; city?: string; county?: string }) => {
+    // Simple recommendation logic based on location
+    if (location?.state === 'FL') {
+      return 'ASCE 7-16'; // Florida Building Code uses ASCE 7-16
+    }
+    if (location?.state === 'TX') {
+      return 'ASCE 7-22'; // Texas typically uses latest IBC
+    }
+    return 'ASCE 7-22'; // Default to latest
+  }, []);
 
   const updateRequirements = useCallback((updates: Partial<ASCERequirements>) => {
     setSelectedRequirements(prev => {
@@ -152,7 +165,8 @@ export function useASCEConfig() {
     validateRequirements,
     getImportanceFactorForClass,
     isHVHZLocation,
-    requiresEngineerApproval
+    requiresEngineerApproval,
+    getRecommendedASCEVersion
   };
 }
 
