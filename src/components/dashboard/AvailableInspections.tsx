@@ -32,7 +32,7 @@ const AvailableInspections = () => {
     try {
       console.log('Generating SOW for inspection:', inspection);
       
-      // Enhanced data mapping with all required fields
+      // Enhanced data mapping with all required fields and proper types
       const sowRequest = {
         projectName: inspection.project_name,
         projectAddress: inspection.project_address,
@@ -45,24 +45,14 @@ const AvailableInspections = () => {
         squareFootage: inspection.square_footage || 10000,
         deckType: inspection.deck_type || 'steel',
         membraneType: inspection.existing_membrane_type || 'tpo',
-        insulationType: inspection.insulation_type || 'polyiso',
         windSpeed: inspection.wind_speed || 140,
         exposureCategory: inspection.exposure_category || 'C',
         buildingClassification: inspection.building_classification || 'II',
-        notes: inspection.notes || '',
-        inspectionId: inspection.id,
-        projectType: 'recover', // Default for field inspections
-        
-        // Additional fields for complete SOW generation
-        buildingLength: inspection.building_length || 100,
-        buildingWidth: inspection.building_width || 100,
-        roofSlope: inspection.roof_slope || 'flat',
-        numberOfStories: inspection.number_of_stories || 1,
-        hvacUnits: inspection.hvac_units?.length || 0,
-        skylights: inspection.skylights || 0,
-        roofHatches: inspection.roof_hatches || 0,
-        penetrations: inspection.penetrations?.length || 0,
-        drains: inspection.roof_drains?.length || 0,
+        inspectorName: inspection.inspector_name || 'Unknown Inspector',
+        inspectionDate: inspection.inspection_date,
+        projectType: (inspection.project_type || 'recover') as 'recover' | 'tearoff' | 'new',
+        customNotes: [inspection.notes, inspection.recommendations, inspection.concerns]
+          .filter(Boolean) as string[]
       };
 
       console.log('Enhanced SOW Request:', sowRequest);

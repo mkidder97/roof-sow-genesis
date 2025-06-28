@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Eye, FileText, MapPin, Calendar, User, AlertTriangle, CheckCircle, Wind } from 'lucide-react';
 import { useFieldInspections } from '@/hooks/useFieldInspections';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
-import { FieldInspection, convertRowToInspection } from '@/types/fieldInspection';
+import { FieldInspection, FieldInspectionData, convertRowToInspection } from '@/types/fieldInspection';
 import { SOWGenerationRequest, transformInspectionToSOWRequest } from '@/types/sow';
 import { generateASCERequirementsSummary } from '@/hooks/useASCEConfig';
 import { LoadingState } from '../ui/loading-state';
@@ -23,8 +23,8 @@ export const AvailableInspections: React.FC<AvailableInspectionsProps> = ({
   onEdit,
   limit = 10
 }) => {
-  const { data: inspections, isLoading, error, refetch } = useFieldInspections();
-  const { generateSOW, isGenerating, generationError } = useSOWGeneration();
+  const { inspections, loading, error, refetch } = useFieldInspections();
+  const { generateSOW, isGenerating, error: generationError } = useSOWGeneration();
   const [generatingSOWForId, setGeneratingSOWForId] = useState<string | null>(null);
 
   const handleGenerateSOW = async (inspection: FieldInspection) => {
@@ -33,28 +33,34 @@ export const AvailableInspections: React.FC<AvailableInspectionsProps> = ({
     setGeneratingSOWForId(inspection.id);
 
     try {
-      // Transform inspection data to SOW request format
-      const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest(inspection);
-
-      // Enhanced SOW request with ASCE requirements
-      const enhancedSOWRequest: SOWGenerationRequest = {
-        ...sowRequest,
-        // Include location data for jurisdiction analysis
-        city: inspection.city,
-        state: inspection.state,
-        county: inspection.county,
-        // Include complete ASCE requirements
-        asceRequirements: inspection.asce_requirements,
-        asceVersion: inspection.asce_version,
+      // Transform inspection data to SOW request format with proper typing
+      const sowRequest: SOWGenerationRequest = {
+        projectName: inspection.project_name,
+        projectAddress: inspection.project_address,
+        customerName: inspection.customer_name,
+        customerPhone: inspection.customer_phone,
+        buildingHeight: inspection.building_height,
+        squareFootage: inspection.square_footage,
+        deckType: inspection.deck_type,
+        membraneType: inspection.existing_membrane_type,
         windSpeed: inspection.wind_speed,
         exposureCategory: inspection.exposure_category,
+        projectType: (inspection.project_type || 'recover') as 'recover' | 'tearoff' | 'new',
+        city: inspection.city,
+        state: inspection.state,
+        zipCode: inspection.zip_code,
         buildingClassification: inspection.building_classification,
-        // Add engineering notes
+        asceRequirements: inspection.asce_requirements,
+        asceVersion: inspection.asce_version,
         engineeringNotes: inspection.asce_requirements ? 
-          generateASCERequirementsSummary(inspection.asce_requirements) : undefined
+          generateASCERequirementsSummary(inspection.asce_requirements) : undefined,
+        inspectorName: inspection.inspector_name,
+        inspectionDate: inspection.inspection_date,
+        customNotes: [inspection.notes, inspection.recommendations, inspection.concerns]
+          .filter(Boolean) as string[]
       };
 
-      await generateSOW(enhancedSOWRequest);
+      await generateSOW(sowRequest);
       
       // Refresh inspections to update SOW status
       refetch();
@@ -99,7 +105,7 @@ export const AvailableInspections: React.FC<AvailableInspectionsProps> = ({
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return <LoadingState message="Loading inspections..." />;
   }
 
@@ -108,7 +114,7 @@ export const AvailableInspections: React.FC<AvailableInspectionsProps> = ({
       <Card>
         <CardContent className="p-6 text-center">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600">Error loading inspections: {error.message}</p>
+          <p className="text-red-600">Error loading inspections: {error}</p>
           <Button onClick={() => refetch()} className="mt-4">
             Try Again
           </Button>
@@ -135,8 +141,7 @@ export const AvailableInspections: React.FC<AvailableInspectionsProps> = ({
 
   return (
     <div className="space-y-4">
-      {displayInspections.map((inspectionRow) => {
-        const inspection = convertRowToInspection(inspectionRow);
+      {displayInspections.map((inspection) => {
         const asceStatus = getASCEStatus(inspection);
         const AsceIcon = asceStatus.icon;
 
@@ -281,7 +286,7 @@ export const AvailableInspections: React.FC<AvailableInspectionsProps> = ({
               {generationError && generatingSOWForId === inspection.id && (
                 <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
                   <p className="text-sm text-red-600">
-                    Error generating SOW: {generationError.message}
+                    Error generating SOW: {typeof generationError === 'string' ? generationError : 'An error occurred'}
                   </p>
                 </div>
               )}
