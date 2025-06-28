@@ -36,11 +36,16 @@ export interface ASCERequirements {
   notes?: string;
 }
 
+export interface ManualOverride {
+  enabled: boolean;
+  reason?: string;
+}
+
 export interface ASCEConfig {
   versions: ASCEVersion[];
   exposureCategories: ExposureCategory[];
   buildingClassifications: BuildingClassification[];
-  manualOverride?: boolean;
+  manualOverride: ManualOverride;
 }
 
 const defaultConfig: ASCEConfig = {
@@ -61,7 +66,10 @@ const defaultConfig: ASCEConfig = {
     { class: 'III', description: 'Substantial hazard to human life', importance_factor: 1.15, isDefault: false },
     { class: 'IV', description: 'Essential facilities', importance_factor: 1.15, isDefault: false }
   ],
-  manualOverride: false
+  manualOverride: {
+    enabled: false,
+    reason: ''
+  }
 };
 
 export function useASCEConfig() {

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -67,7 +68,7 @@ export const ASCESelectionPanel: React.FC<ASCESelectionPanelProps> = ({
 
   const validation = currentRequirements ? validateRequirements(currentRequirements) : { isValid: false, errors: [] };
   const isHVHZ = projectLocation ? isHVHZLocation(projectLocation.state || '', projectLocation.county) : false;
-  const recommendedVersion = getRecommendedASCEVersion();
+  const recommendedVersion = getRecommendedASCEVersion(projectLocation);
 
   if (!currentRequirements) {
     return (
@@ -126,7 +127,7 @@ export const ASCESelectionPanel: React.FC<ASCESelectionPanelProps> = ({
                       <div className="flex items-center gap-2">
                         {version.version}
                         {version.isDefault && <Badge variant="outline">Default</Badge>}
-                        {version === recommendedVersion && <Badge variant="secondary">Recommended</Badge>}
+                        {version.version === recommendedVersion && <Badge variant="secondary">Recommended</Badge>}
                       </div>
                     </SelectItem>
                   ))}

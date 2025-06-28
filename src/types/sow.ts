@@ -1,4 +1,3 @@
-
 // Core interfaces for SOW generation and management
 export interface SOWGenerationData {
   id: string;
@@ -107,6 +106,10 @@ export interface FieldInspectionData {
   wind_speed?: number;
   exposure_category?: string;
   building_classification?: string;
+  inspector_name?: string;
+  inspection_date?: string;
+  recommendations?: string;
+  concerns?: string;
 }
 
 export interface SOWGenerationRequest {

@@ -76,7 +76,7 @@ const SOWGeneration = () => {
     
     try {
       // Make the real API call with properly typed data
-      generateSOW(data);
+      await generateSOW(data);
     } catch (error: any) {
       console.error('SOW submission error:', error);
       toast({
@@ -104,7 +104,7 @@ const SOWGeneration = () => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `SOW_${inspectionData?.projectName || inspectionData?.project_name || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
+        link.download = `SOW_${inspectionData?.project_name || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -128,7 +128,7 @@ const SOWGeneration = () => {
       try {
         const link = document.createElement('a');
         link.href = generationData.downloadUrl;
-        link.download = `SOW_${inspectionData?.projectName || inspectionData?.project_name || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
+        link.download = `SOW_${inspectionData?.project_name || 'Project'}_${new Date().toISOString().split('T')[0]}.pdf`;
         link.click();
         
         toast({

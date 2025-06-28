@@ -29,8 +29,11 @@ export function useFieldInspections() {
 
   const saveInspection = async (inspectionData: Partial<FieldInspection>): Promise<string> => {
     try {
-      // Convert ASCE requirements to JSON for database storage
-      const dbData = {
+      // Convert ASCE requirements to JSON for database storage and ensure required fields
+      const dbData: any = {
+        project_name: inspectionData.project_name || 'Untitled Project',
+        project_address: inspectionData.project_address || 'TBD',
+        inspector_name: inspectionData.inspector_name || 'Unknown Inspector',
         ...inspectionData,
         asce_requirements: inspectionData.asce_requirements ? 
           JSON.stringify(inspectionData.asce_requirements) : null
