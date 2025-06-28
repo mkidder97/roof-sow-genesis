@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FieldInspection, convertRowToInspection } from '@/types/fieldInspection';
@@ -46,10 +47,10 @@ export function useFieldInspections() {
         await fetchInspections();
         return inspectionData.id;
       } else {
-        // Create new
+        // Create new - use single insert instead of array
         const { data, error } = await supabase
           .from('field_inspections')
-          .insert([dbData])
+          .insert(dbData)
           .select()
           .single();
         

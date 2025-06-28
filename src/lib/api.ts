@@ -107,7 +107,7 @@ export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOW
   }
 }
 
-// Export for compatibility
-export type SOWGenerationResponse = SOWGenerationResult;
-export type SOWResponse = SOWGenerationResult;
-export { SOWGenerationRequest };
+// Export for compatibility - use proper type export syntax
+export type { SOWGenerationResult as SOWGenerationResponse };
+export type { SOWGenerationResult as SOWResponse };
+export type { SOWGenerationRequest };

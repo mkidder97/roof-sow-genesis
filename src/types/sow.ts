@@ -1,3 +1,4 @@
+
 // Core interfaces for SOW generation and management
 export interface SOWGenerationData {
   id: string;
@@ -29,6 +30,10 @@ export interface SOWGenerationResult {
   downloadUrl?: string;
   message?: string;
   error?: string;
+  // Add missing properties
+  filename?: string;
+  outputPath?: string;
+  generationTime?: number;
   data?: {
     sow?: string;
     pdf?: string;
@@ -47,7 +52,7 @@ export interface SOWGenerationRecord {
   input_data: any;
   output_data?: any;
   pdf_url?: string;
-  output_file_path?: string; // Add missing property
+  output_file_path?: string;
   error_message?: string;
   generation_started_at?: string;
   generation_finished_at?: string;
@@ -220,6 +225,7 @@ export interface ProjectMetadata {
   deckType?: string;
   buildingHeight?: number;
   length?: number;
+  width?: number; // Add missing width property
 }
 
 export interface Environmental {
@@ -248,6 +254,14 @@ export interface Membrane {
 export interface Takeoff {
   squareFootage: number;
   materials: any[];
+  // Add missing properties
+  drains?: number;
+  pipePenetrations?: number;
+  curbs?: number;
+  hvacUnits?: number;
+  skylights?: number;
+  scuppers?: number;
+  expansionJoints?: number;
 }
 
 export interface Notes {

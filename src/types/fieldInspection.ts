@@ -14,7 +14,7 @@ export interface FieldInspection {
   city?: string;
   state?: string;
   zip_code?: string;
-  county?: string; // Add this field
+  county?: string;
   
   // Building specifications
   building_height?: number;
@@ -81,7 +81,7 @@ export interface FieldInspection {
   takeoff_items?: any;
   sow_generation_count?: number;
   
-  // Detailed equipment tracking
+  // Detailed equipment tracking  
   drainage_options?: any[];
   interior_protection_needed?: boolean;
   interior_protection_sqft?: number;
@@ -103,13 +103,13 @@ export interface ASCERequirements {
   risk_category: string;
   importance_factor: number;
   hvhz_applicable?: boolean;
-  engineer_approved?: boolean; // Add missing property
+  engineer_approved?: boolean;
   approval_date?: string;
   approval_engineer?: string;
   notes?: string;
 }
 
-// Field inspection data from database
+// Field inspection data from database - REQUIRED id
 export interface FieldInspectionData extends FieldInspection {
   id: string; // Required for database operations
 }

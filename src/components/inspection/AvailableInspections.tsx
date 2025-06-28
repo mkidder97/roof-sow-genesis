@@ -7,7 +7,7 @@ import { useCompletedInspections } from '@/hooks/useCompletedInspections';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { FieldInspection } from '@/types/fieldInspection';
+import { FieldInspection, FieldInspectionData } from '@/types/fieldInspection';
 import { transformInspectionToSOWRequest } from '@/types/sow';
 
 const AvailableInspections = () => {
@@ -32,7 +32,17 @@ const AvailableInspections = () => {
 
   const handleGenerateSOW = async (inspection: FieldInspection) => {
     try {
-      const sowRequest = transformInspectionToSOWRequest(inspection);
+      // Ensure inspection has required id field for FieldInspectionData
+      if (!inspection.id) {
+        throw new Error('Inspection ID is required for SOW generation');
+      }
+      
+      const inspectionData: FieldInspectionData = {
+        ...inspection,
+        id: inspection.id // Ensure id is present
+      };
+      
+      const sowRequest = transformInspectionToSOWRequest(inspectionData);
       
       // Fix enum type casting
       const validatedRequest = {
