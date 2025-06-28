@@ -8,13 +8,39 @@ export function useCompletedInspections() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
+  const syncDatabaseConsistency = async () => {
+    try {
+      console.log('Syncing database consistency for completed inspections...');
+      
+      // Update any records where status is "Completed" but flags aren't set
+      const { error: updateError } = await supabase
+        .from('field_inspections')
+        .update({
+          completed: true,
+          ready_for_handoff: true
+        })
+        .eq('status', 'Completed')
+        .or('completed.is.null,completed.eq.false,ready_for_handoff.is.null,ready_for_handoff.eq.false');
+
+      if (updateError) {
+        console.error('Error syncing database:', updateError);
+      } else {
+        console.log('Database sync completed successfully');
+      }
+    } catch (err) {
+      console.error('Failed to sync database:', err);
+    }
+  };
+
   const fetchCompletedInspections = async () => {
     try {
       setLoading(true);
       console.log('Fetching completed inspections for Engineer Dashboard...');
       
-      // IMPROVED: Query for inspections using BOTH status and boolean flags for robustness
-      // This handles edge cases where either field might be set but not the other
+      // First sync the database to fix any inconsistencies
+      await syncDatabaseConsistency();
+      
+      // Now fetch with a more comprehensive query that catches all completed inspections
       const { data, error } = await supabase
         .from('field_inspections')
         .select('*')
@@ -32,7 +58,7 @@ export function useCompletedInspections() {
         const convertedInspections = data.map(convertRowToInspection);
         console.log('Converted completed inspections:', convertedInspections);
         
-        // Filter to only include truly completed inspections
+        // More lenient filtering - if ANY completion indicator is true, include it
         const filteredInspections = convertedInspections.filter(inspection => {
           const isCompleted = inspection.status === 'Completed' || 
                              inspection.completed === true || 

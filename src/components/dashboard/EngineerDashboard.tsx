@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,8 @@ import {
   User,
   Building,
   MapPin,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
@@ -38,25 +40,36 @@ export const EngineerDashboard = () => {
     isBackendOnline
   } = useSOWGeneration();
 
-  // Debug logging
+  // Debug logging with more detail
   useEffect(() => {
+    console.log('=== ENGINEER DASHBOARD DEBUG ===');
     console.log('Engineer Dashboard - Completed inspections:', completedInspections);
     console.log('Engineer Dashboard - Loading:', inspectionsLoading);
     console.log('Engineer Dashboard - Error:', inspectionsError);
+    
+    if (completedInspections.length > 0) {
+      console.log('=== DETAILED INSPECTION DATA ===');
+      completedInspections.forEach((inspection, index) => {
+        console.log(`Inspection ${index + 1}: "${inspection.project_name}"`, {
+          id: inspection.id,
+          status: inspection.status,
+          completed: inspection.completed,
+          ready_for_handoff: inspection.ready_for_handoff,
+          sow_generated: inspection.sow_generated,
+          completed_at: inspection.completed_at
+        });
+      });
+    }
   }, [completedInspections, inspectionsLoading, inspectionsError]);
 
-  // Filter inspections that are ready for SOW (completed and no SOW generated yet)
+  // More robust filtering for ready for SOW
   const readyForSOW = completedInspections.filter(inspection => {
-    // Fixed: Use the boolean completed field instead of status comparison
-    const isCompleted = inspection.completed === true || 
+    const isCompleted = inspection.status === 'Completed' || 
+                       inspection.completed === true || 
                        inspection.ready_for_handoff === true;
     const noSOWGenerated = !inspection.sow_generated;
     
-    console.log(`Inspection "${inspection.project_name}":`, {
-      completed: inspection.completed,
-      status: inspection.status,
-      ready_for_handoff: inspection.ready_for_handoff,
-      sow_generated: inspection.sow_generated,
+    console.log(`SOW Filter - "${inspection.project_name}":`, {
       isCompleted,
       noSOWGenerated,
       readyForSOW: isCompleted && noSOWGenerated
@@ -65,8 +78,10 @@ export const EngineerDashboard = () => {
     return isCompleted && noSOWGenerated;
   });
 
-  console.log('Final readyForSOW count:', readyForSOW.length);
-  console.log('ReadyForSOW inspections:', readyForSOW.map(i => ({ name: i.project_name, status: i.status, completed: i.completed })));
+  console.log('=== SOW READY SUMMARY ===');
+  console.log('Total completed inspections:', completedInspections.length);
+  console.log('Ready for SOW count:', readyForSOW.length);
+  console.log('Ready for SOW list:', readyForSOW.map(i => i.project_name));
 
   const handleGenerateSOW = async (inspection: FieldInspection) => {
     if (!inspection.id) {
@@ -99,13 +114,13 @@ export const EngineerDashboard = () => {
     }
   };
 
-  const handleDownloadSOW = (generation: any) => {
-    if (generation.generation_status === 'completed' && generation.pdf_url) {
-      const link = document.createElement('a');
-      link.href = generation.pdf_url;
-      link.download = `SOW_${generation.id}.pdf`;
-      link.click();
-    }
+  const handleForceRefresh = () => {
+    console.log('Force refreshing completed inspections...');
+    refetch();
+    toast({
+      title: "Refreshing Data",
+      description: "Fetching latest inspection data...",
+    });
   };
 
   if (inspectionsLoading) {
@@ -122,35 +137,36 @@ export const EngineerDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Engineer Dashboard</h1>
-        <p className="text-blue-200">Review completed inspections and generate SOW documents</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Engineer Dashboard</h1>
+          <p className="text-blue-200">Review completed inspections and generate SOW documents</p>
+        </div>
+        <Button 
+          onClick={handleForceRefresh}
+          className="bg-blue-600 hover:bg-blue-700"
+          size="sm"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh Data
+        </Button>
       </div>
 
-      {/* Enhanced Debug Information */}
-      <Alert className="mb-6 bg-yellow-900/50 border-yellow-400/30">
-        <AlertDescription className="text-yellow-200">
+      {/* Real-time Status Display */}
+      <Alert className="mb-6 bg-blue-900/50 border-blue-400/30">
+        <AlertDescription className="text-blue-200">
           <div className="space-y-2 text-sm">
-            <div className="font-medium">Debug Info:</div>
-            <div>• Total completed inspections: {completedInspections.length}</div>
-            <div>• Ready for SOW: {readyForSOW.length}</div>
-            <div>• Loading: {inspectionsLoading ? 'Yes' : 'No'}</div>
+            <div className="font-medium">Live Dashboard Status:</div>
+            <div>• Total completed inspections found: {completedInspections.length}</div>
+            <div>• Ready for SOW generation: {readyForSOW.length}</div>
+            <div>• Data loading: {inspectionsLoading ? 'Yes' : 'No'}</div>
+            <div>• Backend status: {isBackendOnline ? 'Connected' : 'Offline'}</div>
             {completedInspections.length > 0 && (
               <div>
                 <div className="font-medium mt-2">Found inspections:</div>
                 {completedInspections.map(i => (
-                  <div key={i.id} className="ml-2">
-                    • {i.project_name} - Status: {i.status}, Completed: {i.completed ? 'Yes' : 'No'}, Ready: {i.ready_for_handoff ? 'Yes' : 'No'}, SOW: {i.sow_generated ? 'Yes' : 'No'}
-                  </div>
-                ))}
-              </div>
-            )}
-            {readyForSOW.length > 0 && (
-              <div>
-                <div className="font-medium mt-2">Ready for SOW:</div>
-                {readyForSOW.map(i => (
-                  <div key={i.id} className="ml-2 text-green-300">
-                    ✓ {i.project_name} - {i.city}, {i.state}
+                  <div key={i.id} className="ml-2 text-xs">
+                    • "{i.project_name}" - Status: {i.status} | Completed: {i.completed ? 'Yes' : 'No'} | SOW: {i.sow_generated ? 'Generated' : 'Pending'}
                   </div>
                 ))}
               </div>
@@ -251,21 +267,17 @@ export const EngineerDashboard = () => {
               <Card className="bg-white/10 backdrop-blur border-blue-400/30">
                 <CardContent className="p-8 text-center">
                   <FileText className="h-12 w-12 text-blue-400 mx-auto mb-4" />
-                  <h3 className="text-white text-lg mb-2">No Inspections Ready</h3>
+                  <h3 className="text-white text-lg mb-2">No Inspections Ready for SOW</h3>
                   <p className="text-blue-200 mb-4">
-                    Complete field inspections will appear here for SOW generation.
+                    {completedInspections.length === 0 
+                      ? 'No completed inspections found. Complete field inspections will appear here for SOW generation.'
+                      : `Found ${completedInspections.length} completed inspection(s), but they may already have SOW generated or need status sync.`
+                    }
                   </p>
-                  {completedInspections.length > 0 && (
-                    <div className="mt-4 p-4 bg-yellow-900/50 rounded-lg">
-                      <p className="text-yellow-200 text-sm">
-                        Debug: Found {completedInspections.length} completed inspections, but filtering shows none ready for SOW.
-                        Check console for detailed filtering logic.
-                      </p>
-                      <Button onClick={refetch} className="mt-2 bg-yellow-600 hover:bg-yellow-700" size="sm">
-                        Refresh Data
-                      </Button>
-                    </div>
-                  )}
+                  <Button onClick={handleForceRefresh} className="bg-blue-600 hover:bg-blue-700" size="sm">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh & Sync Data
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -318,9 +330,9 @@ export const EngineerDashboard = () => {
                         <p className="text-blue-200 text-sm font-medium mb-1">ASCE Requirements:</p>
                         <p className="text-blue-100 text-sm">
                           {inspection.asce_requirements.version} | 
-                          {inspection.asce_requirements.wind_speed || 'TBD'} mph | 
-                          Exposure {inspection.asce_requirements.exposure_category} | 
-                          Class {inspection.asce_requirements.building_classification}
+                          {inspection.asce_requirements.wind_speed || inspection.wind_speed || 'TBD'} mph | 
+                          Exposure {inspection.asce_requirements.exposure_category || inspection.exposure_category} | 
+                          Class {inspection.asce_requirements.building_classification || inspection.building_classification}
                         </p>
                         {inspection.city === 'Orlando' && inspection.state === 'FL' && (
                           <p className="text-green-300 text-xs mt-1">
