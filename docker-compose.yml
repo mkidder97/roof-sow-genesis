@@ -1,19 +1,62 @@
-version: "3.9"
 services:
   frontend:
-    build: .
+    build: 
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "5173:5173"
     volumes:
-      - .:/app
-      - sow-data:/app/data/sow
-    working_dir: /app
-    command: npm run dev
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+      - ./index.html:/app/index.html:ro
+      - ./vite.config.ts:/app/vite.config.ts:ro
+      - ./tailwind.config.js:/app/tailwind.config.js:ro
+      - ./postcss.config.js:/app/postcss.config.js:ro
+      - node_modules:/app/node_modules
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:3001
+      - VITE_API_URL=http://localhost:8001
       - VITE_SUPABASE_URL=https://tcxtdwfbifklgbvzjomn.supabase.co
       - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHRkd2ZiaWZrbGdidnpqb21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NzM0ODYsImV4cCI6MjA1MjU0OTQ4Nn0.RJbvfH3j_qMjIj8jWz1jv_cOJf2J-gMqgJdU8Q6fHoM
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  backend:
+    build: 
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./mcp:/app/mcp:ro
+      - sow-data:/app/data
+    environment:
+      - SUPABASE_URL=https://tcxtdwfbifklgbvzjomn.supabase.co
+      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHRkd2ZiaWZrbGdidnpqb21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NzM0ODYsImV4cCI6MjA1MjU0OTQ4Nn0.RJbvfH3j_qMjIj8jWz1jv_cOJf2J-gMqgJdU8Q6fHoM
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      frontend:
+        condition: service_healthy
 
 volumes:
   sow-data:
+    driver: local
+  node_modules:
+    driver: local
+
+networks:
+  default:
+    driver: bridge
