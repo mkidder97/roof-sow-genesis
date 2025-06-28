@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -90,20 +89,11 @@ const InspectionDetails: React.FC<InspectionDetailsProps> = ({
             Edit Inspection
           </Button>
         )}
-        
-        {inspection.status === 'Completed' && onGenerateSOW && (
-          <Button 
-            onClick={onGenerateSOW}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Generate SOW
-          </Button>
-        )}
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
         {/* Project Info */}
         <Card className="bg-white/10 backdrop-blur-md border-blue-400/30">
           <CardHeader>
