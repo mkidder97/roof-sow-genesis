@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,10 @@ export const OptimizedEngineerDashboard = () => {
     isBackendOnline
   } = useSOWGeneration();
 
-  const completedInspections = inspections.filter(i => i.completed);
+  // FIXED: Updated filtering logic to check both status and completed flags
+  const completedInspections = inspections.filter(i => 
+    i.status === 'Completed' || i.completed === true
+  );
   const readyForSOW = completedInspections.filter(i => !i.sow_generated);
 
   const handleGenerateSOW = async (inspection: FieldInspection) => {
