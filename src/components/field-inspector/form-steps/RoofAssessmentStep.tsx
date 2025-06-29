@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +7,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Home, AlertTriangle, Eye } from 'lucide-react';
+import { Home, AlertTriangle, Eye, Layers } from 'lucide-react';
 import { FieldInspection } from '@/types/fieldInspection';
+import RoofAssemblyEditor from '../components/RoofAssemblyEditor';
+
+interface RoofLayer {
+  id: string;
+  type: 'membrane' | 'insulation' | 'deck' | 'barrier' | 'coverboard';
+  description: string;
+  attachment: 'mechanically_attached' | 'adhered' | 'ballasted' | 'welded';
+  thickness: string;
+  material?: string;
+}
 
 interface RoofAssessmentStepProps {
   data: Partial<FieldInspection>;
@@ -22,6 +31,85 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({
   onChange,
   readOnly = false
 }) => {
+  // Initialize default layers based on existing data
+  const [roofLayers, setRoofLayers] = useState<RoofLayer[]>(() => {
+    // If we have roof_assembly_layers from the data, use those
+    if (data.roof_assembly_layers && Array.isArray(data.roof_assembly_layers)) {
+      return data.roof_assembly_layers;
+    }
+
+    // Otherwise, create default layers based on existing fields
+    const defaultLayers: RoofLayer[] = [];
+    
+    if (data.existing_membrane_type) {
+      defaultLayers.push({
+        id: 'membrane_1',
+        type: 'membrane',
+        description: data.existing_membrane_type,
+        attachment: 'mechanically_attached',
+        thickness: '60 mil'
+      });
+    }
+
+    if (data.insulation_type) {
+      defaultLayers.push({
+        id: 'insulation_1',
+        type: 'insulation',
+        description: data.insulation_type,
+        attachment: 'mechanically_attached',
+        thickness: '3.5"'
+      });
+    }
+
+    if (data.deck_type) {
+      defaultLayers.push({
+        id: 'deck_1',
+        type: 'deck',
+        description: data.deck_type,
+        attachment: 'mechanically_attached',
+        thickness: '20 gauge'
+      });
+    }
+
+    return defaultLayers.length > 0 ? defaultLayers : [
+      {
+        id: 'membrane_default',
+        type: 'membrane',
+        description: 'TPO',
+        attachment: 'mechanically_attached',
+        thickness: '60 mil'
+      },
+      {
+        id: 'insulation_default',
+        type: 'insulation',
+        description: 'ENERGY 3 ISO',
+        attachment: 'mechanically_attached',
+        thickness: '3.5"'
+      },
+      {
+        id: 'deck_default',
+        type: 'deck',
+        description: 'Steel',
+        attachment: 'mechanically_attached',
+        thickness: '20 gauge'
+      }
+    ];
+  });
+
+  const [isRecover, setIsRecover] = useState(data.project_type === 'recover' || false);
+
+  useEffect(() => {
+    // Update the main form data when roof layers change
+    onChange({
+      roof_assembly_layers: roofLayers,
+      project_type: isRecover ? 'recover' : 'tearoff',
+      // Update legacy fields for backward compatibility
+      deck_type: roofLayers.find(layer => layer.type === 'deck')?.description || '',
+      existing_membrane_type: roofLayers.find(layer => layer.type === 'membrane')?.description || '',
+      insulation_type: roofLayers.find(layer => layer.type === 'insulation')?.description || ''
+    });
+  }, [roofLayers, isRecover, onChange]);
+
   const handleInputChange = (field: keyof FieldInspection, value: any) => {
     onChange({ [field]: value });
   };
@@ -46,105 +134,24 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({
       <Alert className="bg-green-50 border-green-200">
         <Eye className="h-4 w-4 text-green-600" />
         <AlertDescription className="text-green-800">
-          <strong>Inspection Focus:</strong> Document existing roof conditions, materials, and any visible issues. The engineering team will design the new roof system based on your findings.
+          <strong>Inspection Focus:</strong> Document existing roof conditions, materials, and any visible issues. Configure the roof assembly layers to match what you observe in the field.
         </AlertDescription>
       </Alert>
 
-      {/* Existing Roof System Documentation */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Home className="w-5 h-5" />
-            Existing Roof System Assessment
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="deck-type">Existing Deck Type *</Label>
-              <Select
-                value={data.deck_type || ''}
-                onValueChange={(value) => handleInputChange('deck_type', value)}
-                disabled={readOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select observed deck type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Steel">Steel Deck</SelectItem>
-                  <SelectItem value="Concrete">Concrete Deck</SelectItem>
-                  <SelectItem value="Wood">Wood Deck</SelectItem>
-                  <SelectItem value="Gypsum">Gypsum Deck</SelectItem>
-                  <SelectItem value="Loadmaster">Loadmaster Deck</SelectItem>
-                  <SelectItem value="Composite">Composite Deck</SelectItem>
-                  <SelectItem value="Unknown">Unable to Determine</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="existing-membrane-type">Existing Membrane Type *</Label>
-              <Select
-                value={data.existing_membrane_type || ''}
-                onValueChange={(value) => handleInputChange('existing_membrane_type', value)}
-                disabled={readOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select membrane type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TPO">TPO</SelectItem>
-                  <SelectItem value="EPDM">EPDM</SelectItem>
-                  <SelectItem value="PVC">PVC</SelectItem>
-                  <SelectItem value="Modified Bitumen">Modified Bitumen</SelectItem>
-                  <SelectItem value="Built-Up Roof (BUR)">Built-Up Roof (BUR)</SelectItem>
-                  <SelectItem value="Metal">Metal</SelectItem>
-                  <SelectItem value="Spray Foam">Spray Foam</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="insulation-type">Visible Insulation Type</Label>
-              <Select
-                value={data.insulation_type || ''}
-                onValueChange={(value) => handleInputChange('insulation_type', value)}
-                disabled={readOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select if visible" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Polyisocyanurate">Polyisocyanurate (Polyiso)</SelectItem>
-                  <SelectItem value="EPS">EPS (Expanded Polystyrene)</SelectItem>
-                  <SelectItem value="XPS">XPS (Extruded Polystyrene)</SelectItem>
-                  <SelectItem value="Mineral Wool">Mineral Wool</SelectItem>
-                  <SelectItem value="Fiberglass">Fiberglass</SelectItem>
-                  <SelectItem value="Unknown">Unable to Determine</SelectItem>
-                  <SelectItem value="None Visible">None Visible</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="roof-age">Estimated Roof Age (years)</Label>
-              <Input
-                id="roof-age"
-                type="number"
-                min="0"
-                max="50"
-                value={data.roof_age_years || ''}
-                onChange={(e) => handleInputChange('roof_age_years', parseInt(e.target.value) || 0)}
-                placeholder="Best estimate"
-                readOnly={readOnly}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Dynamic Roof Assembly Editor */}
+      <RoofAssemblyEditor
+        layers={roofLayers}
+        onLayersChange={setRoofLayers}
+        isRecover={isRecover}
+        onRecoverChange={setIsRecover}
+        recoverType={data.recover_type}
+        onRecoverTypeChange={(type) => handleInputChange('recover_type', type)}
+        yearInstalled={data.roof_age_years}
+        onYearInstalledChange={(year) => handleInputChange('roof_age_years', year)}
+        originalType={data.original_membrane_type}
+        onOriginalTypeChange={(type) => handleInputChange('original_membrane_type', type)}
+        readOnly={readOnly}
+      />
 
       {/* Condition Assessment */}
       <Card>
@@ -282,11 +289,12 @@ const RoofAssessmentStep: React.FC<RoofAssessmentStepProps> = ({
       {/* Guidance note */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          <strong>Assessment Guidelines:</strong><br />
-          • Focus on documenting what you can observe without destructive testing<br />
-          • Take photos of any damage, wear patterns, or concerning areas<br />
-          • Note any safety hazards or immediate repair needs<br />
-          • The engineering team will use this data to design the appropriate replacement system
+          <strong>Assembly Configuration Guidelines:</strong><br />
+          • Drag and drop layers to reorder them from top to bottom<br />
+          • Add multiple insulation layers as needed for accurate representation<br />
+          • Document attachment methods for each layer<br />
+          • Configure recover settings if applicable to the project<br />
+          • The engineering team will use this detailed assembly data for design calculations
         </p>
       </div>
     </div>
