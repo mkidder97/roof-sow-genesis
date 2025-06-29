@@ -228,7 +228,7 @@ const BuildingDimensionsStep: React.FC<BuildingDimensionsStepProps> = ({
                 <SelectContent>
                   <SelectItem value="Flat (0-1/4/12)">Flat (0-1/4 per 12)</SelectItem>
                   <SelectItem value="Low Slope (1/4-2/12)">Low Slope (1/4-2 per 12)</SelectItem>
-                  <SelectItem value="Steep Slope (>2/12)">Steep Slope (>2 per 12)</SelectItem>
+                  <SelectItem value="Steep Slope (>2/12)">Steep Slope ({'>'}2 per 12)</SelectItem>
                   <SelectItem value="Unknown">Unable to Determine</SelectItem>
                 </SelectContent>
               </Select>
