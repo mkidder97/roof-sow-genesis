@@ -1,11 +1,12 @@
 
 export interface HVACUnit {
   id: string;
-  description: string;
+  description?: string; // Make description optional
   quantity: number;
   condition: string;
   needs_curb_adapter?: boolean;
-  type?: string; // Add missing type property
+  type: string; // Make type required
+  count: number; // Add missing count property
 }
 
 export interface RoofDrain {
@@ -14,7 +15,7 @@ export interface RoofDrain {
   quantity: number;
   condition: string;
   location?: string;
-  count?: number; // Add missing count property
+  count: number; // Make count required for components
 }
 
 export interface Penetration {
@@ -23,12 +24,12 @@ export interface Penetration {
   quantity: number;
   condition: string;
   description?: string;
-  count?: number; // Add missing count property
+  count: number; // Make count required for components
 }
 
 export interface SkylightEquipment {
   id: string;
-  description: string;
+  description?: string; // Make description optional
   quantity: number;
   condition: string;
   curb_condition?: string;
@@ -39,7 +40,7 @@ export interface SkylightEquipment {
 export interface AccessPointEquipment {
   id: string;
   type: string;
-  description: string;
+  description?: string; // Make description optional
   quantity: number;
   condition: string;
   location?: string;
@@ -48,7 +49,7 @@ export interface AccessPointEquipment {
 
 export interface HVACEquipment {
   id: string;
-  description: string;
+  description?: string; // Make description optional
   quantity: number;
   condition: string;
   mounting_type?: string;
@@ -56,7 +57,7 @@ export interface HVACEquipment {
   electrical_connections_condition?: string;
   curb_condition?: string;
   clearances?: string;
-  type?: string; // Add missing type property
+  type: string; // Make type required for components
 }
 
 interface RoofLayer {
@@ -70,37 +71,48 @@ interface RoofLayer {
 
 // Unified ASCERequirements interface with all required properties
 export interface ASCERequirements {
-  version: string;
-  wind_speed: number;
-  exposure_category: string;
-  building_classification: string;
-  importance_factor: number;
-  risk_category?: string; // Add missing risk_category
+  version?: string;
+  wind_speed?: number; // Make optional to match usage
+  windSpeed?: number; // Alternative naming
+  exposure_category?: string;
+  exposureCategory?: string; // Alternative naming
+  building_classification?: string;
+  buildingHeight?: number;
+  roofZone?: string;
+  importance_factor?: number;
+  risk_category?: string; // Make optional for compatibility
   engineer_approved?: boolean;
   approval_date?: string;
   approval_engineer?: string;
+  pressureCoefficients?: {
+    zone1?: number;
+    zone2?: number;
+    zone3?: number;
+  };
 }
 
 export interface AccessPoint {
   id: string;
   type: string;
-  description: string;
+  description?: string; // Make description optional
   quantity: number;
   condition: string;
-  location?: string;
+  location: string;
   size?: string;
+  notes?: string;
 }
 
 export interface SkylightItem {
   id: string;
-  description: string;
+  description?: string; // Make description optional
   quantity: number;
   condition: string;
   curb_condition?: string;
   glazing_condition?: string;
   leaks?: boolean;
-  type?: string; // Add missing type property
-  size?: string; // Add missing size property
+  type: string; // Make type required for components
+  size: string; // Make size required for components
+  notes?: string;
 }
 
 export interface FieldInspectionData {
@@ -133,8 +145,18 @@ export interface DrainageSOWConfig {
   additional_count?: number;
   additional_size?: string;
   additional_notes?: string;
-  specifications?: any; // Add missing specifications property
-  additional_drainage?: any; // Add missing additional_drainage property
+  specifications?: {
+    internalGutters?: string;
+    externalGutters?: string;
+    deckDrains?: string;
+  };
+  additional_drainage?: string;
+  // Legacy compatibility
+  includeInternalGutters?: boolean;
+  includeExternalGutters?: boolean;
+  includeDeckDrains?: boolean;
+  includeOverflowDrains?: boolean;
+  includeScuppers?: boolean;
 }
 
 export interface FieldInspection {
@@ -250,14 +272,72 @@ export interface FieldInspection {
   deck_substrate?: string;
   attachment_method?: string;
   insulation_attachment?: string;
-  walkway_pads?: boolean;
-  equipment_platforms?: boolean;
+  walkway_pads?: boolean | number; // Allow both types for flexibility
+  equipment_platforms?: boolean | number; // Allow both types for flexibility
   penetrations_gas_line_count?: number;
   penetrations_conduit_description?: string;
   penetrations_other?: any;
   curbs_count?: number;
   side_discharge_count?: number;
+  
+  // Additional compatibility properties
+  skylights_detailed?: SkylightItem[];
+  curbs_above_8?: boolean;
+  gas_line_penetrating_deck?: boolean;
 }
+
+// Database row type that matches Supabase types exactly
+export interface FieldInspectionRow {
+  id: string;
+  inspector_name: string;
+  inspector_id: string | null;
+  inspection_date: string | null;
+  project_name: string;
+  project_address: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  building_height: number | null;
+  building_length: number | null;
+  building_width: number | null;
+  square_footage: number | null;
+  number_of_stories: number | null;
+  roof_slope: string | null;
+  deck_type: string | null;
+  existing_membrane_type: string | null;
+  existing_membrane_condition: number | null;
+  roof_age_years: number | null;
+  insulation_type: string | null;
+  insulation_condition: string | null;
+  insulation_layers: any;
+  cover_board_type: string | null;
+  hvac_units: any;
+  roof_drains: any;
+  penetrations: any;
+  skylights: number | null;
+  skylights_detailed: any;
+  overall_condition: number | null;
+  priority_level: string | null;
+  photos: string[] | null;
+  notes: string | null;
+  status: string | null;
+  sow_generated: boolean | null;
+  sow_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  completed_at: string | null;
+  drainage_options: any;
+  interior_protection_needed: boolean | null;
+  interior_protection_sqft: number | null;
+  conduit_attached: boolean | null;
+  upgraded_lighting: boolean | null;
+  interior_fall_protection: boolean | null;
+  curbs_above_8: boolean | null;
+  gas_line_penetrating_deck: boolean | null;
+  access_method: string | null;
+}
+
+// Aliases for compatibility
+export type HVACEquipment = HVACUnit;
 
 // Utility functions that are imported elsewhere
 export const convertRowToInspection = (row: any): FieldInspection => {
@@ -270,7 +350,14 @@ export const convertRowToInspection = (row: any): FieldInspection => {
     status: row.status || 'Draft',
     priority_level: row.priority_level || 'Standard',
     weather_conditions: row.weather_conditions || 'Clear',
-    access_method: row.access_method || 'internal_hatch'
+    access_method: row.access_method || 'internal_hatch',
+    // Parse JSON fields if needed
+    insulation_layers: Array.isArray(row.insulation_layers) ? row.insulation_layers : [],
+    hvac_units: Array.isArray(row.hvac_units) ? row.hvac_units : [],
+    roof_drains: Array.isArray(row.roof_drains) ? row.roof_drains : [],
+    penetrations: Array.isArray(row.penetrations) ? row.penetrations : [],
+    skylights_detailed: Array.isArray(row.skylights_detailed) ? row.skylights_detailed : [],
+    drainage_options: Array.isArray(row.drainage_options) ? row.drainage_options : [],
   };
 };
 
@@ -290,7 +377,13 @@ export const generateDrainageSOWConfig = (inspection: FieldInspection): Drainage
     gutters_depth: inspection.drainage_gutters_depth,
     additional_count: inspection.drainage_additional_count,
     additional_size: inspection.drainage_additional_size,
-    additional_notes: inspection.drainage_additional_notes
+    additional_notes: inspection.drainage_additional_notes,
+    // Add compatibility for new interface properties
+    includeInternalGutters: inspection.drainage_options?.some((d: any) => d.type === 'internal_gutter') || false,
+    includeExternalGutters: inspection.drainage_options?.some((d: any) => d.type === 'external_gutter') || false,
+    includeDeckDrains: inspection.drainage_options?.some((d: any) => d.type === 'deck_drain') || false,
+    includeOverflowDrains: inspection.drainage_options?.some((d: any) => d.type === 'overflow_drain') || false,
+    includeScuppers: inspection.drainage_options?.some((d: any) => d.type === 'overflow_scuppers') || false,
   };
 };
 
@@ -307,6 +400,15 @@ export const selectSOWTemplate = (inspectionData: FieldInspection): string => {
       return 'T6-Tearoff-TPO(MA)-insul-steel';
     }
   } else if (projectType === 'recover') {
+    if (inspectionData.existing_membrane_type?.toLowerCase().includes('tpo')) {
+      return 'TPO_RECOVER';
+    }
+    if (inspectionData.existing_membrane_type?.toLowerCase().includes('pvc')) {
+      return 'PVC_RECOVER';
+    }
+    if (inspectionData.existing_membrane_type?.toLowerCase().includes('epdm')) {
+      return 'EPDM_RECOVER';
+    }
     return 'T5-Recover-TPO(Rhino)-iso-EPS flute fill-SSR';
   }
   
