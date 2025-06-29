@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck, Info, Layers } from 'lucide-react';
+import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck, Info, Layers, Zap, CheckCircle, AlertCircle } from 'lucide-react';
 import { SOWFormData, FieldInspectionData, SOWGenerationRequest, transformInspectionToSOWRequest, transformFormDataToSOWRequest, createSOWError, SOWGenerationRequestSchema } from '@/types/sowGeneration';
 import { MEMBRANE_TYPES, INSULATION_TYPES, getTemplateCategory, RoofLayer } from '@/types/roofingTypes';
 import { RoofAssemblyEditor } from '@/components/field-inspector/components/RoofAssemblyEditorWrapper';
+import { AssemblyTemplateEngine, TemplateCompatibility, AssemblyValidation } from '@/engines/assemblyTemplateEngine';
 import { useToast } from '@/hooks/use-toast';
 
 interface SOWInputFormProps {
@@ -48,6 +49,12 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
   const [assemblyLayers, setAssemblyLayers] = useState<RoofLayer[]>([]);
   const [projectType, setProjectType] = useState<'recover' | 'tearoff' | 'new'>('tearoff');
   
+  // ✅ PHASE 2: Smart sync state
+  const [templateCompatibility, setTemplateCompatibility] = useState<TemplateCompatibility | null>(null);
+  const [assemblyValidation, setAssemblyValidation] = useState<AssemblyValidation | null>(null);
+  const [syncMode, setSyncMode] = useState<'template-to-assembly' | 'assembly-to-template' | 'manual'>('manual');
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  
   const [activeTab, setActiveTab] = useState('project');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -75,6 +82,9 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       if (initialData.roof_assembly_layers && initialData.roof_assembly_layers.length > 0) {
         setAssemblyLayers(initialData.roof_assembly_layers);
         console.log('🏗️ Loaded assembly layers from inspection:', initialData.roof_assembly_layers);
+        
+        // ✅ PHASE 2: Analyze loaded assembly
+        analyzeAssemblyCompatibility(initialData.roof_assembly_layers);
       }
 
       // Set project type from inspection data
@@ -84,11 +94,56 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     }
   }, [initialData]);
 
+  // ✅ PHASE 2: Template → Assembly sync
+  const syncTemplateToAssembly = () => {
+    if (formData.membraneType || formData.insulationType || formData.deckType) {
+      const newLayers = AssemblyTemplateEngine.getTemplateAssembly(
+        formData.membraneType,
+        formData.insulationType,
+        formData.deckType,
+        projectType
+      );
+      
+      setAssemblyLayers(newLayers);
+      setSyncMode('template-to-assembly');
+      analyzeAssemblyCompatibility(newLayers);
+      
+      toast({
+        title: "Assembly Auto-Generated",
+        description: `Generated ${newLayers.length} layers from template selection`,
+      });
+      
+      console.log('🔄 Template → Assembly sync:', newLayers);
+    }
+  };
+
+  // ✅ PHASE 2: Assembly → Template analysis
+  const analyzeAssemblyCompatibility = (layers: RoofLayer[]) => {
+    const compatibility = AssemblyTemplateEngine.getCompatibleTemplates(layers);
+    const validation = AssemblyTemplateEngine.validateAssembly(layers);
+    
+    setTemplateCompatibility(compatibility);
+    setAssemblyValidation(validation);
+    setSyncMode('assembly-to-template');
+    
+    console.log('🔍 Assembly analysis:', { compatibility, validation });
+  };
+
   const handleInputChange = (field: keyof SOWFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+
+    // ✅ PHASE 2: Auto-sync when template selections change
+    if (autoSyncEnabled && ['membraneType', 'insulationType', 'deckType'].includes(field)) {
+      // Debounce the sync to avoid too many updates
+      setTimeout(() => {
+        if (assemblyLayers.length === 0 || syncMode === 'template-to-assembly') {
+          syncTemplateToAssembly();
+        }
+      }, 500);
+    }
 
     // Clear validation error when user starts typing
     if (validationErrors[field]) {
@@ -100,15 +155,28 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     }
   };
 
-  // Handle assembly layer changes
+  // ✅ PHASE 2: Enhanced assembly change handler
   const handleAssemblyChange = (newLayers: RoofLayer[]) => {
     setAssemblyLayers(newLayers);
+    setSyncMode('assembly-to-template');
+    
+    // Analyze compatibility when assembly changes
+    if (newLayers.length > 0) {
+      analyzeAssemblyCompatibility(newLayers);
+    }
+    
     console.log('🏗️ Assembly layers updated:', newLayers);
   };
 
   // Handle project type changes
   const handleProjectTypeChange = (newProjectType: 'recover' | 'tearoff' | 'new') => {
     setProjectType(newProjectType);
+    
+    // Re-sync if template-driven
+    if (autoSyncEnabled && syncMode === 'template-to-assembly') {
+      syncTemplateToAssembly();
+    }
+    
     console.log('🏗️ Project type updated:', newProjectType);
   };
 
@@ -183,6 +251,8 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       
       console.log('SOW generation requested with validated data:', sowRequest);
       console.log('🏗️ Including assembly layers:', assemblyLayers);
+      console.log('🔄 Sync mode:', syncMode);
+      console.log('🎯 Template compatibility:', templateCompatibility);
 
       // Log membrane type for template selection logic
       if (formData.membraneType) {
@@ -212,6 +282,13 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
           {initialData && (
             <Badge className="bg-green-600 text-white">
               Pre-filled from Inspection
+            </Badge>
+          )}
+          {/* ✅ PHASE 2: Sync indicator */}
+          {autoSyncEnabled && (
+            <Badge className="bg-blue-600 text-white text-xs">
+              <Zap className="w-3 h-3 mr-1" />
+              Smart Sync
             </Badge>
           )}
         </CardTitle>
@@ -252,7 +329,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            {/* ✅ UPDATED: Removed Building tab, kept only 4 tabs */}
+            {/* Streamlined 4-tab layout */}
             <TabsList className="grid w-full grid-cols-4 mb-6 bg-white/10 backdrop-blur-md">
               <TabsTrigger value="project" disabled={disabled} className="data-[state=active]:bg-blue-600 text-slate-950">
                 <Building2 className="w-4 h-4 mr-2" />
@@ -272,7 +349,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               </TabsTrigger>
             </TabsList>
 
-            {/* ✅ UPDATED: Enhanced Project Tab with Building Height */}
+            {/* Enhanced Project Tab with Building Height */}
             <TabsContent value="project" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -329,7 +406,6 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                     disabled={disabled} 
                   />
                 </div>
-                {/* ✅ NEW: Building Height moved to Project tab */}
                 <div>
                   <Label htmlFor="buildingHeight" className="text-blue-200">Building Height (ft)</Label>
                   <Input 
@@ -345,49 +421,96 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               </div>
             </TabsContent>
 
-            {/* Assembly Configuration Tab */}
+            {/* ✅ PHASE 2: Enhanced Assembly Tab with Smart Sync */}
             <TabsContent value="assembly" className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-white text-lg font-semibold">Roof Assembly Configuration</h3>
+                    <h3 className="text-white text-lg font-semibold">Smart Roof Assembly Configuration</h3>
                     <p className="text-blue-200 text-sm">
-                      Configure the roof assembly layers and template selection
+                      Template selection and assembly layers sync automatically
                     </p>
                   </div>
-                  {assemblyLayers.length > 0 && (
-                    <Badge className="bg-green-600 text-white">
-                      {assemblyLayers.length} Layers Configured
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {assemblyLayers.length > 0 && (
+                      <Badge className="bg-green-600 text-white">
+                        {assemblyLayers.length} Layers
+                      </Badge>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAutoSyncEnabled(!autoSyncEnabled)}
+                      className="text-blue-200 border-blue-400/30"
+                    >
+                      <Zap className="w-3 h-3 mr-1" />
+                      {autoSyncEnabled ? 'Auto-Sync On' : 'Manual Mode'}
+                    </Button>
+                  </div>
                 </div>
 
-                {/* ✅ TEMPLATE SELECTOR INTEGRATION NOTICE */}
-                <Alert className="bg-purple-900/50 border-purple-400/30">
-                  <Info className="h-4 w-4 text-purple-400" />
-                  <AlertDescription className="text-purple-200">
-                    <div className="space-y-2">
-                      <div><strong>Phase 1:</strong> Assembly editor works independently</div>
-                      <div><strong>Phase 2 (Coming):</strong> Template ↔ Assembly synchronization</div>
-                      <div className="text-xs opacity-75">
-                        Currently: Template selection and assembly layers work separately. 
-                        Phase 2 will add bidirectional sync between template selection and assembly configuration.
+                {/* ✅ PHASE 2: Smart Sync Status */}
+                {templateCompatibility && (
+                  <Alert className="bg-blue-900/50 border-blue-400/30">
+                    <CheckCircle className="h-4 w-4 text-blue-400" />
+                    <AlertDescription className="text-blue-200">
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span><strong>Recommended Template:</strong> {templateCompatibility.recommendedTemplate}</span>
+                          <Badge className="bg-green-600 text-white text-xs">
+                            {templateCompatibility.confidence}% Match
+                          </Badge>
+                        </div>
+                        {templateCompatibility.warnings.length > 0 && (
+                          <div className="text-xs opacity-75">
+                            ⚠️ {templateCompatibility.warnings.join(', ')}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </AlertDescription>
-                </Alert>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-                {/* ✅ ENHANCED: Template Selection in Assembly Tab */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ✅ PHASE 2: Assembly Validation */}
+                {assemblyValidation && !assemblyValidation.isValid && (
+                  <Alert className="bg-red-900/50 border-red-400/30">
+                    <AlertCircle className="h-4 w-4 text-red-400" />
+                    <AlertDescription className="text-red-200">
+                      <div className="space-y-1">
+                        <div><strong>Assembly Issues:</strong></div>
+                        {assemblyValidation.errors.map((error, idx) => (
+                          <div key={idx} className="text-xs">• {error}</div>
+                        ))}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Enhanced Template Selection + Assembly Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h4 className="text-white font-medium">Template Selection</h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-white font-medium">Template Selection</h4>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={syncTemplateToAssembly}
+                        disabled={!formData.membraneType && !formData.insulationType && !formData.deckType}
+                        className="text-blue-200 border-blue-400/30"
+                      >
+                        <Zap className="w-3 h-3 mr-1" />
+                        Sync to Assembly
+                      </Button>
+                    </div>
                     
                     {/* Membrane Type */}
                     <div className="space-y-3">
                       <Label htmlFor="membraneType" className="text-blue-200 text-sm font-semibold">
                         Membrane Type *
                         <Badge className="ml-2 bg-yellow-600 text-white text-xs">
-                          Affects Template
+                          Smart Sync
                         </Badge>
                       </Label>
                       <Select value={formData.membraneType} onValueChange={value => handleInputChange('membraneType', value)} disabled={disabled}>
@@ -449,10 +572,10 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
 
                     {/* Template Selection Logic Display */}
                     {formData.membraneType && (
-                      <Alert className="bg-blue-900/50 border-blue-400/30">
-                        <Info className="h-4 w-4 text-blue-400" />
-                        <AlertDescription className="text-blue-200 text-xs">
-                          <strong>Template Selection:</strong> {MEMBRANE_TYPES.find(m => m.value === formData.membraneType)?.label} → 
+                      <Alert className="bg-purple-900/50 border-purple-400/30">
+                        <Info className="h-4 w-4 text-purple-400" />
+                        <AlertDescription className="text-purple-200 text-xs">
+                          <strong>Template Logic:</strong> {MEMBRANE_TYPES.find(m => m.value === formData.membraneType)?.label} → 
                           {getTemplateCategory(formData.membraneType)} category
                         </AlertDescription>
                       </Alert>
@@ -465,7 +588,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                       <Alert className="bg-blue-900/50 border-blue-400/30">
                         <Info className="h-4 w-4 text-blue-400" />
                         <AlertDescription className="text-blue-200 text-xs">
-                          Assembly layers loaded from field inspection. You can modify them as needed.
+                          Assembly layers loaded from field inspection. Smart sync available.
                         </AlertDescription>
                       </Alert>
                     )}
@@ -483,7 +606,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                   />
                 </div>
 
-                {/* Assembly Summary */}
+                {/* Assembly Summary with Smart Feedback */}
                 {assemblyLayers.length > 0 && (
                   <div className="mt-6">
                     <h4 className="text-white font-medium mb-3">Assembly Summary</h4>
@@ -509,6 +632,16 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                           </div>
                         ))}
                       </div>
+                      
+                      {/* ✅ PHASE 2: Smart suggestions */}
+                      {assemblyValidation?.suggestions && assemblyValidation.suggestions.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-blue-400/20">
+                          <div className="text-blue-200 text-xs font-medium mb-2">💡 Smart Suggestions:</div>
+                          {assemblyValidation.suggestions.map((suggestion, idx) => (
+                            <div key={idx} className="text-blue-300 text-xs">• {suggestion}</div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
