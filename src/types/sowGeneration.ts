@@ -1,10 +1,11 @@
 
 import { z } from 'zod';
+import { RoofLayer } from './roofingTypes';
 
 // Fixed Generation Status Type
 export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
-// Zod schemas for runtime validation - Fixed to match actual flat usage
+// ✅ PHASE 1: Extended Zod schema to include assembly data
 export const SOWGenerationRequestSchema = z.object({
   projectName: z.string().min(1, 'Project name is required'),
   projectAddress: z.string().min(1, 'Project address is required'),
@@ -21,6 +22,11 @@ export const SOWGenerationRequestSchema = z.object({
   takeoffFile: z.instanceof(File).optional(),
   notes: z.string().optional(),
   inspectionId: z.string().optional(),
+  
+  // ✅ NEW: Assembly configuration fields
+  roofAssemblyLayers: z.array(z.any()).optional(), // RoofLayer array
+  projectType: z.enum(['recover', 'tearoff', 'new']).optional(),
+  assemblyNotes: z.string().optional(),
 });
 
 export const FieldInspectionDataSchema = z.object({
@@ -52,6 +58,10 @@ export const FieldInspectionDataSchema = z.object({
   inspector_name: z.string().optional(), // Legacy field
   completed: z.boolean().optional(),
   status: z.string().optional(),
+  
+  // ✅ NEW: Assembly-related fields for backward compatibility
+  roof_assembly_layers: z.array(z.any()).optional(),
+  project_type: z.string().optional(),
 });
 
 export const SOWGenerationErrorSchema = z.object({
@@ -85,9 +95,65 @@ export const SOWResponseSchema = z.object({
   }).optional(),
 });
 
-// TypeScript interfaces derived from Zod schemas - Fixed to use flat structure
-export type SOWGenerationRequest = z.infer<typeof SOWGenerationRequestSchema>;
-export type FieldInspectionData = z.infer<typeof FieldInspectionDataSchema>;
+// ✅ PHASE 1: TypeScript interfaces with assembly support
+export interface SOWGenerationRequest {
+  projectName: string;
+  projectAddress: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  buildingHeight?: number;
+  deckType?: 'concrete' | 'metal' | 'wood' | 'gypsum';
+  membraneType?: 'tpo' | 'epdm' | 'pvc' | 'modified-bitumen';
+  insulationType?: 'polyiso' | 'eps' | 'xps' | 'mineral-wool';
+  windSpeed?: number;
+  exposureCategory?: 'B' | 'C' | 'D';
+  buildingClassification?: 'I' | 'II' | 'III' | 'IV';
+  takeoffFile?: File;
+  notes?: string;
+  inspectionId?: string;
+  
+  // ✅ NEW: Assembly configuration properties
+  roofAssemblyLayers?: RoofLayer[];
+  projectType?: 'recover' | 'tearoff' | 'new';
+  assemblyNotes?: string;
+}
+
+export interface FieldInspectionData {
+  id?: string;
+  projectName: string;
+  project_name?: string; // Legacy field
+  projectAddress: string;
+  project_address?: string; // Legacy field
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  zip_code?: string; // Legacy field
+  buildingHeight?: number;
+  building_height?: number; // Legacy field
+  deckType?: string;
+  deck_type?: string; // Legacy field
+  membraneType?: string;
+  membrane_type?: string; // Legacy field
+  insulationType?: string;
+  insulation_type?: string; // Legacy field
+  windSpeed?: number;
+  wind_speed?: number; // Legacy field
+  exposureCategory?: string;
+  exposure_category?: string; // Legacy field
+  buildingClassification?: string;
+  building_classification?: string; // Legacy field
+  notes?: string;
+  inspectorName?: string;
+  inspector_name?: string; // Legacy field
+  completed?: boolean;
+  status?: string;
+  
+  // ✅ NEW: Assembly-related fields
+  roof_assembly_layers?: RoofLayer[];
+  project_type?: 'recover' | 'tearoff' | 'new';
+}
+
 export type SOWGenerationError = z.infer<typeof SOWGenerationErrorSchema>;
 export type SOWGenerationResponse = z.infer<typeof SOWResponseSchema>;
 
@@ -123,7 +189,7 @@ export interface SOWGenerationProgress {
   estimatedTimeRemaining?: number;
 }
 
-// Data transformation utilities - Fixed to work with flat structure
+// ✅ PHASE 1: Enhanced data transformation with assembly support
 export function transformInspectionToSOWRequest(inspection: FieldInspectionData): Partial<SOWGenerationRequest> {
   return {
     projectName: inspection.projectName || inspection.project_name,
@@ -139,6 +205,10 @@ export function transformInspectionToSOWRequest(inspection: FieldInspectionData)
     exposureCategory: (inspection.exposureCategory || inspection.exposure_category) as any,
     buildingClassification: (inspection.buildingClassification || inspection.building_classification) as any,
     notes: inspection.notes,
+    
+    // ✅ NEW: Include assembly data from inspection
+    roofAssemblyLayers: inspection.roof_assembly_layers,
+    projectType: inspection.project_type,
   };
 }
 
@@ -168,7 +238,7 @@ export function transformFormDataToSOWRequest(formData: SOWFormData): SOWGenerat
   if (formData.exposureCategory) result.exposureCategory = formData.exposureCategory;
   if (formData.buildingClassification) result.buildingClassification = formData.buildingClassification;
 
-  return SOWGenerationRequestSchema.parse(result);
+  return result as SOWGenerationRequest;
 }
 
 // Error handling utilities
