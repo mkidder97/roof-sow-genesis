@@ -8,23 +8,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck, Info } from 'lucide-react';
+import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck, Info, Layers } from 'lucide-react';
 import { SOWFormData, FieldInspectionData, SOWGenerationRequest, transformInspectionToSOWRequest, transformFormDataToSOWRequest, createSOWError, SOWGenerationRequestSchema } from '@/types/sowGeneration';
 import { MEMBRANE_TYPES, INSULATION_TYPES, getTemplateCategory } from '@/types/roofingTypes';
+import { RoofLayer } from '@/types/roofingTypes';
+import { RoofAssemblyEditor } from '@/components/field-inspector/components/RoofAssemblyEditor';
 import { useToast } from '@/hooks/use-toast';
+
 interface SOWInputFormProps {
   initialData?: FieldInspectionData;
   onSubmit: (data: SOWGenerationRequest) => void;
   disabled?: boolean;
 }
+
 export const SOWInputForm: React.FC<SOWInputFormProps> = ({
   initialData,
   onSubmit,
   disabled = false
 }) => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState<SOWFormData>({
     projectName: '',
     projectAddress: '',
@@ -41,10 +44,16 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     takeoffFile: null,
     notes: ''
   });
+
+  // ✅ NEW: Assembly layers state for dynamic roof assembly
+  const [assemblyLayers, setAssemblyLayers] = useState<RoofLayer[]>([]);
+  const [projectType, setProjectType] = useState<'recover' | 'tearoff' | 'new'>('tearoff');
+  
   const [activeTab, setActiveTab] = useState('project');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [selectedMembraneInfo, setSelectedMembraneInfo] = useState<string>('');
   const [selectedInsulationInfo, setSelectedInsulationInfo] = useState<string>('');
+
   useEffect(() => {
     if (initialData) {
       const transformedData = transformInspectionToSOWRequest(initialData);
@@ -64,8 +73,20 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
         buildingClassification: transformedData.buildingClassification || '',
         notes: transformedData.notes || ''
       }));
+
+      // ✅ NEW: Load assembly layers from inspection data
+      if (initialData.roof_assembly_layers && initialData.roof_assembly_layers.length > 0) {
+        setAssemblyLayers(initialData.roof_assembly_layers);
+        console.log('🏗️ Loaded assembly layers from inspection:', initialData.roof_assembly_layers);
+      }
+
+      // Set project type from inspection data
+      if (initialData.project_type) {
+        setProjectType(initialData.project_type as 'recover' | 'tearoff' | 'new');
+      }
     }
   }, [initialData]);
+
   const handleInputChange = (field: keyof SOWFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -85,14 +106,25 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     // Clear validation error when user starts typing
     if (validationErrors[field]) {
       setValidationErrors(prev => {
-        const newErrors = {
-          ...prev
-        };
+        const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
       });
     }
   };
+
+  // ✅ NEW: Handle assembly layer changes
+  const handleAssemblyChange = (newLayers: RoofLayer[]) => {
+    setAssemblyLayers(newLayers);
+    console.log('🏗️ Assembly layers updated:', newLayers);
+  };
+
+  // ✅ NEW: Handle project type changes
+  const handleProjectTypeChange = (newProjectType: 'recover' | 'tearoff' | 'new') => {
+    setProjectType(newProjectType);
+    console.log('🏗️ Project type updated:', newProjectType);
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -122,6 +154,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       }));
     }
   };
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     try {
@@ -140,9 +173,11 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       return false;
     }
   };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (disabled) return;
+
     if (!validateForm()) {
       toast({
         title: "Validation Error",
@@ -151,15 +186,23 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       });
       return;
     }
+
     try {
       const sowRequest = transformFormDataToSOWRequest(formData);
+      
+      // ✅ NEW: Add assembly data to SOW request
+      sowRequest.roofAssemblyLayers = assemblyLayers;
+      sowRequest.projectType = projectType;
+      
       console.log('SOW generation requested with validated data:', sowRequest);
+      console.log('🏗️ Including assembly layers:', assemblyLayers);
 
       // Log membrane type for template selection logic
       if (formData.membraneType) {
         const templateCategory = getTemplateCategory(formData.membraneType);
         console.log('Selected membrane type for template logic:', formData.membraneType, 'Template category:', templateCategory);
       }
+      
       onSubmit(sowRequest);
     } catch (error: any) {
       console.error('Form transformation error:', error);
@@ -170,43 +213,60 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       });
     }
   };
+
   const isFormValid = formData.projectName && formData.projectAddress && Object.keys(validationErrors).length === 0;
-  return <Card className={`bg-white/10 backdrop-blur-md border-blue-400/30 ${disabled ? 'opacity-50' : ''}`}>
+
+  return (
+    <Card className={`bg-white/10 backdrop-blur-md border-blue-400/30 ${disabled ? 'opacity-50' : ''}`}>
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <FileText className="w-5 h-5" />
           SOW Generation Form
-          {initialData && <Badge className="bg-green-600 text-white">
+          {initialData && (
+            <Badge className="bg-green-600 text-white">
               Pre-filled from Inspection
-            </Badge>}
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {disabled && <Alert className="mb-6 bg-red-900/50 border-red-400/30">
+        {disabled && (
+          <Alert className="mb-6 bg-red-900/50 border-red-400/30">
             <AlertTriangle className="h-4 w-4 text-red-400" />
             <AlertDescription className="text-red-200">
               SOW generation is currently unavailable. Please ensure the backend server is running and try again.
             </AlertDescription>
-          </Alert>}
+          </Alert>
+        )}
 
-        {initialData && <Alert className="mb-6 bg-green-900/50 border-green-400/30">
+        {initialData && (
+          <Alert className="mb-6 bg-green-900/50 border-green-400/30">
             <ClipboardCheck className="h-4 w-4 text-green-400" />
             <AlertDescription className="text-green-200">
               <div className="flex items-center justify-between">
                 <div>
                   <strong>Field Inspection Data Loaded:</strong> {initialData.projectName || initialData.project_name} - 
                   Data from the completed field inspection has been automatically populated in the form below.
+                  {assemblyLayers.length > 0 && (
+                    <div className="mt-1">
+                      <Badge className="bg-blue-600 text-white text-xs">
+                        Assembly Layers: {assemblyLayers.length}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
                 <Badge className="bg-green-600 text-white">
                   Auto-filled
                 </Badge>
               </div>
             </AlertDescription>
-          </Alert>}
+          </Alert>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 mb-6 bg-white/10 backdrop-blur-md">
+            {/* ✅ NEW: Added Assembly tab */}
+            <TabsList className="grid w-full grid-cols-5 mb-6 bg-white/10 backdrop-blur-md">
               <TabsTrigger value="project" disabled={disabled} className="data-[state=active]:bg-blue-600 text-slate-950">
                 <Building2 className="w-4 h-4 mr-2" />
                 Project
@@ -214,6 +274,10 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               <TabsTrigger value="building" disabled={disabled} className="data-[state=active]:bg-blue-600 text-slate-950">
                 <Settings className="w-4 h-4 mr-2" />
                 Building
+              </TabsTrigger>
+              <TabsTrigger value="assembly" disabled={disabled} className="data-[state=active]:bg-blue-600 text-slate-950">
+                <Layers className="w-4 h-4 mr-2" />
+                Assembly
               </TabsTrigger>
               <TabsTrigger value="wind" disabled={disabled} className="data-[state=active]:bg-blue-600 text-gray-950">
                 <Wind className="w-4 h-4 mr-2" />
@@ -230,25 +294,57 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="projectName" className="text-blue-200">Project Name *</Label>
-                  <Input id="projectName" value={formData.projectName} onChange={e => handleInputChange('projectName', e.target.value)} className="bg-white/10 border-blue-400/30 text-white" disabled={disabled} required />
+                  <Input 
+                    id="projectName" 
+                    value={formData.projectName} 
+                    onChange={e => handleInputChange('projectName', e.target.value)} 
+                    className="bg-white/10 border-blue-400/30 text-white" 
+                    disabled={disabled} 
+                    required 
+                  />
                   {validationErrors.projectName && <p className="text-red-400 text-sm mt-1">{validationErrors.projectName}</p>}
                 </div>
                 <div>
                   <Label htmlFor="projectAddress" className="text-blue-200">Project Address *</Label>
-                  <Input id="projectAddress" value={formData.projectAddress} onChange={e => handleInputChange('projectAddress', e.target.value)} className="bg-white/10 border-blue-400/30 text-white" disabled={disabled} required />
+                  <Input 
+                    id="projectAddress" 
+                    value={formData.projectAddress} 
+                    onChange={e => handleInputChange('projectAddress', e.target.value)} 
+                    className="bg-white/10 border-blue-400/30 text-white" 
+                    disabled={disabled} 
+                    required 
+                  />
                   {validationErrors.projectAddress && <p className="text-red-400 text-sm mt-1">{validationErrors.projectAddress}</p>}
                 </div>
                 <div>
                   <Label htmlFor="city" className="text-blue-200">City</Label>
-                  <Input id="city" value={formData.city} onChange={e => handleInputChange('city', e.target.value)} className="bg-white/10 border-blue-400/30 text-white" disabled={disabled} />
+                  <Input 
+                    id="city" 
+                    value={formData.city} 
+                    onChange={e => handleInputChange('city', e.target.value)} 
+                    className="bg-white/10 border-blue-400/30 text-white" 
+                    disabled={disabled} 
+                  />
                 </div>
                 <div>
                   <Label htmlFor="state" className="text-blue-200">State</Label>
-                  <Input id="state" value={formData.state} onChange={e => handleInputChange('state', e.target.value)} className="bg-white/10 border-blue-400/30 text-white" disabled={disabled} />
+                  <Input 
+                    id="state" 
+                    value={formData.state} 
+                    onChange={e => handleInputChange('state', e.target.value)} 
+                    className="bg-white/10 border-blue-400/30 text-white" 
+                    disabled={disabled} 
+                  />
                 </div>
                 <div>
                   <Label htmlFor="zipCode" className="text-blue-200">Zip Code</Label>
-                  <Input id="zipCode" value={formData.zipCode} onChange={e => handleInputChange('zipCode', e.target.value)} className="bg-white/10 border-blue-400/30 text-white" disabled={disabled} />
+                  <Input 
+                    id="zipCode" 
+                    value={formData.zipCode} 
+                    onChange={e => handleInputChange('zipCode', e.target.value)} 
+                    className="bg-white/10 border-blue-400/30 text-white" 
+                    disabled={disabled} 
+                  />
                 </div>
               </div>
             </TabsContent>
@@ -258,7 +354,14 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="buildingHeight" className="text-blue-200">Building Height (ft)</Label>
-                  <Input id="buildingHeight" type="number" value={formData.buildingHeight} onChange={e => handleInputChange('buildingHeight', e.target.value)} className="bg-white/10 border-blue-400/30 text-white" disabled={disabled} />
+                  <Input 
+                    id="buildingHeight" 
+                    type="number" 
+                    value={formData.buildingHeight} 
+                    onChange={e => handleInputChange('buildingHeight', e.target.value)} 
+                    className="bg-white/10 border-blue-400/30 text-white" 
+                    disabled={disabled} 
+                  />
                   {validationErrors.buildingHeight && <p className="text-red-400 text-sm mt-1">{validationErrors.buildingHeight}</p>}
                 </div>
                 <div>
@@ -292,20 +395,24 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                     <SelectValue placeholder="Select membrane type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {MEMBRANE_TYPES.map(membrane => <SelectItem key={membrane.value} value={membrane.value}>
+                    {MEMBRANE_TYPES.map(membrane => (
+                      <SelectItem key={membrane.value} value={membrane.value}>
                         <div className="flex flex-col">
                           <span className="font-medium">{membrane.label}</span>
                           <span className="text-xs text-gray-500">{membrane.description}</span>
                         </div>
-                      </SelectItem>)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {selectedMembraneInfo && <Alert className="bg-blue-900/50 border-blue-400/30">
+                {selectedMembraneInfo && (
+                  <Alert className="bg-blue-900/50 border-blue-400/30">
                     <Info className="h-4 w-4 text-blue-400" />
                     <AlertDescription className="text-blue-200">
                       <strong>Selected:</strong> {selectedMembraneInfo}
                     </AlertDescription>
-                  </Alert>}
+                  </Alert>
+                )}
               </div>
 
               {/* Enhanced Insulation Type Selection */}
@@ -318,29 +425,104 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                     <SelectValue placeholder="Select insulation type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {INSULATION_TYPES.map(insulation => <SelectItem key={insulation.value} value={insulation.value}>
+                    {INSULATION_TYPES.map(insulation => (
+                      <SelectItem key={insulation.value} value={insulation.value}>
                         <div className="flex flex-col">
                           <span className="font-medium">{insulation.label}</span>
                           <span className="text-xs text-gray-500">{insulation.description}</span>
                         </div>
-                      </SelectItem>)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {selectedInsulationInfo && <Alert className="bg-green-900/50 border-green-400/30">
+                {selectedInsulationInfo && (
+                  <Alert className="bg-green-900/50 border-green-400/30">
                     <Info className="h-4 w-4 text-green-400" />
                     <AlertDescription className="text-green-200">
                       <strong>Selected:</strong> {selectedInsulationInfo}
                     </AlertDescription>
-                  </Alert>}
+                  </Alert>
+                )}
               </div>
 
               {/* Template Selection Notice */}
-              {formData.membraneType && <Alert className="bg-purple-900/50 border-purple-400/30">
+              {formData.membraneType && (
+                <Alert className="bg-purple-900/50 border-purple-400/30">
                   <Info className="h-4 w-4 text-purple-400" />
                   <AlertDescription className="text-purple-200">
                     <strong>Template Logic:</strong> Your selection of "{MEMBRANE_TYPES.find(m => m.value === formData.membraneType)?.label}" will determine the appropriate SOW template for generation.
                   </AlertDescription>
-                </Alert>}
+                </Alert>
+              )}
+            </TabsContent>
+
+            {/* ✅ NEW: Assembly Configuration Tab */}
+            <TabsContent value="assembly" className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-white text-lg font-semibold">Roof Assembly Configuration</h3>
+                    <p className="text-blue-200 text-sm">
+                      Configure the roof assembly layers from bottom (deck) to top (membrane)
+                    </p>
+                  </div>
+                  {assemblyLayers.length > 0 && (
+                    <Badge className="bg-green-600 text-white">
+                      {assemblyLayers.length} Layers Configured
+                    </Badge>
+                  )}
+                </div>
+
+                {initialData && assemblyLayers.length > 0 && (
+                  <Alert className="bg-blue-900/50 border-blue-400/30">
+                    <Info className="h-4 w-4 text-blue-400" />
+                    <AlertDescription className="text-blue-200">
+                      Assembly layers loaded from field inspection. You can modify them or add additional layers as needed.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Roof Assembly Editor Integration */}
+                <div className="bg-white/5 rounded-lg p-4 border border-blue-400/20">
+                  <RoofAssemblyEditor
+                    layers={assemblyLayers}
+                    onChange={handleAssemblyChange}
+                    projectType={projectType}
+                    onProjectTypeChange={handleProjectTypeChange}
+                    readOnly={disabled}
+                  />
+                </div>
+
+                {/* Assembly Summary */}
+                {assemblyLayers.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-white font-medium mb-3">Assembly Summary</h4>
+                    <div className="bg-white/5 rounded-lg p-4 border border-blue-400/20">
+                      <div className="space-y-2">
+                        {assemblyLayers.map((layer, index) => (
+                          <div key={layer.id} className="flex items-center justify-between text-sm">
+                            <span className="text-blue-200">
+                              {assemblyLayers.length - index}. {layer.description || `${layer.material || ''} ${layer.type}`.trim()}
+                            </span>
+                            <div className="flex gap-2">
+                              {layer.thickness && (
+                                <Badge variant="outline" className="text-xs">
+                                  {layer.thickness}
+                                </Badge>
+                              )}
+                              {layer.attachment && (
+                                <Badge variant="outline" className="text-xs">
+                                  {layer.attachment.replace('_', ' ')}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* Wind Parameters Tab */}
@@ -348,7 +530,14 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="windSpeed" className="text-blue-200">Design Wind Speed (mph)</Label>
-                  <Input id="windSpeed" type="number" value={formData.windSpeed} onChange={e => handleInputChange('windSpeed', e.target.value)} className="bg-white/10 border-blue-400/30 text-white" disabled={disabled} />
+                  <Input 
+                    id="windSpeed" 
+                    type="number" 
+                    value={formData.windSpeed} 
+                    onChange={e => handleInputChange('windSpeed', e.target.value)} 
+                    className="bg-white/10 border-blue-400/30 text-white" 
+                    disabled={disabled} 
+                  />
                   {validationErrors.windSpeed && <p className="text-red-400 text-sm mt-1">{validationErrors.windSpeed}</p>}
                 </div>
                 <div>
@@ -385,25 +574,47 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
             <TabsContent value="upload" className="space-y-4">
               <div>
                 <Label htmlFor="takeoffFile" className="text-blue-200">Takeoff File (PDF, Excel, etc.)</Label>
-                <Input id="takeoffFile" type="file" onChange={handleFileUpload} className="bg-white/10 border-blue-400/30 text-white file:bg-blue-600 file:text-white file:border-0 file:rounded" accept=".pdf,.xlsx,.xls,.csv" disabled={disabled} />
-                {formData.takeoffFile && <p className="text-green-400 text-sm mt-2">
+                <Input 
+                  id="takeoffFile" 
+                  type="file" 
+                  onChange={handleFileUpload} 
+                  className="bg-white/10 border-blue-400/30 text-white file:bg-blue-600 file:text-white file:border-0 file:rounded" 
+                  accept=".pdf,.xlsx,.xls,.csv" 
+                  disabled={disabled} 
+                />
+                {formData.takeoffFile && (
+                  <p className="text-green-400 text-sm mt-2">
                     File selected: {formData.takeoffFile.name}
-                  </p>}
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="notes" className="text-blue-200">Additional Notes</Label>
-                <Textarea id="notes" value={formData.notes} onChange={e => handleInputChange('notes', e.target.value)} className="bg-white/10 border-blue-400/30 text-white" rows={4} placeholder="Any additional specifications or requirements..." disabled={disabled} />
+                <Textarea 
+                  id="notes" 
+                  value={formData.notes} 
+                  onChange={e => handleInputChange('notes', e.target.value)} 
+                  className="bg-white/10 border-blue-400/30 text-white" 
+                  rows={4} 
+                  placeholder="Any additional specifications or requirements..." 
+                  disabled={disabled} 
+                />
               </div>
             </TabsContent>
           </Tabs>
 
           <div className="flex justify-end">
-            <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white px-8 py-2" disabled={disabled || !isFormValid}>
+            <Button 
+              type="submit" 
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-2" 
+              disabled={disabled || !isFormValid}
+            >
               <FileText className="w-4 h-4 mr-2" />
               Generate SOW
             </Button>
           </div>
         </form>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
