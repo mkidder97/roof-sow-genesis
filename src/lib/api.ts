@@ -78,23 +78,31 @@ export interface SOWGenerationResponseData {
   };
 }
 
-// Add missing exports that are imported elsewhere
+// Enhanced SOWResponse with all required properties
 export interface SOWResponse {
   success: boolean;
   sowId?: string;
   downloadUrl?: string;
   message?: string;
   error?: string;
+  filename?: string;
+  outputPath?: string;
+  generationTime?: number;
   data?: {
     pdf?: string;
     sow?: string;
   };
 }
 
+// Complete API endpoints including all referenced endpoints
 export const API_ENDPOINTS = {
   SOW_GENERATION: '/api/sow/generate',
   HEALTH_CHECK: '/api/health',
-  PROJECTS: '/api/projects'
+  PROJECTS: '/api/projects',
+  health: '/api/health',
+  status: '/api/status',
+  docs: '/api/docs',
+  templateMap: '/api/template-map'
 };
 
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {

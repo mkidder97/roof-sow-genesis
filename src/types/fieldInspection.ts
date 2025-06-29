@@ -5,6 +5,7 @@ export interface HVACUnit {
   quantity: number;
   condition: string;
   needs_curb_adapter?: boolean;
+  type?: string; // Add missing type property
 }
 
 export interface RoofDrain {
@@ -13,6 +14,7 @@ export interface RoofDrain {
   quantity: number;
   condition: string;
   location?: string;
+  count?: number; // Add missing count property
 }
 
 export interface Penetration {
@@ -21,6 +23,7 @@ export interface Penetration {
   quantity: number;
   condition: string;
   description?: string;
+  count?: number; // Add missing count property
 }
 
 export interface SkylightEquipment {
@@ -53,6 +56,7 @@ export interface HVACEquipment {
   electrical_connections_condition?: string;
   curb_condition?: string;
   clearances?: string;
+  type?: string; // Add missing type property
 }
 
 interface RoofLayer {
@@ -64,13 +68,14 @@ interface RoofLayer {
   material?: string;
 }
 
-// Add missing exported types
+// Unified ASCERequirements interface with all required properties
 export interface ASCERequirements {
   version: string;
   wind_speed: number;
   exposure_category: string;
   building_classification: string;
   importance_factor: number;
+  risk_category?: string; // Add missing risk_category
   engineer_approved?: boolean;
   approval_date?: string;
   approval_engineer?: string;
@@ -94,10 +99,12 @@ export interface SkylightItem {
   curb_condition?: string;
   glazing_condition?: string;
   leaks?: boolean;
+  type?: string; // Add missing type property
+  size?: string; // Add missing size property
 }
 
 export interface FieldInspectionData {
-  id?: string;
+  id: string; // Make id required for compatibility
   project_name: string;
   project_address: string;
   inspector_name: string;
@@ -126,6 +133,8 @@ export interface DrainageSOWConfig {
   additional_count?: number;
   additional_size?: string;
   additional_notes?: string;
+  specifications?: any; // Add missing specifications property
+  additional_drainage?: any; // Add missing additional_drainage property
 }
 
 export interface FieldInspection {
@@ -236,4 +245,70 @@ export interface FieldInspection {
   upgraded_lighting?: boolean;
   interior_fall_protection?: boolean;
   special_requirements?: string;
+  
+  // Add missing properties referenced in sowIntegrationEngine
+  deck_substrate?: string;
+  attachment_method?: string;
+  insulation_attachment?: string;
+  walkway_pads?: boolean;
+  equipment_platforms?: boolean;
+  penetrations_gas_line_count?: number;
+  penetrations_conduit_description?: string;
+  penetrations_other?: any;
+  curbs_count?: number;
+  side_discharge_count?: number;
 }
+
+// Utility functions that are imported elsewhere
+export const convertRowToInspection = (row: any): FieldInspection => {
+  return {
+    ...row,
+    id: row.id || undefined,
+    project_name: row.project_name || '',
+    project_address: row.project_address || '',
+    inspector_name: row.inspector_name || '',
+    status: row.status || 'Draft',
+    priority_level: row.priority_level || 'Standard',
+    weather_conditions: row.weather_conditions || 'Clear',
+    access_method: row.access_method || 'internal_hatch'
+  };
+};
+
+export const generateDrainageSOWConfig = (inspection: FieldInspection): DrainageSOWConfig => {
+  return {
+    primary_type: inspection.drainage_primary_type,
+    overflow_type: inspection.drainage_overflow_type,
+    deck_drains_count: inspection.drainage_deck_drains_count,
+    deck_drains_diameter: inspection.drainage_deck_drains_diameter,
+    scuppers_count: inspection.drainage_scuppers_count,
+    scuppers_length: inspection.drainage_scuppers_length,
+    scuppers_width: inspection.drainage_scuppers_width,
+    scuppers_height: inspection.drainage_scuppers_height,
+    gutters_linear_feet: inspection.drainage_gutters_linear_feet,
+    gutters_height: inspection.drainage_gutters_height,
+    gutters_width: inspection.drainage_gutters_width,
+    gutters_depth: inspection.drainage_gutters_depth,
+    additional_count: inspection.drainage_additional_count,
+    additional_size: inspection.drainage_additional_size,
+    additional_notes: inspection.drainage_additional_notes
+  };
+};
+
+export const selectSOWTemplate = (inspectionData: FieldInspection): string => {
+  const projectType = inspectionData.project_type || 'tearoff';
+  const deckType = inspectionData.deck_type || 'steel';
+  
+  if (projectType === 'tearoff') {
+    if (deckType === 'gypsum') {
+      return 'T8-Tearoff-TPO(adhered)-insul(adhered)-gypsum';
+    } else if (deckType === 'lightweight_concrete') {
+      return 'T7-Tearoff-TPO(MA)-insul-lwc-steel';
+    } else {
+      return 'T6-Tearoff-TPO(MA)-insul-steel';
+    }
+  } else if (projectType === 'recover') {
+    return 'T5-Recover-TPO(Rhino)-iso-EPS flute fill-SSR';
+  }
+  
+  return 'T6-Tearoff-TPO(MA)-insul-steel'; // Default
+};
