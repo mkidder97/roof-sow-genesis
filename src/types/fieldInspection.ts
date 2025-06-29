@@ -69,27 +69,11 @@ interface RoofLayer {
   material?: string;
 }
 
-// Unified ASCERequirements interface with all required properties
-export interface ASCERequirements {
-  version?: string;
-  wind_speed?: number; // Make optional to match usage
-  windSpeed?: number; // Alternative naming
-  exposure_category?: string;
-  exposureCategory?: string; // Alternative naming
-  building_classification?: string;
-  buildingHeight?: number;
-  roofZone?: string;
-  importance_factor?: number;
-  risk_category?: string; // Make optional for compatibility
-  engineer_approved?: boolean;
-  approval_date?: string;
-  approval_engineer?: string;
-  pressureCoefficients?: {
-    zone1?: number;
-    zone2?: number;
-    zone3?: number;
-  };
-}
+// ✅ Import unified ASCE interface instead of defining locally
+import { PartialASCERequirements } from '@/types/asceRequirements';
+
+// Use PartialASCERequirements for field inspection context (where data may be incomplete)
+export type ASCERequirements = PartialASCERequirements;
 
 export interface AccessPoint {
   id: string;
