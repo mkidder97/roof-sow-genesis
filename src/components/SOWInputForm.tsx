@@ -44,14 +44,12 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     notes: ''
   });
 
-  // ✅ FIXED: Assembly layers state for dynamic roof assembly
+  // Assembly layers state for dynamic roof assembly
   const [assemblyLayers, setAssemblyLayers] = useState<RoofLayer[]>([]);
   const [projectType, setProjectType] = useState<'recover' | 'tearoff' | 'new'>('tearoff');
   
   const [activeTab, setActiveTab] = useState('project');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [selectedMembraneInfo, setSelectedMembraneInfo] = useState<string>('');
-  const [selectedInsulationInfo, setSelectedInsulationInfo] = useState<string>('');
 
   useEffect(() => {
     if (initialData) {
@@ -73,7 +71,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
         notes: transformedData.notes || ''
       }));
 
-      // ✅ FIXED: Load assembly layers from inspection data
+      // Load assembly layers from inspection data
       if (initialData.roof_assembly_layers && initialData.roof_assembly_layers.length > 0) {
         setAssemblyLayers(initialData.roof_assembly_layers);
         console.log('🏗️ Loaded assembly layers from inspection:', initialData.roof_assembly_layers);
@@ -92,16 +90,6 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       [field]: value
     }));
 
-    // Update info displays for membrane and insulation types
-    if (field === 'membraneType') {
-      const membraneInfo = MEMBRANE_TYPES.find(m => m.value === value)?.description || '';
-      setSelectedMembraneInfo(membraneInfo);
-    }
-    if (field === 'insulationType') {
-      const insulationInfo = INSULATION_TYPES.find(i => i.value === value)?.description || '';
-      setSelectedInsulationInfo(insulationInfo);
-    }
-
     // Clear validation error when user starts typing
     if (validationErrors[field]) {
       setValidationErrors(prev => {
@@ -112,13 +100,13 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     }
   };
 
-  // ✅ FIXED: Handle assembly layer changes
+  // Handle assembly layer changes
   const handleAssemblyChange = (newLayers: RoofLayer[]) => {
     setAssemblyLayers(newLayers);
     console.log('🏗️ Assembly layers updated:', newLayers);
   };
 
-  // ✅ FIXED: Handle project type changes
+  // Handle project type changes
   const handleProjectTypeChange = (newProjectType: 'recover' | 'tearoff' | 'new') => {
     setProjectType(newProjectType);
     console.log('🏗️ Project type updated:', newProjectType);
@@ -189,7 +177,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     try {
       const sowRequest = transformFormDataToSOWRequest(formData);
       
-      // ✅ FIXED: Add assembly data to SOW request
+      // Add assembly data to SOW request
       sowRequest.roofAssemblyLayers = assemblyLayers;
       sowRequest.projectType = projectType;
       
@@ -264,15 +252,11 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            {/* ✅ FIXED: Added Assembly tab */}
-            <TabsList className="grid w-full grid-cols-5 mb-6 bg-white/10 backdrop-blur-md">
+            {/* ✅ UPDATED: Removed Building tab, kept only 4 tabs */}
+            <TabsList className="grid w-full grid-cols-4 mb-6 bg-white/10 backdrop-blur-md">
               <TabsTrigger value="project" disabled={disabled} className="data-[state=active]:bg-blue-600 text-slate-950">
                 <Building2 className="w-4 h-4 mr-2" />
                 Project
-              </TabsTrigger>
-              <TabsTrigger value="building" disabled={disabled} className="data-[state=active]:bg-blue-600 text-slate-950">
-                <Settings className="w-4 h-4 mr-2" />
-                Building
               </TabsTrigger>
               <TabsTrigger value="assembly" disabled={disabled} className="data-[state=active]:bg-blue-600 text-slate-950">
                 <Layers className="w-4 h-4 mr-2" />
@@ -288,7 +272,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               </TabsTrigger>
             </TabsList>
 
-            {/* Project Information Tab */}
+            {/* ✅ UPDATED: Enhanced Project Tab with Building Height */}
             <TabsContent value="project" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -345,12 +329,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                     disabled={disabled} 
                   />
                 </div>
-              </div>
-            </TabsContent>
-
-            {/* Enhanced Building Specifications Tab */}
-            <TabsContent value="building" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* ✅ NEW: Building Height moved to Project tab */}
                 <div>
                   <Label htmlFor="buildingHeight" className="text-blue-200">Building Height (ft)</Label>
                   <Input 
@@ -363,106 +342,17 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                   />
                   {validationErrors.buildingHeight && <p className="text-red-400 text-sm mt-1">{validationErrors.buildingHeight}</p>}
                 </div>
-                <div>
-                  <Label htmlFor="deckType" className="text-blue-200">Deck Type</Label>
-                  <Select value={formData.deckType} onValueChange={value => handleInputChange('deckType', value)} disabled={disabled}>
-                    <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                      <SelectValue placeholder="Select deck type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="steel">Steel Deck</SelectItem>
-                      <SelectItem value="concrete">Concrete Deck</SelectItem>
-                      <SelectItem value="wood">Wood Deck</SelectItem>
-                      <SelectItem value="gypsum">Gypsum Deck</SelectItem>
-                      <SelectItem value="loadmaster">Loadmaster Deck</SelectItem>
-                      <SelectItem value="composite">Composite Deck</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
-
-              {/* Enhanced Membrane Type Selection */}
-              <div className="space-y-3">
-                <Label htmlFor="membraneType" className="text-blue-200 text-lg font-semibold">
-                  Membrane Type *
-                  <Badge className="ml-2 bg-yellow-600 text-white text-xs">
-                    Affects Template Selection
-                  </Badge>
-                </Label>
-                <Select value={formData.membraneType} onValueChange={value => handleInputChange('membraneType', value)} disabled={disabled}>
-                  <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                    <SelectValue placeholder="Select membrane type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEMBRANE_TYPES.map(membrane => (
-                      <SelectItem key={membrane.value} value={membrane.value}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{membrane.label}</span>
-                          <span className="text-xs text-gray-500">{membrane.description}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedMembraneInfo && (
-                  <Alert className="bg-blue-900/50 border-blue-400/30">
-                    <Info className="h-4 w-4 text-blue-400" />
-                    <AlertDescription className="text-blue-200">
-                      <strong>Selected:</strong> {selectedMembraneInfo}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-
-              {/* Enhanced Insulation Type Selection */}
-              <div className="space-y-3">
-                <Label htmlFor="insulationType" className="text-blue-200 text-lg font-semibold">
-                  Insulation Type
-                </Label>
-                <Select value={formData.insulationType} onValueChange={value => handleInputChange('insulationType', value)} disabled={disabled}>
-                  <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
-                    <SelectValue placeholder="Select insulation type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INSULATION_TYPES.map(insulation => (
-                      <SelectItem key={insulation.value} value={insulation.value}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{insulation.label}</span>
-                          <span className="text-xs text-gray-500">{insulation.description}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedInsulationInfo && (
-                  <Alert className="bg-green-900/50 border-green-400/30">
-                    <Info className="h-4 w-4 text-green-400" />
-                    <AlertDescription className="text-green-200">
-                      <strong>Selected:</strong> {selectedInsulationInfo}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-
-              {/* Template Selection Notice */}
-              {formData.membraneType && (
-                <Alert className="bg-purple-900/50 border-purple-400/30">
-                  <Info className="h-4 w-4 text-purple-400" />
-                  <AlertDescription className="text-purple-200">
-                    <strong>Template Logic:</strong> Your selection of "{MEMBRANE_TYPES.find(m => m.value === formData.membraneType)?.label}" will determine the appropriate SOW template for generation.
-                  </AlertDescription>
-                </Alert>
-              )}
             </TabsContent>
 
-            {/* ✅ FIXED: Assembly Configuration Tab */}
+            {/* Assembly Configuration Tab */}
             <TabsContent value="assembly" className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-white text-lg font-semibold">Roof Assembly Configuration</h3>
                     <p className="text-blue-200 text-sm">
-                      Configure the roof assembly layers from bottom (deck) to top (membrane)
+                      Configure the roof assembly layers and template selection
                     </p>
                   </div>
                   {assemblyLayers.length > 0 && (
@@ -472,16 +362,117 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                   )}
                 </div>
 
-                {initialData && assemblyLayers.length > 0 && (
-                  <Alert className="bg-blue-900/50 border-blue-400/30">
-                    <Info className="h-4 w-4 text-blue-400" />
-                    <AlertDescription className="text-blue-200">
-                      Assembly layers loaded from field inspection. You can modify them or add additional layers as needed.
-                    </AlertDescription>
-                  </Alert>
-                )}
+                {/* ✅ TEMPLATE SELECTOR INTEGRATION NOTICE */}
+                <Alert className="bg-purple-900/50 border-purple-400/30">
+                  <Info className="h-4 w-4 text-purple-400" />
+                  <AlertDescription className="text-purple-200">
+                    <div className="space-y-2">
+                      <div><strong>Phase 1:</strong> Assembly editor works independently</div>
+                      <div><strong>Phase 2 (Coming):</strong> Template ↔ Assembly synchronization</div>
+                      <div className="text-xs opacity-75">
+                        Currently: Template selection and assembly layers work separately. 
+                        Phase 2 will add bidirectional sync between template selection and assembly configuration.
+                      </div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
 
-                {/* ✅ FIXED: Roof Assembly Editor Integration */}
+                {/* ✅ ENHANCED: Template Selection in Assembly Tab */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="text-white font-medium">Template Selection</h4>
+                    
+                    {/* Membrane Type */}
+                    <div className="space-y-3">
+                      <Label htmlFor="membraneType" className="text-blue-200 text-sm font-semibold">
+                        Membrane Type *
+                        <Badge className="ml-2 bg-yellow-600 text-white text-xs">
+                          Affects Template
+                        </Badge>
+                      </Label>
+                      <Select value={formData.membraneType} onValueChange={value => handleInputChange('membraneType', value)} disabled={disabled}>
+                        <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                          <SelectValue placeholder="Select membrane type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MEMBRANE_TYPES.map(membrane => (
+                            <SelectItem key={membrane.value} value={membrane.value}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{membrane.label}</span>
+                                <span className="text-xs text-gray-500">{membrane.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Insulation Type */}
+                    <div className="space-y-3">
+                      <Label htmlFor="insulationType" className="text-blue-200 text-sm font-semibold">
+                        Insulation Type
+                      </Label>
+                      <Select value={formData.insulationType} onValueChange={value => handleInputChange('insulationType', value)} disabled={disabled}>
+                        <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                          <SelectValue placeholder="Select insulation type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INSULATION_TYPES.map(insulation => (
+                            <SelectItem key={insulation.value} value={insulation.value}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{insulation.label}</span>
+                                <span className="text-xs text-gray-500">{insulation.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Deck Type */}
+                    <div className="space-y-3">
+                      <Label htmlFor="deckType" className="text-blue-200 text-sm font-semibold">Deck Type</Label>
+                      <Select value={formData.deckType} onValueChange={value => handleInputChange('deckType', value)} disabled={disabled}>
+                        <SelectTrigger className="bg-white/10 border-blue-400/30 text-white">
+                          <SelectValue placeholder="Select deck type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="steel">Steel Deck</SelectItem>
+                          <SelectItem value="concrete">Concrete Deck</SelectItem>
+                          <SelectItem value="wood">Wood Deck</SelectItem>
+                          <SelectItem value="gypsum">Gypsum Deck</SelectItem>
+                          <SelectItem value="loadmaster">Loadmaster Deck</SelectItem>
+                          <SelectItem value="composite">Composite Deck</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Template Selection Logic Display */}
+                    {formData.membraneType && (
+                      <Alert className="bg-blue-900/50 border-blue-400/30">
+                        <Info className="h-4 w-4 text-blue-400" />
+                        <AlertDescription className="text-blue-200 text-xs">
+                          <strong>Template Selection:</strong> {MEMBRANE_TYPES.find(m => m.value === formData.membraneType)?.label} → 
+                          {getTemplateCategory(formData.membraneType)} category
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-white font-medium">Assembly Layers</h4>
+                    {initialData && assemblyLayers.length > 0 && (
+                      <Alert className="bg-blue-900/50 border-blue-400/30">
+                        <Info className="h-4 w-4 text-blue-400" />
+                        <AlertDescription className="text-blue-200 text-xs">
+                          Assembly layers loaded from field inspection. You can modify them as needed.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </div>
+
+                {/* Roof Assembly Editor Integration */}
                 <div className="bg-white/5 rounded-lg p-4 border border-blue-400/20">
                   <RoofAssemblyEditor
                     layers={assemblyLayers}
