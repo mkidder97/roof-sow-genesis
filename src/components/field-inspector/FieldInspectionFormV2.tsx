@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -109,9 +110,9 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
         } catch (err) {
           console.error('Error fetching inspection:', err);
           toast({
-            title: \"Error Fetching Inspection\",
-            description: \"Failed to retrieve inspection data. Please try again.\",
-            variant: \"destructive\",
+            title: "Error Fetching Inspection",
+            description: "Failed to retrieve inspection data. Please try again.",
+            variant: "destructive",
           });
         }
       };
@@ -142,9 +143,9 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
   const handleSave = async () => {
     if (!validateCurrentStep()) {
       toast({
-        title: \"Validation Error\",
-        description: \"Please fix the validation errors before saving.\",
-        variant: \"destructive\",
+        title: "Validation Error",
+        description: "Please fix the validation errors before saving.",
+        variant: "destructive",
       });
       return;
     }
@@ -158,16 +159,16 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
       }
 
       toast({
-        title: \"Inspection Saved\",
-        description: \"Your inspection has been saved successfully.\",
+        title: "Inspection Saved",
+        description: "Your inspection has been saved successfully.",
       });
 
     } catch (error) {
       console.error('Error saving inspection:', error);
       toast({
-        title: \"Save Error\",
-        description: \"Failed to save inspection. Please try again.\",
-        variant: \"destructive\",
+        title: "Save Error",
+        description: "Failed to save inspection. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -177,9 +178,9 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
   const handleComplete = async () => {
     if (!validateCurrentStep()) {
       toast({
-        title: \"Validation Error\",
-        description: \"Please complete all required fields before marking as complete.\",
-        variant: \"destructive\",
+        title: "Validation Error",
+        description: "Please complete all required fields before marking as complete.",
+        variant: "destructive",
       });
       return;
     }
@@ -200,16 +201,16 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
       }
 
       toast({
-        title: \"Inspection Completed\",
-        description: \"Your inspection has been marked as complete and is ready for handoff.\",
+        title: "Inspection Completed",
+        description: "Your inspection has been marked as complete and is ready for handoff.",
       });
 
     } catch (error) {
       console.error('Error completing inspection:', error);
       toast({
-        title: \"Completion Error\",
-        description: \"Failed to complete inspection. Please try again.\",
-        variant: \"destructive\",
+        title: "Completion Error",
+        description: "Failed to complete inspection. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -255,27 +256,27 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
 
   if (loading) {
     return (
-      <div className=\"flex items-center justify-center min-h-96\">
-        <Loader2 className=\"h-8 w-8 animate-spin\" />
-        <span className=\"ml-2\">Loading inspection...</span>
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading inspection...</span>
       </div>
     );
   }
 
   return (
     <FieldInspectionErrorBoundary>
-      <div className=\"max-w-6xl mx-auto p-6 space-y-6\">
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* Header */}
         <Card>
           <CardHeader>
-            <div className=\"flex items-center justify-between\">
+            <div className="flex items-center justify-between">
               <div>
-                <CardTitle className=\"flex items-center gap-2\">
-                  <FileText className=\"h-5 w-5\" />
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
                   Field Inspection Form
                   {formData.completed && (
-                    <Badge variant=\"default\" className=\"bg-green-100 text-green-800\">
-                      <CheckCircle className=\"h-3 w-3 mr-1\" />
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
                       Completed
                     </Badge>
                   )}
@@ -285,23 +286,23 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                 </CardDescription>
               </div>
               
-              <div className=\"flex items-center gap-2\">
+              <div className="flex items-center gap-2">
                 {!readOnly && !formData.completed && (
                   <>
-                    <Button onClick={handleSave} disabled={isSubmitting} variant=\"outline\">
+                    <Button onClick={handleSave} disabled={isSubmitting} variant="outline">
                       {isSubmitting ? (
-                        <Loader2 className=\"h-4 w-4 animate-spin mr-2\" />
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : (
-                        <Save className=\"h-4 w-4 mr-2\" />
+                        <Save className="h-4 w-4 mr-2" />
                       )}
                       Save Draft
                     </Button>
                     
                     <Button onClick={handleComplete} disabled={isSubmitting}>
                       {isSubmitting ? (
-                        <Loader2 className=\"h-4 w-4 animate-spin mr-2\" />
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : (
-                        <CheckCircle className=\"h-4 w-4 mr-2\" />
+                        <CheckCircle className="h-4 w-4 mr-2" />
                       )}
                       Complete Inspection
                     </Button>
@@ -310,10 +311,10 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                 
                 <Button 
                   onClick={() => setShowPhotoCapture(true)} 
-                  variant=\"outline\"
+                  variant="outline"
                   disabled={readOnly}
                 >
-                  <Camera className=\"h-4 w-4 mr-2\" />
+                  <Camera className="h-4 w-4 mr-2" />
                   Quick Photo
                 </Button>
               </div>
@@ -323,10 +324,10 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
 
         {/* Validation Errors */}
         {validationErrors.length > 0 && (
-          <Alert variant=\"destructive\">
-            <AlertTriangle className=\"h-4 w-4\" />
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <ul className=\"list-disc pl-4\">
+              <ul className="list-disc pl-4">
                 {validationErrors.map((error, index) => (
                   <li key={index}>{error}</li>
                 ))}
@@ -337,11 +338,11 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
 
         {/* Main Form Tabs */}
         <Card>
-          <CardContent className=\"p-0\">
+          <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               {/* Tab Navigation */}
-              <div className=\"border-b bg-gray-50/50 p-4\">
-                <TabsList className=\"grid w-full grid-cols-6 h-auto\">
+              <div className="border-b bg-gray-50/50 p-4">
+                <TabsList className="grid w-full grid-cols-6 h-auto">
                   {tabs.map((tab) => {
                     const Icon = tab.icon;
                     const status = getTabStatus(tab.id);
@@ -350,18 +351,18 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                       <TabsTrigger
                         key={tab.id}
                         value={tab.id}
-                        className=\"flex flex-col items-center gap-1 py-3 data-[state=active]:bg-white\"
+                        className="flex flex-col items-center gap-1 py-3 data-[state=active]:bg-white"
                       >
-                        <div className=\"flex items-center gap-1\">
-                          <Icon className=\"h-4 w-4\" />
+                        <div className="flex items-center gap-1">
+                          <Icon className="h-4 w-4" />
                           {status === 'complete' && (
-                            <CheckCircle className=\"h-3 w-3 text-green-600\" />
+                            <CheckCircle className="h-3 w-3 text-green-600" />
                           )}
                           {status === 'incomplete' && (
-                            <AlertTriangle className=\"h-3 w-3 text-orange-500\" />
+                            <AlertTriangle className="h-3 w-3 text-orange-500" />
                           )}
                         </div>
-                        <span className=\"text-xs\">{tab.label}</span>
+                        <span className="text-xs">{tab.label}</span>
                       </TabsTrigger>
                     );
                   })}
@@ -369,8 +370,8 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
               </div>
 
               {/* Tab Content */}
-              <div className=\"p-6\">
-                <TabsContent value=\"project-info\" className=\"mt-0\">
+              <div className="p-6">
+                <TabsContent value="project-info" className="mt-0">
                   <FieldInspectionErrorBoundary>
                     <ProjectInfoStep
                       data={formData}
@@ -380,7 +381,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                   </FieldInspectionErrorBoundary>
                 </TabsContent>
 
-                <TabsContent value=\"building-dimensions\" className=\"mt-0\">
+                <TabsContent value="building-dimensions" className="mt-0">
                   <FieldInspectionErrorBoundary>
                     <BuildingDimensionsStep
                       data={formData}
@@ -390,7 +391,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                   </FieldInspectionErrorBoundary>
                 </TabsContent>
 
-                <TabsContent value=\"roof-assessment\" className=\"mt-0\">
+                <TabsContent value="roof-assessment" className="mt-0">
                   <FieldInspectionErrorBoundary>
                     <RoofAssessmentStep
                       data={formData}
@@ -400,7 +401,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                   </FieldInspectionErrorBoundary>
                 </TabsContent>
 
-                <TabsContent value=\"equipment-inventory\" className=\"mt-0\">
+                <TabsContent value="equipment-inventory" className="mt-0">
                   <FieldInspectionErrorBoundary>
                     <EquipmentInventoryStepV2
                       data={formData}
@@ -410,7 +411,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                   </FieldInspectionErrorBoundary>
                 </TabsContent>
 
-                <TabsContent value=\"photo-documentation\" className=\"mt-0\">
+                <TabsContent value="photo-documentation" className="mt-0">
                   <FieldInspectionErrorBoundary>
                     <PhotoDocumentationStep
                       data={formData}
@@ -420,7 +421,7 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                   </FieldInspectionErrorBoundary>
                 </TabsContent>
 
-                <TabsContent value=\"assessment-notes\" className=\"mt-0\">
+                <TabsContent value="assessment-notes" className="mt-0">
                   <FieldInspectionErrorBoundary>
                     <AssessmentNotesStep
                       data={formData}
@@ -452,8 +453,8 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
                 updateField('photos', [...currentPhotos, photoUrl]);
                 setShowPhotoCapture(false);
                 toast({
-                  title: \"Photo Added\",
-                  description: \"Photo has been added to the inspection.\",
+                  title: "Photo Added",
+                  description: "Photo has been added to the inspection.",
                 });
               }}
               onClose={() => setShowPhotoCapture(false)}
