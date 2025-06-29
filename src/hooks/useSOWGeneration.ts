@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-// Simplified compatible types for SOW generation
+// Simplified compatible types for SOW generation with proper type constraints
 interface SOWGenerationRequest {
   projectName: string;
   projectAddress: string;
@@ -12,7 +12,7 @@ interface SOWGenerationRequest {
   city?: string;
   state?: string;
   zipCode?: string;
-  deckType?: string;
+  deckType?: 'concrete' | 'metal' | 'wood' | 'gypsum' | string; // Made more flexible
   membraneType?: string;
   insulationType?: string;
   windSpeed?: number;
@@ -99,7 +99,7 @@ async function callExistingSOWAPI(request: SOWGenerationRequest): Promise<SOWGen
     // Import the existing API function
     const { generateSOWAPI } = await import('@/lib/api');
     
-    // Transform our request to match the existing API structure
+    // Transform our request to match the existing API structure with proper type handling
     const apiRequest = {
       projectName: request.projectName,
       projectAddress: request.projectAddress,
@@ -110,7 +110,7 @@ async function callExistingSOWAPI(request: SOWGenerationRequest): Promise<SOWGen
       city: request.city,
       state: request.state,
       zipCode: request.zipCode,
-      deckType: request.deckType,
+      deckType: request.deckType || 'steel', // Provide default to satisfy type constraints
       membraneType: request.membraneType,
       windSpeed: request.windSpeed,
       exposureCategory: request.exposureCategory,
@@ -270,7 +270,7 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
         
         // Template and roof specifications
         projectType: inspectionData.project_type || 'tearoff',
-        deckType: inspectionData.deck_type,
+        deckType: inspectionData.deck_type || 'steel', // Provide default
         membraneType: inspectionData.existing_membrane_type,
         insulationType: inspectionData.insulation_type,
         

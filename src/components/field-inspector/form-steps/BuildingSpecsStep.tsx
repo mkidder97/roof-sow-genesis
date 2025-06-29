@@ -8,7 +8,23 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Move, Calculator, Info, Shield } from 'lucide-react';
 import { FieldInspection } from '@/types/fieldInspection';
-import { MEMBRANE_TYPES, INSULATION_TYPES } from '@/types/roofingTypes';
+
+// Define membrane types locally since they're not in the imports
+const MEMBRANE_TYPES = [
+  { value: 'TPO', label: 'TPO', description: 'Thermoplastic Polyolefin - Single-ply membrane' },
+  { value: 'EPDM', label: 'EPDM', description: 'Ethylene Propylene Diene Monomer - Rubber membrane' },
+  { value: 'PVC', label: 'PVC', description: 'Polyvinyl Chloride - Single-ply membrane' },
+  { value: 'Modified Bitumen', label: 'Modified Bitumen', description: 'Modified asphalt membrane' },
+  { value: 'Built-Up', label: 'Built-Up', description: 'Traditional tar and gravel system' }
+];
+
+const INSULATION_TYPES = [
+  { value: 'Polyisocyanurate', label: 'Polyisocyanurate (Polyiso)' },
+  { value: 'EPS', label: 'Expanded Polystyrene (EPS)' },
+  { value: 'XPS', label: 'Extruded Polystyrene (XPS)' },
+  { value: 'Mineral Wool', label: 'Mineral Wool' },
+  { value: 'Perlite', label: 'Perlite' }
+];
 
 interface BuildingSpecsStepProps {
   data: Partial<FieldInspection>;
@@ -44,7 +60,8 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
   };
 
   const handleMembraneTypeChange = (value: string) => {
-    onChange({ membrane_type: value });
+    // Use existing_membrane_type instead of membrane_type
+    onChange({ existing_membrane_type: value });
     const membraneInfo = MEMBRANE_TYPES.find(m => m.value === value)?.description || '';
     setSelectedMembraneInfo(membraneInfo);
   };
@@ -58,20 +75,16 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
 
   // Enhanced square footage calculation with validation
   const calculateSquareFootage = (length: number | undefined, width: number | undefined): number => {
-    // Ensure we have valid numbers
     const validLength = Number(length) || 0;
     const validWidth = Number(width) || 0;
     
-    // Return 0 if either dimension is invalid, zero, or negative
     if (validLength <= 0 || validWidth <= 0) {
       return 0;
     }
     
-    // Calculate and round to nearest whole number
     return Math.round(validLength * validWidth);
   };
 
-  // Get calculation display text
   const getCalculationDisplay = (): string | null => {
     const length = data.building_length;
     const width = data.building_width;
@@ -84,43 +97,36 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
     return `${length} × ${width} = ${squareFootage.toLocaleString()} sq ft`;
   };
 
-  // Handle length input change with auto-calculation
   const handleLengthChange = (value: string) => {
     const numericValue = parseFloat(value);
     const length = isNaN(numericValue) ? undefined : numericValue;
     
     const updates: Partial<FieldInspection> = { building_length: length };
     
-    // Auto-calculate square footage if both dimensions are valid
     if (length && length > 0 && data.building_width && data.building_width > 0) {
       updates.square_footage = calculateSquareFootage(length, data.building_width);
     } else if (!length || length <= 0) {
-      // Clear square footage if length becomes invalid
       updates.square_footage = 0;
     }
     
     onChange(updates);
   };
 
-  // Handle width input change with auto-calculation
   const handleWidthChange = (value: string) => {
     const numericValue = parseFloat(value);
     const width = isNaN(numericValue) ? undefined : numericValue;
     
     const updates: Partial<FieldInspection> = { building_width: width };
     
-    // Auto-calculate square footage if both dimensions are valid
     if (width && width > 0 && data.building_length && data.building_length > 0) {
       updates.square_footage = calculateSquareFootage(data.building_length, width);
     } else if (!width || width <= 0) {
-      // Clear square footage if width becomes invalid
       updates.square_footage = 0;
     }
     
     onChange(updates);
   };
 
-  // Validate dimension inputs
   const isLengthValid = data.building_length === undefined || data.building_length > 0;
   const isWidthValid = data.building_width === undefined || data.building_width > 0;
   const calculationDisplay = getCalculationDisplay();
@@ -321,7 +327,7 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
               </Badge>
             </div>
             <Select
-              value={data.membrane_type || ''}
+              value={data.existing_membrane_type || ''}
               onValueChange={handleMembraneTypeChange}
               disabled={readOnly}
             >
@@ -367,101 +373,62 @@ const BuildingSpecsStep: React.FC<BuildingSpecsStepProps> = ({
                 </Button>
               )}
             </div>
-
-            <div className="space-y-3">
-              {insulationLayers.map((layer, index) => (
-                <div key={layer.id} className="bg-white/10 rounded p-3 border border-green-400/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Move className="w-4 h-4 text-green-400" />
-                    <span className="text-white text-sm font-medium">Layer {index + 1}</span>
-                    {!readOnly && insulationLayers.length > 1 && (
-                      <Button
-                        type="button"
-                        onClick={() => removeInsulationLayer(layer.id)}
-                        className="ml-auto bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 h-auto"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    )}
+            
+            {insulationLayers.map((layer, index) => (
+              <div key={layer.id} className="bg-green-600/20 rounded p-3 mb-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-green-200 text-sm font-medium">Layer {index + 1}</span>
+                  {!readOnly && insulationLayers.length > 1 && (
+                    <Button
+                      type="button"
+                      onClick={() => removeInsulationLayer(layer.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 h-auto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-green-200 text-xs">Insulation Type</Label>
+                    <Select
+                      value={layer.type}
+                      onValueChange={(value) => updateInsulationLayer(layer.id, { type: value })}
+                      disabled={readOnly}
+                    >
+                      <SelectTrigger className="bg-white/20 border-green-400/30 text-white h-8">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INSULATION_TYPES.map((insulation) => (
+                          <SelectItem key={insulation.value} value={insulation.value}>
+                            {insulation.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-white text-xs">Insulation Type</Label>
-                      <Select
-                        value={layer.type}
-                        onValueChange={(value) => updateInsulationLayer(layer.id, { type: value })}
-                        disabled={readOnly}
-                      >
-                        <SelectTrigger className="bg-white/20 border-green-400/30 text-white text-sm">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {INSULATION_TYPES.map((insulation) => (
-                            <SelectItem key={insulation.value} value={insulation.value}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{insulation.label}</span>
-                                <span className="text-xs text-gray-500">{insulation.rValue}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-white text-xs">Thickness (inches)</Label>
-                      <Input
-                        type="number"
-                        step="0.25"
-                        min="0"
-                        value={layer.thickness || ''}
-                        onChange={(e) => updateInsulationLayer(layer.id, { thickness: parseFloat(e.target.value) || 0 })}
-                        className="bg-white/20 border-green-400/30 text-white text-sm"
-                        placeholder="e.g., 2.5"
-                        readOnly={readOnly}
-                      />
-                    </div>
+                  <div>
+                    <Label className="text-green-200 text-xs">Thickness (inches)</Label>
+                    <Input
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      value={layer.thickness || ''}
+                      onChange={(e) => updateInsulationLayer(layer.id, { thickness: parseFloat(e.target.value) || 0 })}
+                      className="bg-white/20 border-green-400/30 text-white h-8"
+                      placeholder="2.0"
+                      readOnly={readOnly}
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Cover Board/Membrane Layer */}
-          <div className="bg-orange-500/20 rounded-lg p-4 border-l-4 border-orange-500">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-orange-500 rounded"></div>
-              <Label className="text-white font-semibold">Cover Board (Optional)</Label>
-            </div>
-            <Select
-              value={data.cover_board_type || 'None'}
-              onValueChange={(value) => onChange({ cover_board_type: value })}
-              disabled={readOnly}
-            >
-              <SelectTrigger className="bg-white/20 border-blue-400/30 text-white">
-                <SelectValue placeholder="Select cover board" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="None">None - Direct to membrane</SelectItem>
-                <SelectItem value="Gypsum">Gypsum Cover Board</SelectItem>
-                <SelectItem value="DensDeck">DensDeck</SelectItem>
-                <SelectItem value="Perlite">Perlite Board</SelectItem>
-                <SelectItem value="Wood Fiber">Wood Fiber Board</SelectItem>
-                <SelectItem value="HD Polyiso">HD Polyiso</SelectItem>
-              </SelectContent>
-            </Select>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
-
-      <div className="bg-blue-500/20 rounded-lg p-4">
-        <p className="text-blue-200 text-sm">
-          <strong>Pro Tip:</strong><br />
-          The membrane type selection directly affects which SOW template will be used for document generation. BUR and ballasted systems require specific templates with different specifications and requirements. Enter building length and width to automatically calculate square footage.
-        </p>
-      </div>
     </div>
   );
 };

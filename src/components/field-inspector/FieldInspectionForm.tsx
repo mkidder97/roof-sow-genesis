@@ -83,8 +83,8 @@ export const FieldInspectionForm: React.FC<FieldInspectionFormProps> = ({
     equipment_skylights: [],
     equipment_access_points: [],
     equipment_hvac_units: [],
-    // New takeoff fields
-    drainage_primary_type: '',
+    // New takeoff fields - fix the drainage type to be optional
+    drainage_primary_type: undefined, // Changed from empty string to undefined
     drainage_condition: '',
     penetrations_gas_lines: false,
     penetrations_conduit_attached: false,
