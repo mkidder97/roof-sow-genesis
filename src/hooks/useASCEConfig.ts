@@ -1,5 +1,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
+// ✅ Import unified ASCE interface
+import { ASCERequirements, PartialASCERequirements } from '@/types/asceRequirements';
 
 export interface ASCEVersion {
   version: string;
@@ -20,20 +22,6 @@ export interface BuildingClassification {
   description: string;
   importance_factor: number;
   isDefault: boolean;
-}
-
-export interface ASCERequirements {
-  version: string;
-  wind_speed?: number;
-  exposure_category: string;
-  building_classification: string;
-  risk_category: string;
-  importance_factor: number;
-  hvhz_applicable?: boolean;
-  engineer_approved?: boolean;
-  approval_date?: string;
-  approval_engineer?: string;
-  notes?: string;
 }
 
 export interface ManualOverride {
@@ -74,7 +62,9 @@ const defaultConfig: ASCEConfig = {
 
 export function useASCEConfig() {
   const [config, setConfig] = useState<ASCEConfig>(defaultConfig);
-  const [selectedRequirements, setSelectedRequirements] = useState<ASCERequirements>({
+  
+  // ✅ Use PartialASCERequirements for draft state, complete ASCERequirements for final
+  const [selectedRequirements, setSelectedRequirements] = useState<PartialASCERequirements>({
     version: 'ASCE 7-22',
     exposure_category: 'C',
     building_classification: 'II',
@@ -94,7 +84,7 @@ export function useASCEConfig() {
     return 'ASCE 7-22'; // Default to latest
   }, []);
 
-  const updateRequirements = useCallback((updates: Partial<ASCERequirements>) => {
+  const updateRequirements = useCallback((updates: Partial<PartialASCERequirements>) => {
     setSelectedRequirements(prev => {
       const newRequirements = { ...prev, ...updates };
       
@@ -122,7 +112,7 @@ export function useASCEConfig() {
     });
   }, []);
 
-  const validateRequirements = useCallback((requirements: ASCERequirements) => {
+  const validateRequirements = useCallback((requirements: PartialASCERequirements) => {
     const errors: string[] = [];
     
     if (!requirements.version) {
@@ -178,19 +168,19 @@ export function useASCEConfig() {
   };
 }
 
-export function formatASCERequirements(requirements: ASCERequirements): string {
-  return `${requirements.version} | ${requirements.wind_speed || 'TBD'} mph | Exposure ${requirements.exposure_category} | Class ${requirements.building_classification} (I=${requirements.importance_factor})`;
+export function formatASCERequirements(requirements: PartialASCERequirements): string {
+  return `${requirements.version || 'TBD'} | ${requirements.wind_speed || 'TBD'} mph | Exposure ${requirements.exposure_category || 'TBD'} | Class ${requirements.building_classification || 'TBD'} (I=${requirements.importance_factor || 1.0})`;
 }
 
-export function generateASCERequirementsSummary(requirements?: ASCERequirements): string {
+export function generateASCERequirementsSummary(requirements?: PartialASCERequirements): string {
   if (!requirements) return 'ASCE requirements not specified';
   
   const parts = [
-    `ASCE Version: ${requirements.version}`,
+    `ASCE Version: ${requirements.version || 'TBD'}`,
     `Wind Speed: ${requirements.wind_speed || 'TBD'} mph`,
-    `Exposure Category: ${requirements.exposure_category}`,
-    `Building Classification: ${requirements.building_classification}`,
-    `Importance Factor: ${requirements.importance_factor}`,
+    `Exposure Category: ${requirements.exposure_category || 'TBD'}`,
+    `Building Classification: ${requirements.building_classification || 'TBD'}`,
+    `Importance Factor: ${requirements.importance_factor || 1.0}`,
     requirements.hvhz_applicable ? 'HVHZ Requirements Apply' : null,
     requirements.engineer_approved ? `Engineer Approved: ${requirements.approval_engineer || 'Yes'}` : 'Pending Engineer Approval'
   ].filter(Boolean);
