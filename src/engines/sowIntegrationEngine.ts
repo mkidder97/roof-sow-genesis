@@ -51,7 +51,7 @@ export class SOWIntegrationEngine {
         membraneThickness: '60-mil',
         attachmentMethod: inspection.attachment_method || 'mechanically_attached',
         insulationType: inspection.insulation_type || 'Polyisocyanurate',
-        insulationThickness: '4.5"', // Default R-25
+        insulationThickness: '4.5\"', // Default R-25
         insulationAttachment: inspection.insulation_attachment || 'mechanically_attached'
       },
       windUpliftRequirements: {
@@ -82,8 +82,9 @@ export class SOWIntegrationEngine {
         roofHatches: inspection.roof_hatches || 0,
         details: inspection.equipment_access_points || []
       },
-      walkwayPads: inspection.walkway_pads || 0,
-      equipmentPlatforms: inspection.equipment_platforms || 0
+      // ✅ Fix: Handle both boolean and number types properly
+      walkwayPads: typeof inspection.walkway_pads === 'number' ? inspection.walkway_pads : (inspection.walkway_pads ? 1 : 0),
+      equipmentPlatforms: typeof inspection.equipment_platforms === 'number' ? inspection.equipment_platforms : (inspection.equipment_platforms ? 1 : 0)
     };
   }
 
@@ -117,15 +118,15 @@ export class SOWIntegrationEngine {
     
     // Add drainage-specific requirements
     if (inspection.drainage_primary_type === 'Deck Drains') {
-      requirements.push(`Install ${inspection.drainage_deck_drains_count || 0} new deck drains at ${inspection.drainage_deck_drains_diameter || 4}" diameter`);
+      requirements.push(`Install ${inspection.drainage_deck_drains_count || 0} new deck drains at ${inspection.drainage_deck_drains_diameter || 4}\" diameter`);
     }
     
     if (inspection.drainage_primary_type === 'Scuppers') {
-      requirements.push(`Modify/install scuppers: ${inspection.drainage_scuppers_count || 0} units at ${inspection.drainage_scuppers_length || 12}"L x ${inspection.drainage_scuppers_width || 4}"W, ${inspection.drainage_scuppers_height || 2}" above roof`);
+      requirements.push(`Modify/install scuppers: ${inspection.drainage_scuppers_count || 0} units at ${inspection.drainage_scuppers_length || 12}\"L x ${inspection.drainage_scuppers_width || 4}\"W, ${inspection.drainage_scuppers_height || 2}\" above roof`);
     }
     
     if (inspection.drainage_primary_type === 'Gutters') {
-      requirements.push(`Install gutters: ${inspection.drainage_gutters_linear_feet || 0} linear feet at ${inspection.drainage_gutters_height || 6}"H x ${inspection.drainage_gutters_width || 8}"W x ${inspection.drainage_gutters_depth || 4}"D`);
+      requirements.push(`Install gutters: ${inspection.drainage_gutters_linear_feet || 0} linear feet at ${inspection.drainage_gutters_height || 6}\"H x ${inspection.drainage_gutters_width || 8}\"W x ${inspection.drainage_gutters_depth || 4}\"D`);
     }
     
     // Add penetration requirements
@@ -139,7 +140,7 @@ export class SOWIntegrationEngine {
     
     // Add equipment requirements
     if (inspection.curbs_8_inch_or_above) {
-      requirements.push(`Equipment curbs 8" or above: ${inspection.curbs_count || 0} locations`);
+      requirements.push(`Equipment curbs 8\" or above: ${inspection.curbs_count || 0} locations`);
     }
     
     if (inspection.side_discharge_units) {
@@ -162,9 +163,9 @@ export class SOWIntegrationEngine {
   private static checkHVACCurbRequirements(inspection: FieldInspection): boolean {
     const hvacUnits = inspection.equipment_hvac_units || [];
     return hvacUnits.some(unit => 
-      unit.type.includes('RTU') || 
-      unit.type.includes('Package Unit') ||
-      unit.type.includes('Makeup Air')
+      unit.type?.includes('RTU') || 
+      unit.type?.includes('Package Unit') ||
+      unit.type?.includes('Makeup Air')
     );
   }
 
@@ -200,12 +201,13 @@ export class SOWIntegrationEngine {
 
   /**
    * Determine if drainage modifications are required
+   * ✅ Fix: Use correct property names that match the interface
    */
   private static requiresDrainageModifications(drainageConfig: DrainageSOWConfig): boolean {
     return !!(
-      drainageConfig.specifications.deck_drains ||
-      drainageConfig.specifications.scuppers ||
-      drainageConfig.specifications.gutters ||
+      drainageConfig.specifications?.deckDrains ||        // ✅ Correct: deckDrains (camelCase)
+      drainageConfig.specifications?.internalGutters ||   // ✅ Correct: internalGutters  
+      drainageConfig.specifications?.externalGutters ||   // ✅ Correct: externalGutters
       drainageConfig.additional_drainage
     );
   }
