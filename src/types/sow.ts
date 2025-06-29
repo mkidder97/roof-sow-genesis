@@ -1,3 +1,6 @@
+// ✅ Import unified ASCE interface instead of defining locally
+import { ASCERequirements, validateASCERequirements } from '@/types/asceRequirements';
+
 // Core interfaces for SOW generation and management
 export interface SOWGenerationData {
   id: string;
@@ -278,20 +281,6 @@ export interface SOWGenerationRequest {
   inspectionId?: string;
 }
 
-export interface ASCERequirements {
-  version: string;
-  wind_speed?: number;
-  exposure_category: string;
-  building_classification: string;
-  risk_category: string;
-  importance_factor: number;
-  hvhz_applicable?: boolean;
-  engineer_approved?: boolean;
-  approval_date?: string;
-  approval_engineer?: string;
-  notes?: string;
-}
-
 // Error handling types
 export interface SOWGenerationError {
   message: string;
@@ -396,8 +385,8 @@ export function transformInspectionToSOWRequest(inspection: FieldInspectionData)
     county: inspection.county,
     zipCode: inspection.zip_code,
     
-    // ASCE requirements (enhanced)
-    asceRequirements: inspection.asce_requirements,
+    // ASCE requirements (enhanced) - validate before use
+    asceRequirements: inspection.asce_requirements ? validateASCERequirements(inspection.asce_requirements) || undefined : undefined,
     asceVersion: inspection.asce_version,
     windSpeed: inspection.wind_speed,
     exposureCategory: inspection.exposure_category,
