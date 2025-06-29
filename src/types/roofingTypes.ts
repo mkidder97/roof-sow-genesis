@@ -20,6 +20,16 @@ export interface InsulationType {
   fireRating?: string;
 }
 
+// ✅ FIX: Add RoofLayer interface to match component expectations
+export interface RoofLayer {
+  id: string;
+  type: 'membrane' | 'insulation' | 'deck' | 'barrier' | 'coverboard';
+  description: string;
+  attachment: 'mechanically_attached' | 'adhered' | 'ballasted' | 'welded';
+  thickness: string;
+  material?: string;
+}
+
 // Enhanced membrane types with template logic integration
 export const MEMBRANE_TYPES: MembraneType[] = [
   {
