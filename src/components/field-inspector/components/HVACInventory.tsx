@@ -32,11 +32,15 @@ export const HVACInventory: React.FC<HVACInventoryProps> = ({
   readOnly = false
 }) => {
   const handleAdd = () => {
+    // ✅ Fix: Include ALL required properties
     const newItem: HVACUnit = {
       id: Date.now().toString(),
       type: '',
-      quantity: 0,
-      condition: ''
+      count: 1,           // ✅ Add required count property
+      quantity: 1,        // ✅ Keep existing quantity
+      condition: '',
+      description: '',    // ✅ Add optional description property
+      needs_curb_adapter: false
     };
     onChange([...hvacUnits, newItem]);
   };
@@ -52,7 +56,7 @@ export const HVACInventory: React.FC<HVACInventoryProps> = ({
   };
 
   const renderHVACItem = (hvacUnit: HVACUnit, index: number) => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
         <Label className="block text-sm font-medium text-gray-700 mb-1">Equipment Type</Label>
         <Select
@@ -69,6 +73,17 @@ export const HVACInventory: React.FC<HVACInventoryProps> = ({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      
+      <div>
+        <Label className="block text-sm font-medium text-gray-700 mb-1">Count</Label>
+        <Input
+          type="number"
+          min="0"
+          value={hvacUnit.count || ''}
+          onChange={(e) => handleUpdate(hvacUnit.id, 'count', parseInt(e.target.value) || 0)}
+          readOnly={readOnly}
+        />
       </div>
       
       <div>
@@ -98,6 +113,17 @@ export const HVACInventory: React.FC<HVACInventoryProps> = ({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      
+      {/* Optional Description Field */}
+      <div className="md:col-span-4">
+        <Label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</Label>
+        <Input
+          value={hvacUnit.description || ''}
+          onChange={(e) => handleUpdate(hvacUnit.id, 'description', e.target.value)}
+          placeholder="Additional equipment details..."
+          readOnly={readOnly}
+        />
       </div>
     </div>
   );
