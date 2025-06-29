@@ -78,6 +78,41 @@ export interface SOWGenerationResponseData {
   };
 }
 
+// Add missing exports that are imported elsewhere
+export interface SOWResponse {
+  success: boolean;
+  sowId?: string;
+  downloadUrl?: string;
+  message?: string;
+  error?: string;
+  data?: {
+    pdf?: string;
+    sow?: string;
+  };
+}
+
+export const API_ENDPOINTS = {
+  SOW_GENERATION: '/api/sow/generate',
+  HEALTH_CHECK: '/api/health',
+  PROJECTS: '/api/projects'
+};
+
+export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+  const response = await fetch(endpoint, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    throw new Error(`API call failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
 export const createProject = async (projectData: ProjectInput): Promise<any> => {
   try {
     const { data, error } = await supabase

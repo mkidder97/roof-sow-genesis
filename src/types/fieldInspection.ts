@@ -1,3 +1,4 @@
+
 export interface HVACUnit {
   id: string;
   description: string;
@@ -61,6 +62,70 @@ interface RoofLayer {
   attachment: 'mechanically_attached' | 'adhered' | 'ballasted' | 'welded';
   thickness: string;
   material?: string;
+}
+
+// Add missing exported types
+export interface ASCERequirements {
+  version: string;
+  wind_speed: number;
+  exposure_category: string;
+  building_classification: string;
+  importance_factor: number;
+  engineer_approved?: boolean;
+  approval_date?: string;
+  approval_engineer?: string;
+}
+
+export interface AccessPoint {
+  id: string;
+  type: string;
+  description: string;
+  quantity: number;
+  condition: string;
+  location?: string;
+  size?: string;
+}
+
+export interface SkylightItem {
+  id: string;
+  description: string;
+  quantity: number;
+  condition: string;
+  curb_condition?: string;
+  glazing_condition?: string;
+  leaks?: boolean;
+}
+
+export interface FieldInspectionData {
+  id?: string;
+  project_name: string;
+  project_address: string;
+  inspector_name: string;
+  inspection_date?: string;
+  created_at?: string;
+  updated_at?: string;
+  completed_at?: string;
+  status: 'Draft' | 'In Progress' | 'Completed' | 'Under Review';
+  priority_level: 'Low' | 'Standard' | 'High' | 'Urgent';
+  weather_conditions: 'Clear' | 'Cloudy' | 'Light Rain' | 'Heavy Rain' | 'Snow' | 'Wind' | 'Other';
+}
+
+export interface DrainageSOWConfig {
+  primary_type?: string;
+  overflow_type?: string;
+  deck_drains_count?: number;
+  deck_drains_diameter?: number;
+  scuppers_count?: number;
+  scuppers_length?: number;
+  scuppers_width?: number;
+  scuppers_height?: number;
+  gutters_linear_feet?: number;
+  gutters_height?: number;
+  gutters_width?: number;
+  gutters_depth?: number;
+  additional_count?: number;
+  additional_size?: string;
+  additional_notes?: string;
 }
 
 export interface FieldInspection {
@@ -143,6 +208,7 @@ export interface FieldInspection {
   city?: string;
   state?: string;
   zip_code?: string;
+  county?: string;
 
   notes?: string;
   concerns?: string;
@@ -152,9 +218,22 @@ export interface FieldInspection {
   engineer_id?: string;
   customer_name?: string;
   customer_phone?: string;
-  customer_email?: string;
 
   wind_speed_design?: number;
   exposure_category?: string;
   building_classification?: string;
+
+  // Add missing properties that are referenced in various components
+  sow_generated?: boolean;
+  asce_requirements?: ASCERequirements;
+  asce_version?: string;
+  cover_board_type?: string;
+  insulation_layers?: any[];
+  drainage_options?: any[];
+  interior_protection_needed?: boolean;
+  interior_protection_sqft?: number;
+  conduit_attached?: boolean;
+  upgraded_lighting?: boolean;
+  interior_fall_protection?: boolean;
+  special_requirements?: string;
 }
