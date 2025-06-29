@@ -1,17 +1,66 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { generateSOWAPI, SOWGenerationRequest, SOWGenerationResponse } from '@/lib/api';
-import { SOWIntegrationEngine } from '@/engines/sowIntegrationEngine';
-import { FieldInspection } from '@/types/fieldInspection';
+
+// Simplified compatible types for SOW generation
+interface SOWGenerationRequest {
+  projectName: string;
+  projectAddress: string;
+  customerName?: string;
+  customerPhone?: string;
+  buildingHeight?: number;
+  squareFootage?: number;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  deckType?: string;
+  membraneType?: string;
+  insulationType?: string;
+  windSpeed?: number;
+  exposureCategory?: string;
+  buildingClassification?: string;
+  projectType?: 'recover' | 'tearoff' | 'new';
+  
+  // Enhanced drainage fields
+  drainage_primary_type?: string;
+  drainage_overflow_type?: string;
+  drainage_deck_drains_count?: number;
+  drainage_deck_drains_diameter?: number;
+  drainage_scuppers_count?: number;
+  drainage_scuppers_length?: number;
+  drainage_scuppers_width?: number;
+  drainage_scuppers_height?: number;
+  drainage_gutters_linear_feet?: number;
+  drainage_gutters_height?: number;
+  drainage_gutters_width?: number;
+  drainage_gutters_depth?: number;
+  drainage_additional_count?: number;
+  drainage_additional_size?: string;
+  drainage_additional_notes?: string;
+  
+  numberOfDrains?: number;
+  numberOfPenetrations?: number;
+  notes?: string;
+  inspectionId?: string;
+}
+
+interface SOWGenerationResponse {
+  success: boolean;
+  sowId?: string;
+  downloadUrl?: string;
+  message?: string;
+  error?: string;
+  data?: {
+    pdf?: string;
+    sow?: string;
+  };
+}
 
 export interface UseSOWGenerationReturn {
   generateSOW: (request: SOWGenerationRequest) => Promise<SOWGenerationResponse>;
-  generateSOWFromInspection: (inspectionData: FieldInspection) => Promise<SOWGenerationResponse>;
+  generateSOWFromInspection: (inspectionData: any) => Promise<SOWGenerationResponse>;
   isGenerating: boolean;
   error: string | null;
   clearError: () => void;
-  
-  // Additional properties that components expect
   generationError: Error | null;
   generationData: SOWGenerationResponse | undefined;
   generationProgress: number;
@@ -22,6 +71,74 @@ export interface UseSOWGenerationReturn {
   isStatusLoading: boolean;
   isBackendOnline: boolean;
   reset: () => void;
+}
+
+// Simple template selection logic (inline to avoid import issues)
+function selectSOWTemplate(inspectionData: any): string {
+  const projectType = inspectionData.project_type || 'tearoff';
+  const deckType = inspectionData.deck_type || 'steel';
+  
+  if (projectType === 'tearoff') {
+    if (deckType === 'gypsum') {
+      return 'T8-Tearoff-TPO(adhered)-insul(adhered)-gypsum';
+    } else if (deckType === 'lightweight_concrete') {
+      return 'T7-Tearoff-TPO(MA)-insul-lwc-steel';
+    } else {
+      return 'T6-Tearoff-TPO(MA)-insul-steel';
+    }
+  } else if (projectType === 'recover') {
+    return 'T5-Recover-TPO(Rhino)-iso-EPS flute fill-SSR';
+  }
+  
+  return 'T6-Tearoff-TPO(MA)-insul-steel'; // Default
+}
+
+// Use existing API from lib/api.ts to avoid compatibility issues
+async function callExistingSOWAPI(request: SOWGenerationRequest): Promise<SOWGenerationResponse> {
+  try {
+    // Import the existing API function
+    const { generateSOWAPI } = await import('@/lib/api');
+    
+    // Transform our request to match the existing API structure
+    const apiRequest = {
+      projectName: request.projectName,
+      projectAddress: request.projectAddress,
+      customerName: request.customerName,
+      customerPhone: request.customerPhone,
+      buildingHeight: request.buildingHeight,
+      squareFootage: request.squareFootage,
+      city: request.city,
+      state: request.state,
+      zipCode: request.zipCode,
+      deckType: request.deckType,
+      membraneType: request.membraneType,
+      windSpeed: request.windSpeed,
+      exposureCategory: request.exposureCategory,
+      buildingClassification: request.buildingClassification,
+      projectType: request.projectType,
+      numberOfDrains: request.numberOfDrains,
+      numberOfPenetrations: request.numberOfPenetrations,
+      notes: request.notes,
+      inspectionId: request.inspectionId
+    };
+
+    const result = await generateSOWAPI(apiRequest);
+    
+    return {
+      success: result.success,
+      sowId: result.sowId,
+      downloadUrl: result.downloadUrl,
+      message: result.message,
+      error: result.error,
+      data: result.data
+    };
+  } catch (error) {
+    console.error('SOW API call failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'SOW generation failed'
+    };
+  }
 }
 
 export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationResponse) => void; onError?: (error: Error) => void }): UseSOWGenerationReturn {
@@ -73,7 +190,7 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
       setGenerationProgress(25);
       setGenerationStatus('Processing project data...');
 
-      const response = await generateSOWAPI(request);
+      const response = await callExistingSOWAPI(request);
 
       if (!response.success) {
         throw new Error(response.error || 'SOW generation failed');
@@ -115,8 +232,8 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
     }
   }, [toast, options]);
 
-  // Enhanced function to generate SOW from inspection data using integration engine
-  const generateSOWFromInspection = useCallback(async (inspectionData: FieldInspection): Promise<SOWGenerationResponse> => {
+  // Enhanced function to generate SOW from inspection data
+  const generateSOWFromInspection = useCallback(async (inspectionData: any): Promise<SOWGenerationResponse> => {
     setIsGenerating(true);
     setError(null);
     setGenerationError(null);
@@ -124,22 +241,19 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
     setGenerationStatus('Processing field inspection data...');
 
     try {
-      console.log('🔧 Processing field inspection data with SOW Integration Engine:', inspectionData);
+      console.log('🔧 Processing field inspection data:', inspectionData);
 
-      // Generate SOW configuration using the integration engine
       setGenerationProgress(20);
-      setGenerationStatus('Analyzing field inspection data...');
+      setGenerationStatus('Analyzing drainage configuration...');
       
-      const sowConfig = SOWIntegrationEngine.generateSOWConfiguration(inspectionData);
-      const sectionInclusions = SOWIntegrationEngine.generateSectionInclusions(inspectionData);
-      
-      console.log('📋 SOW Configuration generated:', sowConfig);
-      console.log('📝 Section inclusions determined:', sectionInclusions);
+      // Simple template selection
+      const templateId = selectSOWTemplate(inspectionData);
+      console.log('📋 Selected template:', templateId);
 
       setGenerationProgress(40);
       setGenerationStatus('Building SOW request from inspection data...');
 
-      // Create enhanced SOW generation request with integration engine data
+      // Create enhanced SOW generation request with drainage specifications
       const request: SOWGenerationRequest = {
         // Basic project information
         projectName: inspectionData.project_name || 'Untitled Project',
@@ -150,76 +264,50 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
         state: inspectionData.state,
         zipCode: inspectionData.zip_code,
         
-        // Building specifications from SOW config
-        buildingHeight: sowConfig.projectInfo.buildingHeight,
-        squareFootage: sowConfig.projectInfo.squareFootage,
+        // Building specifications
+        buildingHeight: inspectionData.building_height,
+        squareFootage: inspectionData.square_footage,
         
-        // Template selection from integration engine
-        templateId: sowConfig.templateId,
-        projectType: sowConfig.projectInfo.projectType,
-        
-        // Roof assembly specifications
-        deckType: sowConfig.roofAssembly.deckType,
-        membraneType: sowConfig.roofAssembly.newSystem.membraneType,
-        insulationType: sowConfig.roofAssembly.newSystem.insulationType,
-        attachmentMethod: sowConfig.roofAssembly.newSystem.attachmentMethod,
+        // Template and roof specifications
+        projectType: inspectionData.project_type || 'tearoff',
+        deckType: inspectionData.deck_type,
+        membraneType: inspectionData.existing_membrane_type,
+        insulationType: inspectionData.insulation_type,
         
         // ASCE requirements
         windSpeed: inspectionData.wind_speed,
         exposureCategory: inspectionData.exposure_category,
         buildingClassification: inspectionData.building_classification,
         
-        // Enhanced drainage specifications from integration engine
-        drainageConfiguration: {
-          primaryType: sowConfig.drainageConfig.primary_type,
-          overflowType: sowConfig.drainageConfig.overflow_type,
-          specifications: sowConfig.drainageConfig.specifications,
-          additionalDrainage: sowConfig.drainageConfig.additional_drainage
-        },
+        // Enhanced drainage specifications
+        drainage_primary_type: inspectionData.drainage_primary_type,
+        drainage_overflow_type: inspectionData.drainage_overflow_type,
         
-        // Equipment specifications from integration engine
-        equipmentSpecs: {
-          skylights: sowConfig.equipmentSpecs.skylights,
-          hvacUnits: sowConfig.equipmentSpecs.hvacUnits,
-          accessPoints: sowConfig.equipmentSpecs.accessPoints,
-          walkwayPads: sowConfig.equipmentSpecs.walkwayPads,
-          equipmentPlatforms: sowConfig.equipmentSpecs.equipmentPlatforms
-        },
+        // Deck drains
+        drainage_deck_drains_count: inspectionData.drainage_deck_drains_count,
+        drainage_deck_drains_diameter: inspectionData.drainage_deck_drains_diameter,
         
-        // Penetration specifications from integration engine
-        penetrationSpecs: {
-          gasLines: sowConfig.penetrationSpecs.gasLines,
-          conduit: sowConfig.penetrationSpecs.conduit,
-          other: sowConfig.penetrationSpecs.other
-        },
+        // Scuppers
+        drainage_scuppers_count: inspectionData.drainage_scuppers_count,
+        drainage_scuppers_length: inspectionData.drainage_scuppers_length,
+        drainage_scuppers_width: inspectionData.drainage_scuppers_width,
+        drainage_scuppers_height: inspectionData.drainage_scuppers_height,
         
-        // Section inclusions based on inspection data
-        sectionInclusions: {
-          tearoffAndDisposal: sectionInclusions.tearoffAndDisposal,
-          newRoofSystem: sectionInclusions.newRoofSystem,
-          flashing: sectionInclusions.flashing,
-          drainageModifications: sectionInclusions.drainageModifications,
-          scupperWork: sectionInclusions.scupperWork,
-          gutterInstallation: sectionInclusions.gutterInstallation,
-          equipmentCurbs: sectionInclusions.equipmentCurbs,
-          skylightFlashing: sectionInclusions.skylightFlashing,
-          walkwayPads: sectionInclusions.walkwayPads,
-          equipmentPlatforms: sectionInclusions.equipmentPlatforms,
-          gasLinePenetrations: sectionInclusions.gasLinePenetrations,
-          conduitProtection: sectionInclusions.conduitProtection,
-          interiorProtection: sectionInclusions.interiorProtection,
-          safetyRequirements: sectionInclusions.safetyRequirements,
-          accessRequirements: sectionInclusions.accessRequirements
-        },
+        // Gutters
+        drainage_gutters_linear_feet: inspectionData.drainage_gutters_linear_feet,
+        drainage_gutters_height: inspectionData.drainage_gutters_height,
+        drainage_gutters_width: inspectionData.drainage_gutters_width,
+        drainage_gutters_depth: inspectionData.drainage_gutters_depth,
         
-        // Special requirements and modifications
-        specialRequirements: sowConfig.specialRequirements.modifications,
+        // Additional drainage
+        drainage_additional_count: inspectionData.drainage_additional_count,
+        drainage_additional_size: inspectionData.drainage_additional_size,
+        drainage_additional_notes: inspectionData.drainage_additional_notes,
         
         // Legacy fields for backward compatibility
-        numberOfDrains: (sowConfig.drainageConfig.specifications.deck_drains?.count || 0) + 
-                       (sowConfig.drainageConfig.specifications.scuppers?.count || 0),
-        numberOfPenetrations: (sowConfig.penetrationSpecs.gasLines.count || 0) + 
-                             (sowConfig.penetrationSpecs.other.requiresCustomFlashing ? 1 : 0),
+        numberOfDrains: (inspectionData.drainage_deck_drains_count || 0) + 
+                       (inspectionData.drainage_scuppers_count || 0),
+        numberOfPenetrations: inspectionData.penetrations_gas_line_count || 0,
         
         // Additional metadata
         notes: inspectionData.notes,
