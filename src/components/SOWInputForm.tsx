@@ -10,9 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, Building2, Wind, Settings, AlertTriangle, ClipboardCheck, Info, Layers } from 'lucide-react';
 import { SOWFormData, FieldInspectionData, SOWGenerationRequest, transformInspectionToSOWRequest, transformFormDataToSOWRequest, createSOWError, SOWGenerationRequestSchema } from '@/types/sowGeneration';
-import { MEMBRANE_TYPES, INSULATION_TYPES, getTemplateCategory } from '@/types/roofingTypes';
-import { RoofLayer } from '@/types/roofingTypes';
-import { RoofAssemblyEditor } from '@/components/field-inspector/components/RoofAssemblyEditor';
+import { MEMBRANE_TYPES, INSULATION_TYPES, getTemplateCategory, RoofLayer } from '@/types/roofingTypes';
+import { RoofAssemblyEditor } from '@/components/field-inspector/components/RoofAssemblyEditorWrapper';
 import { useToast } from '@/hooks/use-toast';
 
 interface SOWInputFormProps {
@@ -45,7 +44,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     notes: ''
   });
 
-  // ✅ NEW: Assembly layers state for dynamic roof assembly
+  // ✅ FIXED: Assembly layers state for dynamic roof assembly
   const [assemblyLayers, setAssemblyLayers] = useState<RoofLayer[]>([]);
   const [projectType, setProjectType] = useState<'recover' | 'tearoff' | 'new'>('tearoff');
   
@@ -74,7 +73,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
         notes: transformedData.notes || ''
       }));
 
-      // ✅ NEW: Load assembly layers from inspection data
+      // ✅ FIXED: Load assembly layers from inspection data
       if (initialData.roof_assembly_layers && initialData.roof_assembly_layers.length > 0) {
         setAssemblyLayers(initialData.roof_assembly_layers);
         console.log('🏗️ Loaded assembly layers from inspection:', initialData.roof_assembly_layers);
@@ -113,13 +112,13 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     }
   };
 
-  // ✅ NEW: Handle assembly layer changes
+  // ✅ FIXED: Handle assembly layer changes
   const handleAssemblyChange = (newLayers: RoofLayer[]) => {
     setAssemblyLayers(newLayers);
     console.log('🏗️ Assembly layers updated:', newLayers);
   };
 
-  // ✅ NEW: Handle project type changes
+  // ✅ FIXED: Handle project type changes
   const handleProjectTypeChange = (newProjectType: 'recover' | 'tearoff' | 'new') => {
     setProjectType(newProjectType);
     console.log('🏗️ Project type updated:', newProjectType);
@@ -190,7 +189,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     try {
       const sowRequest = transformFormDataToSOWRequest(formData);
       
-      // ✅ NEW: Add assembly data to SOW request
+      // ✅ FIXED: Add assembly data to SOW request
       sowRequest.roofAssemblyLayers = assemblyLayers;
       sowRequest.projectType = projectType;
       
@@ -265,7 +264,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            {/* ✅ NEW: Added Assembly tab */}
+            {/* ✅ FIXED: Added Assembly tab */}
             <TabsList className="grid w-full grid-cols-5 mb-6 bg-white/10 backdrop-blur-md">
               <TabsTrigger value="project" disabled={disabled} className="data-[state=active]:bg-blue-600 text-slate-950">
                 <Building2 className="w-4 h-4 mr-2" />
@@ -456,7 +455,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
               )}
             </TabsContent>
 
-            {/* ✅ NEW: Assembly Configuration Tab */}
+            {/* ✅ FIXED: Assembly Configuration Tab */}
             <TabsContent value="assembly" className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -482,7 +481,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
                   </Alert>
                 )}
 
-                {/* Roof Assembly Editor Integration */}
+                {/* ✅ FIXED: Roof Assembly Editor Integration */}
                 <div className="bg-white/5 rounded-lg p-4 border border-blue-400/20">
                   <RoofAssemblyEditor
                     layers={assemblyLayers}
