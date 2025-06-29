@@ -1,322 +1,395 @@
+// src/lib/api.ts - Clean Production API Configuration
 
-import { supabase } from './supabase';
+const API_BASE_URL = import.meta.env.PROD 
+  ? import.meta.env.VITE_API_URL || 'https://your-production-backend.com' 
+  : 'http://localhost:8001';
 
-export interface ProjectInput {
-  projectName: string;
-  address: string;
-  companyName?: string;
-  squareFootage?: number;
-  buildingHeight?: number;
-  length?: number;
-  width?: number;
-  elevation?: number;
-  projectType?: string;
-  membraneThickness?: string;
-  membraneColor?: string;
-  deckType?: string;
-  exposureCategory?: string;
-  insulationType?: string;
-  coverBoardType?: string;
-  existingInsulationCondition?: string;
-  insulationThickness?: number;
-  insulationRValue?: number;
-  coverBoardThickness?: number;
-  hasExistingInsulation?: boolean;
-  roofSlope?: number;
-  numberOfDrains?: number;
-  numberOfPenetrations?: number;
-  skylights?: number;
-  roofHatches?: number;
-  drainTypes?: string[];
-  penetrationTypes?: string[];
-  hvacUnits?: number;
-  walkwayPadRequested?: boolean;
-  downspouts?: number;
-  expansionJoints?: number;
-  parapetHeight?: number;
-  gutterType?: string;
-  roofConfiguration?: string;
-  documentAttachment?: {
-    filename: string;
-    type: string;
-    data: string;
-  };
-  userId?: string;
-}
+export const API_ENDPOINTS = {
+  // PRODUCTION: Clean SOW generation endpoint
+  generateSOW: `${API_BASE_URL}/api/sow/generate`,
+  downloadSOW: `${API_BASE_URL}/api/sow/download`,
+  getSOWStatus: `${API_BASE_URL}/api/sow/status`,
+  listSOWs: `${API_BASE_URL}/api/sow/list`,
+  deleteSOW: `${API_BASE_URL}/api/sow`,
+  
+  // System Status
+  health: `${API_BASE_URL}/api/health`,
+  status: `${API_BASE_URL}/api/status`,
+  sowHealth: `${API_BASE_URL}/api/sow/health`,
+  
+  // Jurisdiction Analysis (Keep - These are good)
+  jurisdictionAnalyze: `${API_BASE_URL}/api/jurisdiction/analyze`,
+  jurisdictionLookup: `${API_BASE_URL}/api/jurisdiction/lookup`,
+  jurisdictionGeocode: `${API_BASE_URL}/api/jurisdiction/geocode`,
+  jurisdictionCodes: `${API_BASE_URL}/api/jurisdiction/codes`,
+  jurisdictionValidate: `${API_BASE_URL}/api/jurisdiction/validate`,
+  jurisdictionPressureTable: `${API_BASE_URL}/api/jurisdiction/pressure-table`,
+  jurisdictionDebug: `${API_BASE_URL}/api/jurisdiction/debug`,
+  jurisdictionHealth: `${API_BASE_URL}/api/jurisdiction/health`,
+  
+  // Developer Tools Info (not integrated in production workflow)
+  devTools: `${API_BASE_URL}/api/dev-tools`,
+  
+  // Additional endpoints for testing
+  docs: `${API_BASE_URL}/api/docs`,
+  templateMap: `${API_BASE_URL}/api/template-map`,
+  
+  // Legacy compatibility
+  SOW_GENERATION: `${API_BASE_URL}/api/sow/generate`,
+  HEALTH_CHECK: `${API_BASE_URL}/api/health`,
+  PROJECTS: `${API_BASE_URL}/api/projects`,
+} as const;
 
 export interface SOWGenerationRequest {
-  projectName: string;
-  projectAddress: string;
-  customerName?: string;
-  customerPhone?: string;
-  buildingHeight?: number;
-  squareFootage?: number;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  deckType?: string;
-  membraneType?: string;
-  windSpeed?: number;
-  exposureCategory?: string;
-  buildingClassification?: string;
-  projectType?: string;
-  numberOfDrains?: number;
-  numberOfPenetrations?: number;
-  notes?: string;
+  // Clean production request structure
+  projectData: {
+    projectName: string;
+    projectAddress: string;
+    customerName?: string;
+    customerPhone?: string;
+    buildingHeight?: number;
+    squareFootage?: number;
+    numberOfDrains?: number;
+    numberOfPenetrations?: number;
+    membraneType?: string;
+    windSpeed?: number;
+    exposureCategory?: string;
+    projectType?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    deckType?: string;
+    insulationType?: string;
+    buildingClassification?: string;
+    notes?: string;
+  };
   inspectionId?: string;
+  file?: File;
 }
 
-export interface SOWGenerationResponseData {
+export interface SOWGenerationResponse {
   success: boolean;
-  sowId?: string;
-  downloadUrl?: string;
-  message?: string;
-  error?: string;
   data?: {
     pdf?: string;
     sow?: string;
+    engineeringSummary?: {
+      jurisdiction?: {
+        location: string;
+        asceVersion: string;
+        hvhz: boolean;
+        windSpeed: number;
+      };
+      windAnalysis?: {
+        pressures: any;
+        zones: any;
+        calculations: any;
+      };
+      manufacturerAnalysis?: {
+        selectedPattern: string;
+        manufacturer: string;
+        system: string;
+        approvals: string[];
+        liveDataSources: string[];
+        dataSource: string;
+      };
+      fileSize?: number;
+      fileUrl?: string;
+      filename?: string;
+      generationTime?: number;
+    };
+    template?: string;
+    templateUsed?: string;
   };
-}
-
-// Enhanced SOWResponse with all required properties
-export interface SOWResponse {
-  success: boolean;
-  sowId?: string;
-  downloadUrl?: string;
-  message?: string;
+  generationTime?: number;
+  metadata?: {
+    fileProcessed?: boolean;
+    extractionConfidence?: number;
+    liveManufacturerData?: boolean;
+    productionGeneration?: boolean;
+  };
   error?: string;
+  // Additional properties that components expect
   filename?: string;
   outputPath?: string;
-  generationTime?: number;
-  data?: {
-    pdf?: string;
-    sow?: string;
-  };
 }
 
-// Complete API endpoints including all referenced endpoints
-export const API_ENDPOINTS = {
-  SOW_GENERATION: '/api/sow/generate',
-  HEALTH_CHECK: '/api/health',
-  PROJECTS: '/api/projects',
-  health: '/api/health',
-  status: '/api/status',
-  docs: '/api/docs',
-  templateMap: '/api/template-map'
-};
+// Legacy alias for compatibility
+export type SOWResponse = SOWGenerationResponse;
 
-export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-  const response = await fetch(endpoint, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  });
+// Draft Management Interface
+export interface DraftData {
+  id: string;
+  name: string;
+  data: any;
+  created_at: string;
+  updated_at: string;
+  // Properties that components expect to be at the top level
+  projectName?: string;
+  projectAddress?: string;
+  buildingHeight?: number;
+  buildingLength?: number;
+  buildingWidth?: number;
+  squareFootage?: number;
+  numberOfStories?: number;
+  lastModified?: string;
+  insulationLayers?: any[];
+}
 
+/**
+ * Main production SOW generation function
+ * Clean, direct generation without self-healing complexity
+ */
+export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOWGenerationResponse> {
+  try {
+    const formData = new FormData();
+    
+    // Clean project data mapping
+    const projectData = {
+      projectName: request.projectData.projectName,
+      projectAddress: request.projectData.projectAddress,
+      customerName: request.projectData.customerName,
+      customerPhone: request.projectData.customerPhone,
+      buildingHeight: request.projectData.buildingHeight,
+      squareFootage: request.projectData.squareFootage,
+      numberOfDrains: request.projectData.numberOfDrains,
+      numberOfPenetrations: request.projectData.numberOfPenetrations,
+      membraneType: request.projectData.membraneType,
+      windSpeed: request.projectData.windSpeed,
+      exposureCategory: request.projectData.exposureCategory,
+      projectType: request.projectData.projectType,
+      city: request.projectData.city,
+      state: request.projectData.state,
+      zipCode: request.projectData.zipCode,
+      deckType: request.projectData.deckType,
+      insulationType: request.projectData.insulationType,
+      buildingClassification: request.projectData.buildingClassification,
+      notes: request.projectData.notes
+    };
+    
+    // Add project data
+    formData.append('projectData', JSON.stringify(projectData));
+    
+    // Add inspection ID if provided
+    if (request.inspectionId) {
+      formData.append('inspectionId', request.inspectionId);
+    }
+    
+    // Add file if provided
+    if (request.file) {
+      formData.append('file', request.file);
+    }
+
+    console.log('🚀 Clean production SOW generation request:', {
+      projectName: projectData.projectName,
+      projectAddress: projectData.projectAddress,
+      hasFile: !!request.file,
+      productionMode: true
+    });
+
+    const response = await fetch(API_ENDPOINTS.generateSOW, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Production SOW generated successfully');
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Production SOW generation failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generic API call helper
+ */
+export async function apiCall(endpoint: string, options: RequestInit = {}): Promise<any> {
+  try {
+    const response = await fetch(endpoint, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('API call failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Draft Management Functions
+ */
+export async function saveDraft(name: string, data: any): Promise<DraftData> {
+  // For Phase 1, use local storage as a simple draft system
+  const draft: DraftData = {
+    id: Date.now().toString(),
+    name,
+    data,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const drafts = await listDrafts();
+  const updatedDrafts = [...drafts, draft];
+  localStorage.setItem('sow_drafts', JSON.stringify(updatedDrafts));
+  
+  return draft;
+}
+
+export async function loadDraft(id: string): Promise<DraftData | null> {
+  const drafts = await listDrafts();
+  return drafts.find(draft => draft.id === id) || null;
+}
+
+export async function listDrafts(): Promise<DraftData[]> {
+  try {
+    const draftsJson = localStorage.getItem('sow_drafts');
+    return draftsJson ? JSON.parse(draftsJson) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function deleteDraft(id: string): Promise<boolean> {
+  const drafts = await listDrafts();
+  const filteredDrafts = drafts.filter(draft => draft.id !== id);
+  localStorage.setItem('sow_drafts', JSON.stringify(filteredDrafts));
+  return true;
+}
+
+/**
+ * SOW Management Functions
+ */
+export async function downloadSOWAPI(id: string): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}/api/download/pdf/${id}`);
   if (!response.ok) {
-    throw new Error(`API call failed: ${response.statusText}`);
+    throw new Error(`Download failed: ${response.status}`);
   }
+  return await response.blob();
+}
 
-  return response.json();
-};
+export async function getSOWStatusAPI(id: string): Promise<any> {
+  return apiCall(`${API_BASE_URL}/api/workflow/${id}`);
+}
 
-export const createProject = async (projectData: ProjectInput): Promise<any> => {
+export async function listSOWsAPI(): Promise<any> {
+  return apiCall(`${API_BASE_URL}/api/recent-workflows`);
+}
+
+export async function deleteSOWAPI(id: string): Promise<boolean> {
+  const response = await fetch(`${API_BASE_URL}/api/sow/${id}`, {
+    method: 'DELETE',
+  });
+  return response.ok;
+}
+
+/**
+ * Check backend health status
+ */
+export async function checkHealth(): Promise<any> {
   try {
-    const { data, error } = await supabase
-      .from('projects')
-      .insert([projectData])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw new Error(`Failed to create project: ${error.message}`);
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error creating project:', error);
-    throw error;
-  }
-};
-
-export const getProjects = async (userId?: string): Promise<any[]> => {
-  try {
-    let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
+    const response = await fetch(API_ENDPOINTS.health);
     
-    if (userId) {
-      query = query.eq('user_id', userId);
+    if (!response.ok) {
+      throw new Error(`Backend health check failed: ${response.status}`);
     }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw new Error(`Failed to fetch projects: ${error.message}`);
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    throw error;
-  }
-};
-
-export const updateProject = async (id: string, updates: Partial<ProjectInput>): Promise<any> => {
-  try {
-    const { data, error } = await supabase
-      .from('projects')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw new Error(`Failed to update project: ${error.message}`);
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error updating project:', error);
-    throw error;
-  }
-};
-
-export const deleteProject = async (id: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw new Error(`Failed to delete project: ${error.message}`);
-    }
-  } catch (error) {
-    console.error('Error deleting project:', error);
-    throw error;
-  }
-};
-
-export const generateSOWAPI = async (request: SOWGenerationRequest): Promise<SOWGenerationResponseData> => {
-  try {
-    console.log('🚀 Starting SOW generation API call with:', request);
-
-    // Basic validation
-    if (!request.projectName?.trim()) {
-      throw new Error('Project name is required');
-    }
-    if (!request.projectAddress?.trim()) {
-      throw new Error('Project address is required');
-    }
-
-    // For now, return a mock success response since the actual SOW generation
-    // backend is not connected. In production, this would call the real API.
-    console.log('⚠️ Mock SOW generation - backend not connected');
     
-    return {
-      success: true,
-      message: 'SOW generation completed successfully (mock)',
-      sowId: `sow_${Date.now()}`,
-      downloadUrl: '#mock-download-url',
-      data: {
-        pdf: 'mock-pdf-data',
-        sow: 'mock-sow-content'
-      }
-    };
-
+    return await response.json();
   } catch (error) {
-    console.error('❌ SOW generation API failed:', error);
+    console.error('Health check failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check SOW system health
+ */
+export async function checkSOWHealth(): Promise<any> {
+  try {
+    const response = await fetch(API_ENDPOINTS.sowHealth);
     
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'SOW generation failed'
-    };
-  }
-};
-
-export const getProject = async (id: string): Promise<any> => {
-  try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw new Error(`Failed to fetch project: ${error.message}`);
+    if (!response.ok) {
+      throw new Error(`SOW health check failed: ${response.status}`);
     }
-
-    return data;
-  } catch (error) {
-    console.error('Error fetching project:', error);
-    throw error;
-  }
-};
-
-// Field inspection related API functions
-export const getFieldInspections = async (userId?: string): Promise<any[]> => {
-  try {
-    let query = supabase.from('field_inspections').select('*').order('created_at', { ascending: false });
     
-    if (userId) {
-      query = query.eq('inspector_id', userId);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw new Error(`Failed to fetch field inspections: ${error.message}`);
-    }
-
-    return data || [];
+    return await response.json();
   } catch (error) {
-    console.error('Error fetching field inspections:', error);
+    console.error('SOW health check failed:', error);
     throw error;
   }
-};
+}
 
-export const getFieldInspection = async (id: string): Promise<any> => {
+/**
+ * Get system status
+ */
+export async function getSystemStatus(): Promise<any> {
   try {
-    const { data, error } = await supabase
-      .from('field_inspections')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw new Error(`Failed to fetch field inspection: ${error.message}`);
+    const response = await fetch(API_ENDPOINTS.status);
+    
+    if (!response.ok) {
+      throw new Error(`System status check failed: ${response.status}`);
     }
-
-    return data;
+    
+    return await response.json();
   } catch (error) {
-    console.error('Error fetching field inspection:', error);
+    console.error('System status check failed:', error);
     throw error;
   }
-};
+}
 
-export const saveFieldInspection = async (inspectionData: any): Promise<any> => {
+/**
+ * Get developer tools info (separate from production)
+ */
+export async function getDevToolsInfo(): Promise<any> {
   try {
-    const { data, error } = await supabase
-      .from('field_inspections')
-      .upsert(inspectionData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      throw new Error(`Failed to save field inspection: ${error.message}`);
+    const response = await fetch(API_ENDPOINTS.devTools);
+    
+    if (!response.ok) {
+      throw new Error(`Dev tools info failed: ${response.status}`);
     }
-
-    return data;
+    
+    return await response.json();
   } catch (error) {
-    console.error('Error saving field inspection:', error);
+    console.error('Dev tools info failed:', error);
     throw error;
   }
-};
+}
+
+// Legacy compatibility functions (simplified for production)
+export async function generateSOW(payload: any): Promise<any> {
+  // Convert legacy payload to new format
+  const request: SOWGenerationRequest = {
+    projectData: {
+      projectName: payload.projectName || 'Untitled Project',
+      projectAddress: payload.address || payload.projectAddress || '',
+      buildingHeight: payload.buildingHeight,
+      squareFootage: payload.squareFootage,
+      membraneType: payload.membraneThickness?.includes('TPO') ? 'TPO' : 'EPDM',
+      projectType: payload.projectType || 'recover',
+      deckType: payload.deckType,
+      exposureCategory: payload.exposureCategory
+    }
+  };
+
+  return generateSOWAPI(request);
+}
+
+export async function generateSOWWithDebug(payload: any): Promise<any> {
+  // In production, just use the clean generation (no debug complexity)
+  return generateSOW(payload);
+}
+
+export default API_ENDPOINTS;
