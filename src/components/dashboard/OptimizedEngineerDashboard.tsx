@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +23,6 @@ import { useSOWGeneration } from '@/hooks/useSOWGeneration';
 import { useFieldInspections } from '@/hooks/useFieldInspections';
 import { useToast } from '@/hooks/use-toast';
 import { FieldInspection } from '@/types/fieldInspection';
-import { SOWGenerationRequest, transformInspectionToSOWRequest } from '@/types/sow';
 
 export const OptimizedEngineerDashboard = () => {
   const { user } = useAuth();
@@ -32,7 +30,6 @@ export const OptimizedEngineerDashboard = () => {
   const navigate = useNavigate();
   const { inspections, loading: inspectionsLoading } = useFieldInspections();
   const {
-    generateSOW,
     isGenerating,
     generationData,
     generationError,
@@ -51,16 +48,9 @@ export const OptimizedEngineerDashboard = () => {
     if (!inspection.id) return;
 
     try {
-      const sowRequest: SOWGenerationRequest = transformInspectionToSOWRequest({
-        ...inspection,
-        id: inspection.id
-      });
-
-      await generateSOW(sowRequest);
-
       toast({
-        title: "SOW Generation Started",
-        description: `Navigating to SOW Generator for ${inspection.project_name}`,
+        title: "Navigating to SOW Generator",
+        description: `Opening SOW Generator for ${inspection.project_name}`,
       });
 
       // Navigate to SOW Generation page with inspection data
@@ -72,10 +62,10 @@ export const OptimizedEngineerDashboard = () => {
       });
 
     } catch (error) {
-      console.error('SOW generation failed:', error);
+      console.error('Navigation failed:', error);
       toast({
-        title: "SOW Generation Failed",
-        description: "Failed to generate SOW. Please try again.",
+        title: "Navigation Failed",
+        description: "Failed to navigate to SOW generator. Please try again.",
         variant: "destructive",
       });
     }
@@ -216,20 +206,10 @@ export const OptimizedEngineerDashboard = () => {
                     <div className="flex justify-end">
                       <Button 
                         onClick={() => handleGenerateSOW(inspection)}
-                        disabled={isGenerating || !isBackendOnline}
                         className="bg-blue-600 hover:bg-blue-700"
                       >
-                        {isGenerating ? (
-                          <>
-                            <Clock className="h-4 w-4 mr-2 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <FileText className="h-4 w-4 mr-2" />
-                            Generate SOW
-                          </>
-                        )}
+                        <FileText className="h-4 w-4 mr-2" />
+                        Generate SOW
                       </Button>
                     </div>
                   </CardContent>
