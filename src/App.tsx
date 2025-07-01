@@ -3,6 +3,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate,
 } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster"
 import Home from "./pages/Home";
@@ -70,6 +71,9 @@ function App() {
             {/* Field Inspector Routes */}
             <Route path="/field-inspector" element={<FieldInspector />} />
             <Route path="/field-inspector/dashboard" element={<InspectorDashboard />} />
+            
+            {/* Field Inspection Routes - Add redirect for /field-inspection */}
+            <Route path="/field-inspection" element={<Navigate to="/field-inspector/dashboard" replace />} />
             <Route path="/field-inspection/new" element={<FieldInspectionForm />} />
             <Route path="/field-inspection/:id" element={<InspectionDetailsPage />} />
             <Route path="/field-inspection/:id/edit" element={<FieldInspectionForm />} />
