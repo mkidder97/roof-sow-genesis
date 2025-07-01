@@ -9,6 +9,9 @@ export * from './types/roofing';
 
 // Export utilities
 export * from './utils';
+export * from './utils/fieldInspection';
+export * from './utils/sow';
+export * from './utils/validation';
 
 // Export constants
 export * from './constants';
