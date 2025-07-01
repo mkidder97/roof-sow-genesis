@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { ASCERequirements, PartialASCERequirements } from '@/types/asceRequirements';
 
-export { ASCERequirements, PartialASCERequirements } from '@/types/asceRequirements';
+export type { ASCERequirements, PartialASCERequirements } from '@/types/asceRequirements';
 
 export function useASCEConfig() {
   const [config, setConfig] = useState<PartialASCERequirements>({});
@@ -17,3 +17,5 @@ export function useASCEConfig() {
     setConfig,
   };
 }
+
+export type { ASCERequirements };

@@ -97,6 +97,7 @@ export interface FieldInspectionData {
   status: 'Draft' | 'In Progress' | 'Completed' | 'Under Review';
   priority_level: 'Low' | 'Standard' | 'High' | 'Urgent';
   weather_conditions: 'Clear' | 'Cloudy' | 'Light Rain' | 'Heavy Rain' | 'Snow' | 'Wind' | 'Other';
+  asce_requirements?: PartialASCERequirements; // ✅ Fixed: Made optional and uses PartialASCERequirements
 }
 
 export interface DrainageSOWConfig {
@@ -226,7 +227,7 @@ export interface FieldInspection {
 
   // Add missing properties that are referenced in various components
   sow_generated?: boolean;
-  asce_requirements?: ASCERequirements;
+  asce_requirements?: PartialASCERequirements; // ✅ Fixed: Uses PartialASCERequirements
   asce_version?: string;
   cover_board_type?: string;
   insulation_layers?: any[];
@@ -306,8 +307,7 @@ export interface FieldInspectionRow {
   access_method: string | null;
 }
 
-// Aliases for compatibility
-export type HVACEquipment = HVACUnit;
+// ✅ Removed duplicate HVACEquipment - keeping only HVACUnit as the single definition
 
 // Utility functions that are imported elsewhere
 export const convertRowToInspection = (row: any): FieldInspection => {
