@@ -60,6 +60,40 @@ const defaultConfig: ASCEConfig = {
   }
 };
 
+/**
+ * Get recommended ASCE version based on requirements
+ * @param cfg ASCE requirements configuration
+ * @returns Recommended ASCE version string
+ */
+export function getRecommendedASCEVersion(cfg: ASCERequirements): string {
+  // Simple recommendation logic based on location
+  if (cfg.state === 'FL') {
+    return 'ASCE 7-16'; // Florida Building Code uses ASCE 7-16
+  }
+  if (cfg.state === 'TX') {
+    return 'ASCE 7-22'; // Texas typically uses latest IBC
+  }
+  return 'ASCE 7-22'; // Default to latest
+}
+
+/**
+ * Format ASCE requirements for display
+ * @param cfg ASCE requirements
+ * @returns Formatted string representation
+ */
+export function formatASCERequirements(cfg: ASCERequirements): string {
+  return `${cfg.version || 'TBD'} | ${cfg.wind_speed || 'TBD'} mph | Exposure ${cfg.exposure_category || 'TBD'} | Class ${cfg.building_classification || 'TBD'} (I=${cfg.importance_factor || 1.0})`;
+}
+
+/**
+ * Validate ASCE requirements completeness
+ * @param cfg ASCE requirements to validate
+ * @returns Boolean indicating if requirements are valid
+ */
+export function validateRequirements(cfg: ASCERequirements): boolean {
+  return !!(cfg.version && cfg.exposure_category && cfg.building_classification && cfg.importance_factor);
+}
+
 export function useASCEConfig() {
   const [config, setConfig] = useState<ASCEConfig>(defaultConfig);
   
@@ -73,7 +107,7 @@ export function useASCEConfig() {
     engineer_approved: false
   });
 
-  const getRecommendedASCEVersion = useCallback((location?: { state?: string; city?: string; county?: string }) => {
+  const getRecommendedASCEVersionCallback = useCallback((location?: { state?: string; city?: string; county?: string }) => {
     // Simple recommendation logic based on location
     if (location?.state === 'FL') {
       return 'ASCE 7-16'; // Florida Building Code uses ASCE 7-16
@@ -112,7 +146,7 @@ export function useASCEConfig() {
     });
   }, []);
 
-  const validateRequirements = useCallback((requirements: PartialASCERequirements) => {
+  const validateRequirementsCallback = useCallback((requirements: PartialASCERequirements) => {
     const errors: string[] = [];
     
     if (!requirements.version) {
@@ -160,16 +194,12 @@ export function useASCEConfig() {
     selectedRequirements,
     updateRequirements,
     resetToDefaults,
-    validateRequirements,
+    validateRequirements: validateRequirementsCallback,
     getImportanceFactorForClass,
     isHVHZLocation,
     requiresEngineerApproval,
-    getRecommendedASCEVersion
+    getRecommendedASCEVersion: getRecommendedASCEVersionCallback
   };
-}
-
-export function formatASCERequirements(requirements: PartialASCERequirements): string {
-  return `${requirements.version || 'TBD'} | ${requirements.wind_speed || 'TBD'} mph | Exposure ${requirements.exposure_category || 'TBD'} | Class ${requirements.building_classification || 'TBD'} (I=${requirements.importance_factor || 1.0})`;
 }
 
 export function generateASCERequirementsSummary(requirements?: PartialASCERequirements): string {
@@ -187,3 +217,6 @@ export function generateASCERequirementsSummary(requirements?: PartialASCERequir
   
   return parts.join('\n');
 }
+
+// ✅ Export the type as requested
+export type { ASCERequirements };
