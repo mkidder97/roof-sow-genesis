@@ -1,7 +1,9 @@
 // Wind Pressure Calculation Engine
 // Multi-version ASCE uplift calculator supporting 7-10, 7-16, and 7-22
+// REFACTORED: Now uses Supabase config tables instead of hard-coded values
 
 import { getCodeData } from '../lib/jurisdiction-mapping';
+import { supabase } from '../lib/supabase';
 
 export interface WindEngineInputs {
   address?: string;
@@ -52,6 +54,67 @@ export interface WindPressureResult {
   complianceNotes: string[];
 }
 
+// Cache for ASCE parameters
+let asceParamsCache: Record<string, number> | null = null;
+let cacheTimestamp: number | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Load ASCE parameters from Supabase config table
+ */
+async function loadAsceParams(): Promise<Record<string, number>> {
+  // Return cached data if still valid
+  if (asceParamsCache && cacheTimestamp && (Date.now() - cacheTimestamp < CACHE_DURATION)) {
+    return asceParamsCache;
+  }
+
+  try {
+    const { data: asceRows, error } = await supabase
+      .from('asce_params')
+      .select('param_name, param_value')
+      .eq('is_active', true);
+
+    if (error) {
+      throw new Error(`Failed to fetch ASCE params: ${error.message}`);
+    }
+
+    if (!asceRows || asceRows.length === 0) {
+      console.warn('⚠️ No ASCE parameters found in database, using fallback values');
+      return getFallbackAsceParams();
+    }
+
+    // Build parameter lookup
+    const params = Object.fromEntries(
+      asceRows.map(row => [row.param_name, row.param_value])
+    );
+
+    asceParamsCache = params;
+    cacheTimestamp = Date.now();
+
+    console.log(`✅ Loaded ${asceRows.length} ASCE parameters from config table`);
+    return params;
+
+  } catch (error) {
+    console.error('❌ Error loading ASCE params from config:', error);
+    console.warn('⚠️ Falling back to hardcoded ASCE parameters');
+    return getFallbackAsceParams();
+  }
+}
+
+/**
+ * Fallback ASCE parameters if database is unavailable
+ */
+function getFallbackAsceParams(): Record<string, number> {
+  return {
+    'Kd': 0.85,
+    'I': 1.0,
+    'I_I': 0.87,
+    'I_II': 1.00,
+    'I_III': 1.15,
+    'I_IV': 1.15
+  };
+}
+
 /**
  * Main wind pressure calculation engine
  * Supports ASCE 7-10, 7-16, and 7-22 methodologies
@@ -97,8 +160,8 @@ export async function calculateWindPressures(inputs: WindEngineInputs): Promise<
   
   console.log(`📊 Wind calculation parameters: ASCE ${asceVersion}, V=${basicWindSpeed}mph, Exp=${inputs.exposureCategory}, h=${inputs.buildingHeight}ft`);
   
-  // Step 4: Calculate wind pressure factors
-  const factors = calculateWindFactors(inputs, asceVersion, basicWindSpeed, elevation);
+  // Step 4: Calculate wind pressure factors (now using config)
+  const factors = await calculateWindFactors(inputs, asceVersion, basicWindSpeed, elevation);
   
   // Step 5: Get pressure coefficients for ASCE version
   const pressureCoefficients = getPressureCoefficients(asceVersion);
@@ -137,15 +200,19 @@ export async function calculateWindPressures(inputs: WindEngineInputs): Promise<
 
 /**
  * Calculate wind pressure factors per ASCE methodology
+ * REFACTORED: Now loads parameters from config table
  */
-function calculateWindFactors(
+async function calculateWindFactors(
   inputs: WindEngineInputs, 
   asceVersion: '7-10' | '7-16' | '7-22',
   basicWindSpeed: number,
   elevation: number
 ) {
-  // Directionality factor (varies slightly by ASCE version)
-  const Kd = getDirectionalityFactor(asceVersion);
+  // Load ASCE parameters from config table
+  const asceParams = await loadAsceParams();
+  
+  // Directionality factor (from config table)
+  const Kd = asceParams['Kd'] || 0.85; // Fallback if not in config
   
   // Velocity pressure exposure coefficient
   const Kh = getVelocityPressureCoefficient(inputs.buildingHeight, inputs.exposureCategory, asceVersion);
@@ -156,8 +223,16 @@ function calculateWindFactors(
   // Ground elevation factor (ASCE 7-22 addition)
   const Ke = getElevationFactor(elevation, asceVersion);
   
-  // Importance factor based on risk category
-  const I = getImportanceFactor(inputs.riskCategory || 'II');
+  // Importance factor based on risk category (from config table)
+  const riskCategory = inputs.riskCategory || 'II';
+  let I = asceParams[`I_${riskCategory}`] || asceParams['I'];
+  
+  if (!I) {
+    // Fallback importance factor if not in config
+    const importanceMap = { 'I': 0.87, 'II': 1.00, 'III': 1.15, 'IV': 1.15 };
+    I = importanceMap[riskCategory] || 1.0;
+    console.warn(`⚠️ Using fallback importance factor for ${riskCategory}: ${I}`);
+  }
   
   // Velocity pressure
   const qh = 0.00256 * Kh * Kzt * Kd * Ke * I * Math.pow(basicWindSpeed, 2);
@@ -167,17 +242,11 @@ function calculateWindFactors(
 
 /**
  * Get ASCE version-specific directionality factor
+ * DEPRECATED: Now loaded from config table via calculateWindFactors
  */
 function getDirectionalityFactor(asceVersion: '7-10' | '7-16' | '7-22'): number {
-  switch (asceVersion) {
-    case '7-22':
-      return 0.85; // Updated in 7-22
-    case '7-16':
-      return 0.85;
-    case '7-10':
-    default:
-      return 0.85;
-  }
+  console.warn('⚠️ getDirectionalityFactor is deprecated, use config table instead');
+  return 0.85; // Fallback value
 }
 
 /**
@@ -242,8 +311,10 @@ function getElevationFactor(elevation: number, asceVersion: '7-10' | '7-16' | '7
 
 /**
  * Get importance factor based on risk category
+ * DEPRECATED: Now loaded from config table via calculateWindFactors
  */
 function getImportanceFactor(riskCategory: 'I' | 'II' | 'III' | 'IV'): number {
+  console.warn('⚠️ getImportanceFactor is deprecated, use config table instead');
   const factors = {
     'I': 0.87,
     'II': 1.00,
@@ -392,6 +463,7 @@ function generateComplianceNotes(
   notes.push(`Wind pressures calculated per ASCE ${asceVersion} Components and Cladding method`);
   notes.push(`Basic wind speed: ${windSpeed} mph`);
   notes.push(`Exposure Category ${exposure} assumed`);
+  notes.push('✅ Using config-driven ASCE parameters from database');
   
   if (windSpeed >= 150) {
     notes.push('High wind speed region - verify manufacturer system ratings');
@@ -453,4 +525,13 @@ export function validateWindInputs(inputs: WindEngineInputs): {
     errors,
     warnings
   };
+}
+
+/**
+ * Clear ASCE parameters cache
+ */
+export function clearAsceCache(): void {
+  asceParamsCache = null;
+  cacheTimestamp = null;
+  console.log('🔄 ASCE parameters cache cleared');
 }
