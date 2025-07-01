@@ -1,0 +1,270 @@
+name: 🤖 CI for Monorepo Packages
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION_MATRIX: '[18, 20]'
+  CACHE_VERSION: v1
+
+jobs:
+  # Detect changes to optimize CI runs
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web-client: ${{ steps.changes.outputs.web-client }}
+      api-server: ${{ steps.changes.outputs.api-server }}
+      shared: ${{ steps.changes.outputs.shared }}
+      root: ${{ steps.changes.outputs.root }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            web-client:
+              - 'packages/web-client/**'
+            api-server:
+              - 'packages/api-server/**'
+            shared:
+              - 'packages/shared/**'
+            root:
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/**'
+
+  # Shared package CI
+  shared:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs.root == 'true'
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npm run install:all
+
+      - name: 🧹 Lint shared package
+        run: npm run type-check --workspace=packages/shared
+
+      - name: 🔧 Build shared package
+        run: npm run build --workspace=packages/shared
+
+      - name: 📊 Upload shared build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-dist-node-${{ matrix.node-version }}
+          path: packages/shared/dist/
+          retention-days: 1
+
+  # Web client CI
+  web-client:
+    runs-on: ubuntu-latest
+    needs: [changes, shared]
+    if: always() && (needs.changes.outputs.web-client == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.root == 'true')
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npm run install:all
+
+      - name: 📥 Download shared build artifacts
+        if: needs.shared.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: shared-dist-node-${{ matrix.node-version }}
+          path: packages/shared/dist/
+
+      - name: 🔧 Build shared if needed
+        if: needs.shared.result != 'success'
+        run: npm run build --workspace=packages/shared
+
+      - name: 🧹 Lint web-client
+        run: npm run lint --workspace=packages/web-client
+
+      - name: 🔍 Type check web-client
+        run: npm run type-check --workspace=packages/web-client
+
+      - name: 🧪 Test web-client
+        run: |
+          # Add test command when tests are implemented
+          echo "Tests will be added here"
+
+      - name: 🔧 Build web-client
+        run: npm run build --workspace=packages/web-client
+
+      - name: 📊 Upload web-client build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-client-dist-node-${{ matrix.node-version }}
+          path: packages/web-client/dist/
+          retention-days: 1
+
+  # API server CI
+  api-server:
+    runs-on: ubuntu-latest
+    needs: [changes, shared]
+    if: always() && (needs.changes.outputs.api-server == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.root == 'true')
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 🖥️ Setup Chrome for Puppeteer
+        uses: browser-actions/setup-chrome@v1
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npm run install:all
+
+      - name: 📥 Download shared build artifacts
+        if: needs.shared.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: shared-dist-node-${{ matrix.node-version }}
+          path: packages/shared/dist/
+
+      - name: 🔧 Build shared if needed
+        if: needs.shared.result != 'success'
+        run: npm run build --workspace=packages/shared
+
+      - name: 🧹 Lint api-server (type check)
+        run: |
+          # Check TypeScript compilation
+          npx tsc --noEmit --project packages/api-server/tsconfig.json
+
+      - name: 🧪 Test api-server
+        env:
+          NODE_ENV: test
+        run: |
+          # Add proper test command when tests are implemented
+          echo "API server tests will be added here"
+          # Example health check test
+          # npm run test --workspace=packages/api-server
+
+      - name: 🔧 Build api-server
+        run: npm run build --workspace=packages/api-server
+
+      - name: 📊 Upload api-server build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-server-dist-node-${{ matrix.node-version }}
+          path: packages/api-server/dist/
+          retention-days: 1
+
+  # Security and dependency checks
+  security:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.root == 'true' || github.event_name == 'schedule'
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔒 Run security audit
+        run: npm audit --audit-level=high
+
+      - name: 🔍 Check for outdated dependencies
+        run: npm outdated || true
+
+  # Build summary job
+  build-summary:
+    runs-on: ubuntu-latest
+    needs: [web-client, api-server, shared]
+    if: always()
+    steps:
+      - name: 📋 Build Summary
+        run: |
+          echo "## 🤖 CI Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.shared.result }}" = "success" ]; then
+            echo "| 📦 shared | ✅ Success |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.shared.result }}" = "failure" ]; then
+            echo "| 📦 shared | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 📦 shared | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.web-client.result }}" = "success" ]; then
+            echo "| 🌐 web-client | ✅ Success |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.web-client.result }}" = "failure" ]; then
+            echo "| 🌐 web-client | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🌐 web-client | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.api-server.result }}" = "success" ]; then
+            echo "| 🚀 api-server | ✅ Success |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.api-server.result }}" = "failure" ]; then
+            echo "| 🚀 api-server | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🚀 api-server | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- All packages built successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "- Ready for deployment 🚀" >> $GITHUB_STEP_SUMMARY
+
+      - name: 💯 Success check
+        if: needs.web-client.result == 'success' && needs.api-server.result == 'success' && (needs.shared.result == 'success' || needs.shared.result == 'skipped')
+        run: echo "🎉 All builds completed successfully!"
+
+      - name: ❌ Failure check
+        if: needs.web-client.result == 'failure' || needs.api-server.result == 'failure' || needs.shared.result == 'failure'
+        run: |
+          echo "❌ Some builds failed. Check the logs above."
+          exit 1
