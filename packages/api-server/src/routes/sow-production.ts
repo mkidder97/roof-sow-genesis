@@ -6,6 +6,7 @@ import { analyzeJurisdiction } from '../lib/jurisdiction-analysis';
 import { EnhancedManufacturerAnalysisEngine } from '../manufacturer/EnhancedManufacturerAnalysisEngine.js';
 import { generatePDF } from '../lib/pdf-generator';
 import { parseTakeoffFile } from '../core/takeoff-engine';
+import { HealthCheckResponse } from '@roof-sow-genesis/shared';
 
 const router = express.Router();
 const upload = multer({ 
@@ -190,22 +191,27 @@ export async function checkSOWHealth(req: express.Request, res: express.Response
       console.warn('⚠️ Manufacturer health check failed, using basic status');
     }
     
-    res.json({
+    const response: HealthCheckResponse = {
       success: true,
       status: 'healthy',
       timestamp: new Date().toISOString(),
       components: healthStatus,
       version: 'production-1.0.0'
-    });
+    };
+    
+    res.json(response);
 
   } catch (error: any) {
     console.error('❌ Health check failed:', error);
-    res.status(500).json({
+    
+    const response: HealthCheckResponse = {
       success: false,
       status: 'unhealthy',
       error: error.message,
       timestamp: new Date().toISOString()
-    });
+    };
+    
+    res.status(500).json(response);
   }
 }
 
