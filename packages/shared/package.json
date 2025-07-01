@@ -1,0 +1,32 @@
+{
+  "name": "@roof-sow-genesis/shared",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Shared types, DTOs, and utilities for roof SOW generation system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/**/*.ts",
+    "clean": "rm -rf dist node_modules"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types/index.js",
+    "./utils": "./dist/utils/index.js",
+    "./constants": "./dist/constants/index.js"
+  },
+  "dependencies": {
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.5",
+    "typescript": "^5.5.3",
+    "eslint": "^9.9.0"
+  }
+}
