@@ -1,43 +1,84 @@
 # Archive Directory
 
-This directory contains legacy files and directories that have been deprecated in favor of the new monorepo structure.
+This directory contains legacy code, tools, and experimental features that are no longer actively used in the main codebase but are preserved for historical reference and potential future use.
 
-## Archived Directories
+## Recently Archived (2025-07-01)
 
-The following directories should be moved here as part of the reorganization:
+### 🛠️ MCP Tools (`archive/mcp-tools/`)
+Legacy Model Context Protocol (MCP) tools that were used during early development phases:
+- **analyze-pdf-output**: PDF analysis and quality checking tools
+- **pdf-formatting-optimizer**: Template formatting optimization utilities  
+- **propose-fix-snippet**: AI-powered code improvement suggestions
+- **write-fix-module**: Automated fix implementation tools
+- **trigger-regeneration**: PDF regeneration automation
+- **log-fix-history**: Fix tracking and history logging
+- **uplift.js**: Wind uplift calculation utilities
 
-### `mcp-tools/` 
-MCP (Model Context Protocol) tools and utilities. These were used for development workflows but are being phased out in favor of cleaner development processes.
+### 🧪 Development Scripts (`archive/development/`)
+Development and testing utilities used during the build phase:
+- **test-all-templates.js**: Comprehensive template testing suite
+- **test-pdf-simple.js**: Basic PDF generation testing
+- **test-system-configurations.js**: System configuration validation
 
-**Action**: Move entire directory to `archive/mcp-tools/`
+### 🔧 Legacy Fixes (`archive/fixes/`)
+Historical bug fixes and patches:
+- **README.md**: Documentation of fix procedures
+- **change_log.json**: Historical change tracking
+- **snippets/**: Code snippet library for quick fixes
 
-### `development/`
-Legacy development scripts and temporary files.
+## Archive Policy
 
-**Action**: Move entire directory to `archive/development/`
+**Why Archived**: These directories contained tools and scripts that served their purpose during development but are no longer needed for the production codebase. They have been moved to archive to:
 
-### `fixes/`
-Temporary fix files and patches.
+1. **Clean up the main repository** - Remove clutter from active development areas
+2. **Preserve history** - Maintain access to tools that might be useful for reference
+3. **Improve navigation** - Make the project structure clearer for new developers
+4. **Maintain CI/CD efficiency** - Remove unused code from build processes
 
-**Action**: Move entire directory to `archive/fixes/`
+## Archive Structure
 
-### `__MACOSX/`
-MacOS metadata files (if they exist).
+```
+archive/
+├── README.md                    # This file
+├── mcp-tools/                   # Legacy MCP development tools
+│   ├── analyze-pdf-output/      # PDF analysis utilities
+│   ├── pdf-formatting-optimizer/ # Template optimization
+│   ├── propose-fix-snippet/     # AI code suggestions
+│   ├── write-fix-module/        # Automated fix tools
+│   ├── trigger-regeneration/    # PDF regeneration
+│   ├── log-fix-history/         # Fix tracking
+│   └── uplift.js               # Wind calculation utilities
+├── development/                 # Development and testing scripts
+│   ├── test-all-templates.js    # Template testing suite
+│   ├── test-pdf-simple.js       # Basic PDF testing
+│   └── test-system-configurations.js # System validation
+└── fixes/                       # Legacy fixes and patches
+    ├── README.md                # Fix documentation
+    ├── change_log.json          # Historical changes
+    └── snippets/                # Code snippet library
+```
 
-**Action**: Delete or move to `archive/__MACOSX/`
+## Accessing Archived Code
 
-## Migration Process
+If you need to reference or restore any archived code:
 
-1. Before archiving, ensure no critical functionality depends on these directories
-2. Update any scripts or references that point to these locations
-3. Move directories to archive/ 
-4. Update documentation to reflect new structure
-5. After successful migration, archived directories can be removed in a future cleanup
+1. **Browse the archive**: Navigate to the specific directory under `archive/`
+2. **Copy what you need**: Extract relevant code to active directories
+3. **Update dependencies**: Ensure compatibility with current codebase
+4. **Test thoroughly**: Archived code may not be compatible with current versions
 
-## Restoration
+## Archive Guidelines
 
-If any archived functionality is needed:
-1. Copy specific files back to appropriate locations in the new structure
-2. Update imports and references 
-3. Test thoroughly
-4. Update documentation
+When archiving future code:
+
+1. **Document the reason** - Explain why code is being archived
+2. **Preserve structure** - Maintain original directory organization
+3. **Update this README** - Add entries for new archived content
+4. **Test CI/CD** - Ensure builds still pass after archiving
+5. **Update references** - Remove any imports or references to archived code
+
+---
+
+**Last Updated**: July 1, 2025  
+**Archived By**: Shared Code Extraction Process  
+**Reason**: Legacy tools no longer needed for production codebase
