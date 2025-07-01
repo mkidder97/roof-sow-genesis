@@ -1,0 +1,3 @@
+# Architecture
+
+This project is organized as a monorepo with three main packages: `web-client` contains the React/Vite frontend application with all UI components and client-side logic, `api-server` houses the Express.js backend with all server endpoints and business logic, and `shared` provides common TypeScript types, DTOs, and utility functions used across both client and server. This structure promotes better separation of concerns, enables independent development and deployment of each package, and centralizes shared code to avoid duplication while maintaining clear boundaries between frontend and backend concerns.
