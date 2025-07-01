@@ -1,3 +1,4 @@
+
 export interface HVACUnit {
   id: string;
   description?: string; // Make description optional
@@ -44,6 +45,19 @@ export interface AccessPointEquipment {
   condition: string;
   location?: string;
   size?: string;
+}
+
+export interface HVACEquipment {
+  id: string;
+  description?: string; // Make description optional
+  quantity: number;
+  condition: string;
+  mounting_type?: string;
+  refrigerant_lines_condition?: string;
+  electrical_connections_condition?: string;
+  curb_condition?: string;
+  clearances?: string;
+  type: string; // Make type required for components
 }
 
 interface RoofLayer {
@@ -97,7 +111,6 @@ export interface FieldInspectionData {
   status: 'Draft' | 'In Progress' | 'Completed' | 'Under Review';
   priority_level: 'Low' | 'Standard' | 'High' | 'Urgent';
   weather_conditions: 'Clear' | 'Cloudy' | 'Light Rain' | 'Heavy Rain' | 'Snow' | 'Wind' | 'Other';
-  asce_requirements?: PartialASCERequirements; // ✅ Fixed: Made optional and uses PartialASCERequirements
 }
 
 export interface DrainageSOWConfig {
@@ -179,7 +192,7 @@ export interface FieldInspection {
 
   equipment_skylights?: SkylightEquipment[];
   equipment_access_points?: AccessPointEquipment[];
-  equipment_hvac_units?: HVACUnit[]; // Changed from HVACEquipment to HVACUnit
+  equipment_hvac_units?: HVACEquipment[];
 
   drainage_primary_type?: 'Deck Drains' | 'Scuppers' | 'Gutters';
   drainage_overflow_type?: 'Deck Drains' | 'Scuppers' | 'Gutters';
@@ -227,7 +240,7 @@ export interface FieldInspection {
 
   // Add missing properties that are referenced in various components
   sow_generated?: boolean;
-  asce_requirements?: PartialASCERequirements; // ✅ Fixed: Uses PartialASCERequirements
+  asce_requirements?: ASCERequirements;
   asce_version?: string;
   cover_board_type?: string;
   insulation_layers?: any[];
@@ -307,7 +320,8 @@ export interface FieldInspectionRow {
   access_method: string | null;
 }
 
-// ✅ Removed duplicate HVACEquipment - keeping only HVACUnit as the single definition
+// Aliases for compatibility
+export type HVACEquipment = HVACUnit;
 
 // Utility functions that are imported elsewhere
 export const convertRowToInspection = (row: any): FieldInspection => {

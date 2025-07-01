@@ -1,48 +1,45 @@
-
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 // Simplified compatible types for SOW generation with proper type constraints
 interface SOWGenerationRequest {
-  projectData: {
-    projectName: string;
-    projectAddress: string;
-    customerName?: string;
-    customerPhone?: string;
-    buildingHeight?: number;
-    squareFootage?: number;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    deckType?: 'concrete' | 'metal' | 'wood' | 'gypsum' | string; // Made more flexible
-    membraneType?: string;
-    insulationType?: string;
-    windSpeed?: number;
-    exposureCategory?: string;
-    buildingClassification?: string;
-    projectType?: 'recover' | 'tearoff' | 'new';
-    
-    // Enhanced drainage fields
-    drainage_primary_type?: string;
-    drainage_overflow_type?: string;
-    drainage_deck_drains_count?: number;
-    drainage_deck_drains_diameter?: number;
-    drainage_scuppers_count?: number;
-    drainage_scuppers_length?: number;
-    drainage_scuppers_width?: number;
-    drainage_scuppers_height?: number;
-    drainage_gutters_linear_feet?: number;
-    drainage_gutters_height?: number;
-    drainage_gutters_width?: number;
-    drainage_gutters_depth?: number;
-    drainage_additional_count?: number;
-    drainage_additional_size?: string;
-    drainage_additional_notes?: string;
-    
-    numberOfDrains?: number;
-    numberOfPenetrations?: number;
-    notes?: string;
-  };
+  projectName: string;
+  projectAddress: string;
+  customerName?: string;
+  customerPhone?: string;
+  buildingHeight?: number;
+  squareFootage?: number;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  deckType?: 'concrete' | 'metal' | 'wood' | 'gypsum' | string; // Made more flexible
+  membraneType?: string;
+  insulationType?: string;
+  windSpeed?: number;
+  exposureCategory?: string;
+  buildingClassification?: string;
+  projectType?: 'recover' | 'tearoff' | 'new';
+  
+  // Enhanced drainage fields
+  drainage_primary_type?: string;
+  drainage_overflow_type?: string;
+  drainage_deck_drains_count?: number;
+  drainage_deck_drains_diameter?: number;
+  drainage_scuppers_count?: number;
+  drainage_scuppers_length?: number;
+  drainage_scuppers_width?: number;
+  drainage_scuppers_height?: number;
+  drainage_gutters_linear_feet?: number;
+  drainage_gutters_height?: number;
+  drainage_gutters_width?: number;
+  drainage_gutters_depth?: number;
+  drainage_additional_count?: number;
+  drainage_additional_size?: string;
+  drainage_additional_notes?: string;
+  
+  numberOfDrains?: number;
+  numberOfPenetrations?: number;
+  notes?: string;
   inspectionId?: string;
 }
 
@@ -104,24 +101,24 @@ async function callExistingSOWAPI(request: SOWGenerationRequest): Promise<SOWGen
     
     // Transform our request to match the existing API structure with proper type handling
     const apiRequest = {
-      projectName: request.projectData.projectName,
-      projectAddress: request.projectData.projectAddress,
-      customerName: request.projectData.customerName,
-      customerPhone: request.projectData.customerPhone,
-      buildingHeight: request.projectData.buildingHeight,
-      squareFootage: request.projectData.squareFootage,
-      city: request.projectData.city,
-      state: request.projectData.state,
-      zipCode: request.projectData.zipCode,
-      deckType: request.projectData.deckType || 'steel', // Provide default to satisfy type constraints
-      membraneType: request.projectData.membraneType,
-      windSpeed: request.projectData.windSpeed,
-      exposureCategory: request.projectData.exposureCategory,
-      buildingClassification: request.projectData.buildingClassification,
-      projectType: request.projectData.projectType,
-      numberOfDrains: request.projectData.numberOfDrains,
-      numberOfPenetrations: request.projectData.numberOfPenetrations,
-      notes: request.projectData.notes,
+      projectName: request.projectName,
+      projectAddress: request.projectAddress,
+      customerName: request.customerName,
+      customerPhone: request.customerPhone,
+      buildingHeight: request.buildingHeight,
+      squareFootage: request.squareFootage,
+      city: request.city,
+      state: request.state,
+      zipCode: request.zipCode,
+      deckType: request.deckType || 'steel', // Provide default to satisfy type constraints
+      membraneType: request.membraneType,
+      windSpeed: request.windSpeed,
+      exposureCategory: request.exposureCategory,
+      buildingClassification: request.buildingClassification,
+      projectType: request.projectType,
+      numberOfDrains: request.numberOfDrains,
+      numberOfPenetrations: request.numberOfPenetrations,
+      notes: request.notes,
       inspectionId: request.inspectionId
     };
 
@@ -183,10 +180,10 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
       console.log('🚀 Starting SOW generation with request:', request);
 
       // Validate required fields
-      if (!request.projectData.projectName?.trim()) {
+      if (!request.projectName?.trim()) {
         throw new Error('Project name is required');
       }
-      if (!request.projectData.projectAddress?.trim()) {
+      if (!request.projectAddress?.trim()) {
         throw new Error('Project address is required');
       }
 
@@ -256,67 +253,64 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
       setGenerationProgress(40);
       setGenerationStatus('Building SOW request from inspection data...');
 
-      // ✅ Fixed: Wrap project fields under projectData
+      // Create enhanced SOW generation request with drainage specifications
       const request: SOWGenerationRequest = {
-        projectData: {
-          // Basic project information
-          projectName: inspectionData.project_name || 'Untitled Project',
-          projectAddress: inspectionData.project_address || '',
-          customerName: inspectionData.customer_name,
-          customerPhone: inspectionData.customer_phone,
-          city: inspectionData.city,
-          state: inspectionData.state,
-          zipCode: inspectionData.zip_code,
-          
-          // Building specifications
-          buildingHeight: inspectionData.building_height,
-          squareFootage: inspectionData.square_footage,
-          
-          // Template and roof specifications
-          projectType: inspectionData.project_type || 'tearoff',
-          deckType: inspectionData.deck_type || 'steel', // Provide default
-          membraneType: inspectionData.existing_membrane_type,
-          insulationType: inspectionData.insulation_type,
-          
-          // ASCE requirements
-          windSpeed: inspectionData.wind_speed,
-          exposureCategory: inspectionData.exposure_category,
-          buildingClassification: inspectionData.building_classification,
-          
-          // Enhanced drainage specifications
-          drainage_primary_type: inspectionData.drainage_primary_type,
-          drainage_overflow_type: inspectionData.drainage_overflow_type,
-          
-          // Deck drains
-          drainage_deck_drains_count: inspectionData.drainage_deck_drains_count,
-          drainage_deck_drains_diameter: inspectionData.drainage_deck_drains_diameter,
-          
-          // Scuppers
-          drainage_scuppers_count: inspectionData.drainage_scuppers_count,
-          drainage_scuppers_length: inspectionData.drainage_scuppers_length,
-          drainage_scuppers_width: inspectionData.drainage_scuppers_width,
-          drainage_scuppers_height: inspectionData.drainage_scuppers_height,
-          
-          // Gutters
-          drainage_gutters_linear_feet: inspectionData.drainage_gutters_linear_feet,
-          drainage_gutters_height: inspectionData.drainage_gutters_height,
-          drainage_gutters_width: inspectionData.drainage_gutters_width,
-          drainage_gutters_depth: inspectionData.drainage_gutters_depth,
-          
-          // Additional drainage
-          drainage_additional_count: inspectionData.drainage_additional_count,
-          drainage_additional_size: inspectionData.drainage_additional_size,
-          drainage_additional_notes: inspectionData.drainage_additional_notes,
-          
-          // Legacy fields for backward compatibility
-          numberOfDrains: (inspectionData.drainage_deck_drains_count || 0) + 
-                         (inspectionData.drainage_scuppers_count || 0),
-          numberOfPenetrations: inspectionData.penetrations_gas_line_count || 0,
-          
-          // Additional metadata
-          notes: inspectionData.notes
-        },
-        // ✅ Fixed: inspectionId at top level
+        // Basic project information
+        projectName: inspectionData.project_name || 'Untitled Project',
+        projectAddress: inspectionData.project_address || '',
+        customerName: inspectionData.customer_name,
+        customerPhone: inspectionData.customer_phone,
+        city: inspectionData.city,
+        state: inspectionData.state,
+        zipCode: inspectionData.zip_code,
+        
+        // Building specifications
+        buildingHeight: inspectionData.building_height,
+        squareFootage: inspectionData.square_footage,
+        
+        // Template and roof specifications
+        projectType: inspectionData.project_type || 'tearoff',
+        deckType: inspectionData.deck_type || 'steel', // Provide default
+        membraneType: inspectionData.existing_membrane_type,
+        insulationType: inspectionData.insulation_type,
+        
+        // ASCE requirements
+        windSpeed: inspectionData.wind_speed,
+        exposureCategory: inspectionData.exposure_category,
+        buildingClassification: inspectionData.building_classification,
+        
+        // Enhanced drainage specifications
+        drainage_primary_type: inspectionData.drainage_primary_type,
+        drainage_overflow_type: inspectionData.drainage_overflow_type,
+        
+        // Deck drains
+        drainage_deck_drains_count: inspectionData.drainage_deck_drains_count,
+        drainage_deck_drains_diameter: inspectionData.drainage_deck_drains_diameter,
+        
+        // Scuppers
+        drainage_scuppers_count: inspectionData.drainage_scuppers_count,
+        drainage_scuppers_length: inspectionData.drainage_scuppers_length,
+        drainage_scuppers_width: inspectionData.drainage_scuppers_width,
+        drainage_scuppers_height: inspectionData.drainage_scuppers_height,
+        
+        // Gutters
+        drainage_gutters_linear_feet: inspectionData.drainage_gutters_linear_feet,
+        drainage_gutters_height: inspectionData.drainage_gutters_height,
+        drainage_gutters_width: inspectionData.drainage_gutters_width,
+        drainage_gutters_depth: inspectionData.drainage_gutters_depth,
+        
+        // Additional drainage
+        drainage_additional_count: inspectionData.drainage_additional_count,
+        drainage_additional_size: inspectionData.drainage_additional_size,
+        drainage_additional_notes: inspectionData.drainage_additional_notes,
+        
+        // Legacy fields for backward compatibility
+        numberOfDrains: (inspectionData.drainage_deck_drains_count || 0) + 
+                       (inspectionData.drainage_scuppers_count || 0),
+        numberOfPenetrations: inspectionData.penetrations_gas_line_count || 0,
+        
+        // Additional metadata
+        notes: inspectionData.notes,
         inspectionId: inspectionData.id
       };
 

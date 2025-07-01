@@ -50,6 +50,3 @@ export const DashboardSkeleton = () => {
     </div>
   );
 };
-
-// Export LoadingSkeleton as an alias to DashboardSkeleton for compatibility
-export const LoadingSkeleton = DashboardSkeleton;
