@@ -1,0 +1,8 @@
+# This directory will contain all page components
+# Main pages to be migrated:
+# - Home.tsx
+# - Dashboard.tsx 
+# - FieldInspector.tsx
+# - SOWGeneration.tsx
+# - Auth.tsx
+# - And many more...

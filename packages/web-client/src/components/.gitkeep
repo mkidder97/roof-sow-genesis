@@ -1,0 +1,10 @@
+# This directory will contain all React components
+# Subdirectories:
+# - ui/ - Reusable UI components 
+# - auth/ - Authentication components
+# - field-inspector/ - Field inspection workflow
+# - dashboard/ - Dashboard components
+# - sections/ - SOW section components
+# - workflow/ - Workflow management
+# - navigation/ - Navigation components
+# - admin/ - Admin interface components
