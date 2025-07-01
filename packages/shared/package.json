@@ -2,31 +2,38 @@
   "name": "@roof-sow-genesis/shared",
   "private": true,
   "version": "1.0.0",
-  "description": "Shared types, DTOs, and utilities for roof SOW generation system",
+  "description": "Shared types, utilities, and constants for roof SOW generation system",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "lint": "eslint src/**/*.ts",
-    "clean": "rm -rf dist node_modules"
-  },
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": "./dist/index.js",
-    "./types": "./dist/types/index.js",
-    "./utils": "./dist/utils/index.js",
-    "./constants": "./dist/constants/index.js"
-  },
-  "dependencies": {
-    "zod": "^3.25.67"
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^22.5.5",
-    "typescript": "^5.5.3",
-    "eslint": "^9.9.0"
+    "typescript": "^5.1.6"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types/*": {
+      "import": "./dist/types/*.js",
+      "require": "./dist/types/*.js",
+      "types": "./dist/types/*.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "require": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/constants/index.js",
+      "require": "./dist/constants/index.js",
+      "types": "./dist/constants/index.d.ts"
+    }
   }
 }
