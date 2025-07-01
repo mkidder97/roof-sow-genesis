@@ -394,33 +394,6 @@ export type Database = {
           },
         ]
       }
-      gcp_config: {
-        Row: {
-          created_at: string
-          gc_p_value: number
-          id: string
-          roof_type: string
-          updated_at: string
-          zone: string
-        }
-        Insert: {
-          created_at?: string
-          gc_p_value: number
-          id?: string
-          roof_type: string
-          updated_at?: string
-          zone: string
-        }
-        Update: {
-          created_at?: string
-          gc_p_value?: number
-          id?: string
-          roof_type?: string
-          updated_at?: string
-          zone?: string
-        }
-        Relationships: []
-      }
       project_comments: {
         Row: {
           comment: string
