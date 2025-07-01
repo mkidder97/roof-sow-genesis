@@ -67,3 +67,11 @@ export async function calculateWindPressures(params: WindAnalysisParams): Promis
   const zonePressures = calculateZonePressures(qh, GCp, params.asceVersion);
   
   console.log(`💨 Zone pressures calculated using ${params.asceVersion}: Z1F=${Math.abs(zonePressures.zone1Field).toFixed(1)}, Z3C=${Math.abs(zonePressures.zone3Corner).toFixed(1)}`);
+  
+  return {
+    designWindSpeed: basicWindSpeed,
+    exposureCategory: params.exposureCategory,
+    elevation: params.elevation,
+    zonePressures
+  };
+}
