@@ -320,9 +320,6 @@ export interface FieldInspectionRow {
   access_method: string | null;
 }
 
-// Aliases for compatibility
-export type HVACEquipment = HVACUnit;
-
 // Utility functions that are imported elsewhere
 export const convertRowToInspection = (row: any): FieldInspection => {
   return {
