@@ -12,6 +12,8 @@ export * from './utils';
 export * from './utils/fieldInspection';
 export * from './utils/sow';
 export * from './utils/validation';
+export * from './utils/windAnalysis';
+export * from './utils/jurisdiction';
 
 // Export constants
 export * from './constants';
@@ -64,3 +66,15 @@ export type {
   ManufacturerSystem,
   RoofingSpecification,
 } from './types/roofing';
+
+// Re-export utility interfaces for convenience
+export type {
+  WindZonePressures,
+  WindFactors,
+} from './utils/windAnalysis';
+
+export type {
+  JurisdictionInfo,
+  ComplianceIssue,
+  ComplianceResult,
+} from './utils/jurisdiction';
