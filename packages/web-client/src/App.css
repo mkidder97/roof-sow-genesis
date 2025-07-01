@@ -1,4 +1,4 @@
-.root {
+#root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
@@ -28,7 +28,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .root .logo {
+  a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
   }
 }
