@@ -1,0 +1,2 @@
+# This directory contains client-side engines
+# Note: Some engines may be moved to packages/shared/ or packages/api-server/
