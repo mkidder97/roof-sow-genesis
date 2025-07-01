@@ -7,8 +7,7 @@ import { useCompletedInspections } from '@/hooks/useCompletedInspections';
 import { useSOWGeneration } from '@/hooks/useSOWGeneration';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { FieldInspection, FieldInspectionData } from '@/types/fieldInspection';
-import { transformInspectionToSOWRequest } from '@/types/sow';
+import { FieldInspection } from '@/types/fieldInspection';
 
 const AvailableInspections = () => {
   const { completedInspections, loading, error, refetch } = useCompletedInspections();
@@ -32,26 +31,59 @@ const AvailableInspections = () => {
 
   const handleGenerateSOW = async (inspection: FieldInspection) => {
     try {
-      // Ensure inspection has required id field for FieldInspectionData
+      // Ensure inspection has required id field
       if (!inspection.id) {
         throw new Error('Inspection ID is required for SOW generation');
       }
       
-      const inspectionData: FieldInspectionData = {
-        ...inspection,
-        id: inspection.id // Ensure id is present
-      };
-      
-      const sowRequest = transformInspectionToSOWRequest(inspectionData);
-      
-      // Fix enum type casting
-      const validatedRequest = {
-        ...sowRequest,
-        deckType: (inspection.deck_type || 'concrete') as 'concrete' | 'metal' | 'wood' | 'gypsum',
-        membraneType: (inspection.existing_membrane_type || 'tpo') as 'tpo' | 'epdm' | 'pvc' | 'modified-bitumen'
+      // Fixed: Wrap all project fields under projectData
+      const sowRequest = {
+        projectData: {
+          projectName: inspection.project_name,
+          projectAddress: inspection.project_address,
+          customerName: inspection.customer_name,
+          customerPhone: inspection.customer_phone,
+          buildingHeight: inspection.building_height,
+          squareFootage: inspection.square_footage,
+          city: inspection.city,
+          state: inspection.state,
+          zipCode: inspection.zip_code,
+          deckType: (inspection.deck_type || 'concrete') as 'concrete' | 'metal' | 'wood' | 'gypsum',
+          membraneType: inspection.existing_membrane_type,
+          insulationType: inspection.insulation_type,
+          windSpeed: inspection.wind_speed,
+          exposureCategory: inspection.exposure_category,
+          buildingClassification: inspection.building_classification,
+          projectType: inspection.project_type || 'tearoff',
+          
+          // Enhanced drainage specifications
+          drainage_primary_type: inspection.drainage_primary_type,
+          drainage_overflow_type: inspection.drainage_overflow_type,
+          drainage_deck_drains_count: inspection.drainage_deck_drains_count,
+          drainage_deck_drains_diameter: inspection.drainage_deck_drains_diameter,
+          drainage_scuppers_count: inspection.drainage_scuppers_count,
+          drainage_scuppers_length: inspection.drainage_scuppers_length,
+          drainage_scuppers_width: inspection.drainage_scuppers_width,
+          drainage_scuppers_height: inspection.drainage_scuppers_height,
+          drainage_gutters_linear_feet: inspection.drainage_gutters_linear_feet,
+          drainage_gutters_height: inspection.drainage_gutters_height,
+          drainage_gutters_width: inspection.drainage_gutters_width,
+          drainage_gutters_depth: inspection.drainage_gutters_depth,
+          drainage_additional_count: inspection.drainage_additional_count,
+          drainage_additional_size: inspection.drainage_additional_size,
+          drainage_additional_notes: inspection.drainage_additional_notes,
+          
+          // Legacy fields for backward compatibility
+          numberOfDrains: (inspection.drainage_deck_drains_count || 0) + 
+                         (inspection.drainage_scuppers_count || 0),
+          numberOfPenetrations: inspection.penetrations_gas_line_count || 0,
+          
+          notes: inspection.notes
+        },
+        inspectionId: inspection.id
       };
 
-      await generateSOW(validatedRequest);
+      await generateSOW(sowRequest);
     } catch (error) {
       console.error('SOW generation error:', error);
     }

@@ -32,27 +32,29 @@ const AvailableInspections = () => {
     try {
       console.log('Generating SOW for inspection:', inspection);
       
-      // Enhanced data mapping with all required fields and proper types
+      // Fixed: Wrap all project fields under projectData
       const sowRequest = {
-        projectName: inspection.project_name,
-        projectAddress: inspection.project_address,
-        city: inspection.city || 'Unknown',
-        state: inspection.state || 'FL',
-        zipCode: inspection.zip_code || '00000',
-        customerName: inspection.customer_name || 'TBD',
-        customerPhone: inspection.customer_phone || 'TBD',
-        buildingHeight: inspection.building_height || 20,
-        squareFootage: inspection.square_footage || 10000,
-        deckType: inspection.deck_type || 'steel',
-        membraneType: inspection.existing_membrane_type || 'tpo',
-        windSpeed: inspection.wind_speed || 140,
-        exposureCategory: inspection.exposure_category || 'C',
-        buildingClassification: inspection.building_classification || 'II',
-        inspectorName: inspection.inspector_name || 'Unknown Inspector',
-        inspectionDate: inspection.inspection_date,
-        projectType: (inspection.project_type || 'recover') as 'recover' | 'tearoff' | 'new',
-        customNotes: [inspection.notes, inspection.recommendations, inspection.concerns]
-          .filter(Boolean) as string[]
+        projectData: {
+          projectName: inspection.project_name,
+          projectAddress: inspection.project_address,
+          city: inspection.city || 'Unknown',
+          state: inspection.state || 'FL',
+          zipCode: inspection.zip_code || '00000',
+          customerName: inspection.customer_name || 'TBD',
+          customerPhone: inspection.customer_phone || 'TBD',
+          buildingHeight: inspection.building_height || 20,
+          squareFootage: inspection.square_footage || 10000,
+          deckType: inspection.deck_type || 'steel',
+          membraneType: inspection.existing_membrane_type || 'tpo',
+          windSpeed: inspection.wind_speed || 140,
+          exposureCategory: inspection.exposure_category || 'C',
+          buildingClassification: inspection.building_classification || 'II',
+          projectType: (inspection.project_type || 'recover') as 'recover' | 'tearoff' | 'new',
+          notes: [inspection.notes, inspection.recommendations, inspection.concerns]
+            .filter(Boolean)
+            .join('; ') || undefined
+        },
+        inspectionId: inspection.id
       };
 
       console.log('Enhanced SOW Request:', sowRequest);
