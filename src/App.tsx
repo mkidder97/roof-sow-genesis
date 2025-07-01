@@ -1,4 +1,3 @@
-
 import {
   BrowserRouter as Router,
   Routes,
@@ -35,6 +34,10 @@ import InspectionDetailsPage from "./pages/InspectionDetailsPage";
 import SOWGeneration from "./pages/SOWGeneration";
 import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import GCPConfigList from "./pages/GCPConfigList";
+import GCPConfigDetail from "./pages/GCPConfigDetail";
+import GCPConfigForm from "./pages/GCPConfigForm";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +80,12 @@ function App() {
             <Route path="/field-inspection/new" element={<FieldInspectionForm />} />
             <Route path="/field-inspection/:id" element={<InspectionDetailsPage />} />
             <Route path="/field-inspection/:id/edit" element={<FieldInspectionForm />} />
+
+            {/* GCP Configuration Routes */}
+            <Route path="/gcp-config" element={<GCPConfigList />} />
+            <Route path="/gcp-config/new" element={<GCPConfigForm />} />
+            <Route path="/gcp-config/:id" element={<GCPConfigDetail />} />
+            <Route path="/gcp-config/:id/edit" element={<GCPConfigForm />} />
 
             {/* SOW Generation Route - Engineer Only */}
             <Route path="/sow-generation" element={<SOWGeneration />} />

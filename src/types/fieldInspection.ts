@@ -1,4 +1,3 @@
-
 export interface HVACUnit {
   id: string;
   description?: string; // Make description optional
@@ -45,19 +44,6 @@ export interface AccessPointEquipment {
   condition: string;
   location?: string;
   size?: string;
-}
-
-export interface HVACEquipment {
-  id: string;
-  description?: string; // Make description optional
-  quantity: number;
-  condition: string;
-  mounting_type?: string;
-  refrigerant_lines_condition?: string;
-  electrical_connections_condition?: string;
-  curb_condition?: string;
-  clearances?: string;
-  type: string; // Make type required for components
 }
 
 interface RoofLayer {
@@ -192,7 +178,7 @@ export interface FieldInspection {
 
   equipment_skylights?: SkylightEquipment[];
   equipment_access_points?: AccessPointEquipment[];
-  equipment_hvac_units?: HVACEquipment[];
+  equipment_hvac_units?: HVACUnit[]; // Changed from HVACEquipment to HVACUnit
 
   drainage_primary_type?: 'Deck Drains' | 'Scuppers' | 'Gutters';
   drainage_overflow_type?: 'Deck Drains' | 'Scuppers' | 'Gutters';
