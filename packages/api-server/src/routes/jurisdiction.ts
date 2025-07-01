@@ -16,7 +16,7 @@ import {
   JurisdictionAnalysisResponse,
   QuickJurisdictionLookup,
   QuickJurisdictionResponse
-} from '../types';
+} from '@roof-sow-genesis/shared';
 
 /**
  * Main jurisdiction analysis endpoint
