@@ -15,9 +15,11 @@
     "build:client": "npm run build --workspace=packages/web-client",
     "build:server": "npm run build --workspace=packages/api-server",
     "lint": "npm run lint --workspaces",
+    "lint:fix": "npm run lint:fix --workspaces",
     "test": "npm run test --workspaces",
     "clean": "npm run clean --workspaces && rm -rf node_modules",
-    "install:all": "npm install"
+    "install:all": "npm install",
+    "prepare": "husky install"
   },
   "keywords": [
     "pdf-generation",
@@ -30,7 +32,9 @@
     "monorepo"
   ],
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.3"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -45,5 +49,10 @@
   },
   "homepage": "https://github.com/mkidder97/roof-sow-genesis#readme",
   "author": "mkidder97",
-  "license": "MIT"
+  "license": "MIT",
+  "lint-staged": {
+    "packages/*/src/**/*.{ts,tsx}": [
+      "npm run lint:fix"
+    ]
+  }
 }
