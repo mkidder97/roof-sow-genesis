@@ -1,5 +1,5 @@
-// Enhanced Express Server with Complete Multi-Role Workflow Integration & File Management
-// NOW INCLUDES: Phase 1 Complete SOW Generation Engine + Advanced Section-Input Mapping System + Draft Management + SOW Generation API
+// Enhanced Express Server with Complete Multi-Role Workflow Integration & File Management & Engineering Config
+// NOW INCLUDES: Phase 1 Complete SOW Generation Engine + Advanced Section-Input Mapping System + Draft Management + SOW Generation API + Database-Driven Engineering Configuration
 
 // CRITICAL: Load environment variables first
 import dotenv from 'dotenv';
@@ -43,6 +43,9 @@ import enhancedFormattingRouter from './routes/sow-enhanced-formatting.js';
 
 // Import NEW: Phase 1 Complete SOW Generation Engine routes
 import sowCompleteRouter from './routes/sow-complete.js';
+
+// Import NEW: Database-driven Engineering Configuration routes
+import engineeringConfigRouter from './routes/engineering-config.js';
 
 // Import simple test endpoints (that work without complex dependencies)
 import { 
@@ -126,6 +129,13 @@ app.use('/output', express.static(outputDir));
 
 // Health check endpoint
 app.get('/health', healthCheck);
+
+// ======================
+// NEW: DATABASE-DRIVEN ENGINEERING CONFIGURATION
+// ======================
+
+// Engineering configuration routes (replaces hardcoded constants)
+app.use('/api/engineering-config', engineeringConfigRouter);
 
 // ======================
 // NEW: PHASE 1 COMPLETE SOW GENERATION ENGINE
@@ -232,16 +242,27 @@ app.get('/api/jurisdiction/health', jurisdictionHealth);
 // SYSTEM STATUS & DOCUMENTATION
 // ======================
 
-// Enhanced system status endpoint with Phase 1 SOW Engine status
+// Enhanced system status endpoint with Engineering Config status
 app.get('/api/status', async (req, res) => {
   const supabaseStatus = await checkSupabaseConnection();
   
   res.json({
-    phase: 'Phase 1 Complete SOW Generation Engine + Multi-Role Workflow System + File Management + Section-Input Mapping + Draft Management',
-    version: '11.0.0-phase1-complete',
-    engineVersion: '11.0.0 - Phase 1 Complete SOW Generation Engine + Section Mapping + Content Generation + Wind Analysis',
+    phase: 'Phase 1 Complete SOW Generation Engine + Multi-Role Workflow System + File Management + Section-Input Mapping + Draft Management + Database-Driven Engineering Configuration',
+    version: '12.0.0-phase1-complete-config',
+    engineVersion: '12.0.0 - Phase 1 Complete SOW Generation Engine + Section Mapping + Content Generation + Wind Analysis + Database-Driven Engineering Configuration',
     serverStatus: 'running',
     timestamp: new Date().toISOString(),
+    
+    // NEW: Database-Driven Engineering Configuration
+    engineeringConfiguration: {
+      config_storage: 'Supabase database with JSONB values ✅',
+      template_rules: 'Dynamic template selection from database ✅',
+      engineering_constants: 'Importance factors, pressure coefficients, directivity factors ✅',
+      caching_system: 'Memory caching with TTL for performance ✅',
+      fallback_mechanisms: 'Graceful degradation to hardcoded values ✅',
+      api_endpoints: 'Complete RESTful configuration management ✅',
+      type_safety: 'Full TypeScript interfaces and validation ✅'
+    },
     
     // NEW: Phase 1 Complete SOW Generation Engine
     phase1SOWEngine: {
@@ -250,7 +271,8 @@ app.get('/api/status', async (req, res) => {
       wind_integrator: 'Complete ASCE wind analysis with zone calculations ✅',
       template_support: 'T5, T6, T7, T8 templates with intelligent selection ✅',
       validation_system: 'Comprehensive input and output validation ✅',
-      test_framework: 'Automated testing with real project data ✅'
+      test_framework: 'Automated testing with real project data ✅',
+      database_config: 'Engineering constants loaded from database ✅'
     },
     
     // Existing SOW Generation API Status
@@ -297,17 +319,30 @@ app.get('/api/status', async (req, res) => {
       file_integration: 'COMPLETE ✅'
     },
     endpoints: {
+      // NEW: Database-Driven Engineering Configuration
+      engineeringConfiguration: {
+        'GET /api/engineering-config/health': 'Engineering config system health check',
+        'GET /api/engineering-config/all': 'Get all configuration values',
+        'GET /api/engineering-config/:key': 'Get specific configuration by key',
+        'POST /api/engineering-config/template-match': 'Find matching template based on conditions',
+        'GET /api/engineering-config/values/importance-factor/:classification': 'Get importance factor',
+        'GET /api/engineering-config/values/internal-pressure/:enclosure': 'Get internal pressure coefficient',
+        'GET /api/engineering-config/values/directivity-factor': 'Get wind directionality factor',
+        'POST /api/engineering-config/clear-cache': 'Clear configuration cache',
+        'GET /api/engineering-config/test': 'Comprehensive configuration test'
+      },
+      
       // NEW: Phase 1 Complete SOW Generation Engine
       phase1SOWEngine: {
-        'POST /api/sow/generate-complete': 'Complete SOW generation with all features',
+        'POST /api/sow/generate-complete': 'Complete SOW generation with database config',
         'POST /api/sow/generate-from-inspection/:id': 'Generate SOW from field inspection',
         'POST /api/sow/validate': 'Validate project inputs without generation',
         'GET /api/sow/test': 'Test SOW generation with sample data',
         'GET /api/sow/templates': 'Get available templates and requirements',
-        'POST /api/sow/wind-analysis': 'Standalone wind analysis',
+        'POST /api/sow/wind-analysis': 'Standalone wind analysis with database config',
         'GET /api/sow/status': 'Phase 1 engine system status'
       },
-      // Existing endpoints...
+      // Existing endpoints...\
       sowGenerationAPI: {
         'POST /api/sow-legacy/generate': 'Legacy SOW generation with file upload',
         'GET /api/sow-legacy/download/:sowId': 'Download generated PDF',
@@ -353,6 +388,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     section_mapping: req.path.includes('mapping'),
     draft_management: req.path.includes('drafts'),
     sow_generation_api: req.path.includes('/api/sow/'),
+    engineering_config: req.path.includes('/api/engineering-config/'),
     phase1_engine: req.path.includes('/api/sow/generate-complete') || req.path.includes('/api/sow/test')
   });
 });
@@ -366,6 +402,13 @@ app.use('*', (req, res) => {
     availableEndpoints: [
       'GET /health - System health check',
       'GET /api/status - Complete system status',
+      
+      // NEW: Database-Driven Engineering Configuration
+      'GET /api/engineering-config/health - Engineering config health',
+      'GET /api/engineering-config/all - All configuration values',
+      'GET /api/engineering-config/:key - Specific configuration',
+      'POST /api/engineering-config/template-match - Template matching',
+      'GET /api/engineering-config/test - Comprehensive config test',
       
       // NEW: Phase 1 Complete SOW Generation Engine
       'POST /api/sow/generate-complete - Complete SOW generation',
@@ -397,14 +440,21 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('🚀 Phase 1 Complete SOW Generation Engine + Multi-Role Workflow System Starting...');
-  console.log('=' .repeat(120));
+  console.log('🚀 Phase 1 Complete SOW Generation Engine + Multi-Role Workflow System + Database-Driven Engineering Configuration Starting...');
+  console.log('=' .repeat(130));
   console.log(`📡 Server running on port ${PORT}`);
   console.log(`🔗 Base URL: http://localhost:${PORT}`);
   console.log('');
   console.log('📊 System Status:');
   console.log(`   ✅ Health Check: GET /health`);
   console.log(`   📈 Full Status: GET /api/status`);
+  console.log('');
+  console.log('🎯 NEW: Database-Driven Engineering Configuration:');
+  console.log(`   ⚙️ Config Health: GET /api/engineering-config/health`);
+  console.log(`   📋 All Configs: GET /api/engineering-config/all`);
+  console.log(`   🔍 Specific Config: GET /api/engineering-config/:key`);
+  console.log(`   🎯 Template Match: POST /api/engineering-config/template-match`);
+  console.log(`   🧪 Test All: GET /api/engineering-config/test`);
   console.log('');
   console.log('🎯 NEW: Phase 1 Complete SOW Generation Engine:');
   console.log(`   🎨 Complete Generation: POST /api/sow/generate-complete`);
@@ -452,18 +502,20 @@ app.listen(PORT, () => {
   console.log(`   ✅ Input Validation System - COMPLETE`);
   console.log(`   ✅ Test Framework - COMPLETE`);
   console.log(`   ✅ API Integration - COMPLETE`);
+  console.log(`   ✅ Database-Driven Engineering Configuration - COMPLETE`);
   console.log('');
   console.log('🧪 Quick Test Commands:');
+  console.log(`   curl http://localhost:${PORT}/api/engineering-config/health`);
+  console.log(`   curl http://localhost:${PORT}/api/engineering-config/test`);
   console.log(`   curl http://localhost:${PORT}/api/sow/status`);
   console.log(`   curl http://localhost:${PORT}/api/sow/test`);
   console.log(`   curl http://localhost:${PORT}/api/sow/templates`);
-  console.log(`   node test-phase1.js`);
   console.log('');
   console.log('📁 Output Directory:', outputDir);
   console.log('🌍 CORS Enabled for Lovable and local development');
-  console.log('🗄️ Database: Supabase with complete workflow + file management + SOW tracking schema');
-  console.log('=' .repeat(120));
-  console.log('🎉 Phase 1 Complete SOW Generation Engine OPERATIONAL!');
+  console.log('🗄️ Database: Supabase with complete workflow + file management + SOW tracking + engineering configuration schema');
+  console.log('=' .repeat(130));
+  console.log('🎉 Phase 1 Complete SOW Generation Engine + Database-Driven Engineering Configuration OPERATIONAL!');
   console.log('');
   console.log('🎯 NEW FEATURES:');
   console.log('    🧠 Dynamic section selection based on project characteristics');
@@ -473,6 +525,9 @@ app.listen(PORT, () => {
   console.log('    ✅ Comprehensive validation at every step');
   console.log('    🧪 Automated testing with the existing Southridge 12 project');
   console.log('    🔗 Full integration with field inspection workflow');
+  console.log('    ⚙️ Database-driven engineering constants and template rules');
+  console.log('    🔄 Fallback mechanisms for robust operation');
+  console.log('    📊 Type-safe configuration management');
   console.log('');
   console.log('🚀 Ready for immediate testing and Phase 2 implementation!');
 });
