@@ -12,6 +12,8 @@
     "dev:professional": "tsx watch src/index-professional.ts",
     "start": "tsx src/index-production.ts",
     "build": "tsc",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:health": "curl http://localhost:3001/health",
     "test:sow": "curl -X POST http://localhost:3001/api/sow/generate -H \"Content-Type: application/json\" -d '{\"projectData\":{\"projectName\":\"Test Project\",\"projectAddress\":\"Orlando, FL\"}}'",
@@ -55,6 +57,9 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/nodemailer": "^6.4.14",
     "@types/papaparse": "^5.3.14",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.45.0",
     "tsx": "^3.12.7",
     "typescript": "^5.1.6"
   },
