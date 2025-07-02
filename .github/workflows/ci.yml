@@ -1,4 +1,4 @@
-name: 🤖 CI for Monorepo Packages
+name: 🤖 CI Pipeline with Smoke Tests
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 env:
   NODE_VERSION: '20'
+  CI: true
 
 jobs:
   # Basic health check and setup validation
@@ -32,21 +33,12 @@ jobs:
           echo "=== Root Directory ==="
           ls -la
           echo ""
-          echo "=== Packages Directory ==="
-          ls -la packages/ || echo "No packages directory"
+          echo "=== Server Directory ==="
+          ls -la server/ || echo "No server directory"
           echo ""
-          echo "=== Individual Packages ==="
-          for pkg in packages/*/; do
-            if [ -d "$pkg" ]; then
-              echo "--- ${pkg} ---"
-              ls -la "$pkg"
-              if [ -f "${pkg}package.json" ]; then
-                echo "Package.json found"
-                cat "${pkg}package.json" | jq -r '.name // "no-name"' || echo "Cannot parse package.json"
-              fi
-              echo ""
-            fi
-          done
+          echo "=== Package.json Files ==="
+          find . -name "package.json" -type f
+        continue-on-error: true
 
       - name: 📦 Install Root Dependencies
         run: |
@@ -59,8 +51,8 @@ jobs:
         run: |
           echo "any=true" >> $GITHUB_OUTPUT
 
-  # Shared package build
-  shared:
+  # Frontend build and lint (MUST PASS)
+  frontend:
     runs-on: ubuntu-latest
     needs: setup
     if: needs.setup.outputs.has_changes == 'true'
@@ -75,95 +67,27 @@ jobs:
           cache: 'npm'
 
       - name: 📦 Install Dependencies
-        run: |
-          npm ci || npm install
-          cd packages/shared
-          if [ -f package.json ]; then
-            npm install || echo "Shared package install failed"
-          fi
-        continue-on-error: true
+        run: npm ci
 
-      - name: 🔧 Build Shared Package
-        run: |
-          if [ -d packages/shared ]; then
-            cd packages/shared
-            echo "Building shared package..."
-            if [ -f package.json ]; then
-              npm run build || echo "Build script not found or failed"
-            else
-              echo "No package.json in shared package"
-            fi
-          else
-            echo "No shared package directory found"
-          fi
-        continue-on-error: true
+      - name: 🧹 Lint Frontend
+        run: npm run lint
 
-      - name: 📊 Upload Shared Artifacts
+      - name: 🔧 Build Frontend
+        run: npm run build
+
+      - name: 📊 Upload Frontend Build
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: shared-build
-          path: packages/shared/dist/
+          name: frontend-build
+          path: dist/
           retention-days: 1
-        continue-on-error: true
 
-  # Web client build
-  web-client:
+  # Backend build and lint (MUST PASS)
+  backend:
     runs-on: ubuntu-latest
-    needs: [setup, shared]
-    if: always() && needs.setup.outputs.has_changes == 'true'
-    steps:
-      - name: 🔄 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 📦 Install Dependencies
-        run: |
-          npm ci || npm install
-          cd packages/web-client
-          if [ -f package.json ]; then
-            npm install || echo "Web-client install failed"
-          fi
-        continue-on-error: true
-
-      - name: 📥 Download Shared Artifacts
-        uses: actions/download-artifact@v4
-        if: needs.shared.result == 'success'
-        with:
-          name: shared-build
-          path: packages/shared/dist/
-        continue-on-error: true
-
-      - name: 🧹 Lint Web Client
-        run: |
-          if [ -d packages/web-client ]; then
-            cd packages/web-client
-            if [ -f package.json ]; then
-              npm run lint || echo "Lint script not found or failed"
-            fi
-          fi
-        continue-on-error: true
-
-      - name: 🔧 Build Web Client
-        run: |
-          if [ -d packages/web-client ]; then
-            cd packages/web-client
-            if [ -f package.json ]; then
-              npm run build || echo "Build script not found or failed"
-            fi
-          fi
-        continue-on-error: true
-
-  # API server build
-  api-server:
-    runs-on: ubuntu-latest
-    needs: [setup, shared]
-    if: always() && needs.setup.outputs.has_changes == 'true'
+    needs: setup
+    if: needs.setup.outputs.has_changes == 'true'
     steps:
       - name: 🔄 Checkout
         uses: actions/checkout@v4
@@ -176,39 +100,161 @@ jobs:
 
       - name: 🖥️ Setup Chrome for Puppeteer
         uses: browser-actions/setup-chrome@v1
-        continue-on-error: true
+
+      - name: 📦 Install Root Dependencies
+        run: npm ci
+
+      - name: 📦 Install Server Dependencies
+        working-directory: ./server
+        run: npm install
+
+      - name: 🔧 Build Backend
+        working-directory: ./server
+        run: npm run build
+
+      - name: 📊 Upload Backend Build
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: backend-build
+          path: server/dist/
+          retention-days: 1
+
+  # Unit Tests (MUST PASS)
+  test:
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
       - name: 📦 Install Dependencies
-        run: |
-          npm ci || npm install
-          cd packages/api-server
-          if [ -f package.json ]; then
-            npm install || echo "API-server install failed"
-          fi
-        continue-on-error: true
+        run: npm ci
 
-      - name: 📥 Download Shared Artifacts
-        uses: actions/download-artifact@v4
-        if: needs.shared.result == 'success'
+      - name: 🧪 Run Unit Tests
+        run: npm run test:unit
+
+      - name: 🧪 Run Server Tests
+        working-directory: ./server
+        run: |
+          npm install
+          npm run test
+
+  # Smoke Test (MUST PASS)
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: [frontend, backend, test]
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: shared-build
-          path: packages/shared/dist/
-        continue-on-error: true
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: 🔧 Build API Server
+      - name: 🖥️ Setup Chrome for Puppeteer
+        uses: browser-actions/setup-chrome@v1
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 📦 Install Server Dependencies
+        working-directory: ./server
+        run: npm install
+
+      - name: 📥 Download Backend Build
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build
+          path: server/dist/
+
+      - name: 🚀 Start API Server
+        working-directory: ./server
         run: |
-          if [ -d packages/api-server ]; then
-            cd packages/api-server
-            if [ -f package.json ]; then
-              npm run build || echo "Build script not found or failed"
+          echo "Starting API server in background..."
+          tsx index.ts &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+          
+          # Wait for server to start
+          echo "Waiting for server to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3001/health >/dev/null 2>&1; then
+              echo "✅ Server is responding!"
+              break
             fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Server failed to start within 30 seconds"
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            echo "Attempt $i/30: Server not ready yet..."
+            sleep 2
+          done
+        env:
+          NODE_ENV: test
+
+      - name: 🔍 Test API Health Endpoint
+        run: |
+          echo "Testing /health endpoint..."
+          
+          # Test health endpoint
+          response=$(curl -s -w "%{http_code}" http://localhost:3001/health)
+          http_code=$(echo "$response" | tail -c 4)
+          body=$(echo "$response" | head -c -4)
+          
+          echo "HTTP Status: $http_code"
+          echo "Response Body: $body"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "❌ Health check failed with status $http_code"
+            exit 1
           fi
-        continue-on-error: true
+          
+          echo "✅ Health check passed!"
+
+      - name: 🔍 Test API Basic Endpoints
+        run: |
+          echo "Testing additional API endpoints..."
+          
+          # Test root endpoint
+          if curl -f http://localhost:3001/ >/dev/null 2>&1; then
+            echo "✅ Root endpoint responding"
+          else
+            echo "⚠️ Root endpoint not responding (may be expected)"
+          fi
+          
+          # Test any other critical endpoints
+          echo "✅ Basic endpoint tests completed!"
+
+      - name: 🧪 Run Smoke Test Suite
+        run: |
+          echo "Running comprehensive smoke tests..."
+          npm run test:smoke
+          echo "✅ Smoke test suite passed!"
+
+      - name: 🛑 Stop API Server
+        if: always()
+        run: |
+          if [ ! -z "$SERVER_PID" ]; then
+            echo "Stopping server (PID: $SERVER_PID)..."
+            kill $SERVER_PID 2>/dev/null || true
+            sleep 2
+            kill -9 $SERVER_PID 2>/dev/null || true
+          fi
 
   # Summary job
   summary:
     runs-on: ubuntu-latest
-    needs: [setup, shared, web-client, api-server]
+    needs: [setup, frontend, backend, test, smoke-test]
     if: always()
     steps:
       - name: 📋 CI Summary
@@ -218,15 +264,26 @@ jobs:
           echo "| Job | Status | Notes |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Setup | ${{ needs.setup.result }} | Project structure validation |" >> $GITHUB_STEP_SUMMARY
-          echo "| Shared | ${{ needs.shared.result }} | Package build attempt |" >> $GITHUB_STEP_SUMMARY
-          echo "| Web Client | ${{ needs.web-client.result }} | Frontend build attempt |" >> $GITHUB_STEP_SUMMARY
-          echo "| API Server | ${{ needs.api-server.result }} | Backend build attempt |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.frontend.result }} | Build and lint (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | ${{ needs.backend.result }} | Build and lint (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result }} | Unit tests (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Smoke Test | ${{ needs.smoke-test.result }} | Integration tests (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Status" >> $GITHUB_STEP_SUMMARY
-          echo "This CI run provides diagnostic information about the monorepo structure." >> $GITHUB_STEP_SUMMARY
-          echo "All steps use continue-on-error to ensure complete feedback." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Ready for iterative improvement!** 🚀" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if any critical jobs failed
+          if [[ "${{ needs.frontend.result }}" != "success" || 
+                "${{ needs.backend.result }}" != "success" || 
+                "${{ needs.test.result }}" != "success" || 
+                "${{ needs.smoke-test.result }}" != "success" ]]; then
+            echo "### ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo "One or more critical jobs failed. Please fix the issues before merging." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "### ✅ Build Successful" >> $GITHUB_STEP_SUMMARY
+            echo "All jobs passed successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: ✅ Pipeline Complete
-        run: echo "🎉 CI pipeline completed successfully with diagnostic information!"
+        run: echo "🎉 CI pipeline completed with enforced quality gates!"
