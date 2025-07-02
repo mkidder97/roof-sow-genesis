@@ -1,38 +1,21 @@
 {
   "name": "roof-sow-backend",
-  "version": "11.0.0-production",
-  "description": "Clean Production SOW Generator Backend - Live manufacturer scraping, wind analysis, jurisdiction mapping, and professional PDF generation without self-healing complexity",
+  "version": "4.0.0",
+  "description": "Enhanced SOW Generator Backend with Section Engine, Self-Healing & Live Scraping",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch index.ts",
-    "dev:production": "tsx watch index-production.ts",
     "dev:enhanced": "tsx watch index-enhanced.ts",
-    "dev:professional": "tsx watch index-professional.ts",
-    "dev:supabase": "tsx watch index-supabase.ts",
-    "dev:realtime": "tsx watch index-realtime-integrated.ts",
-    "start": "tsx index-production.ts",
-    "start:production": "tsx index-production.ts",
     "start:enhanced": "tsx index-enhanced.ts",
-    "start:professional": "tsx index-professional.ts",
-    "start:supabase": "tsx index-supabase.ts",
-    "start:realtime": "tsx index-realtime-integrated.ts",
-    "start:legacy": "tsx index.ts",
     "build": "tsc",
-    "build:production": "tsc index-production.ts --outDir dist",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "test:production": "curl -X POST http://localhost:3001/api/sow/generate -H \"Content-Type: application/json\" -d '{\"projectData\":{\"projectName\":\"Test Project\",\"projectAddress\":\"Orlando, FL\"}}'",
-    "test:health": "curl http://localhost:3001/health",
-    "test:sow-health": "curl http://localhost:3001/api/sow/health",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "scrape:test": "tsx scrapers/manufacturer-scraping-service.js",
     "scrape:carlisle": "tsx scrapers/carlisle-real-scraper.js",
-    "scrape:approvals": "tsx scrapers/automated-approvals-service.js",
-    "dev-tools:mcp-setup": "./setup-mcp-tools.sh",
-    "dev-tools:analyze-pdf": "cd mcp-tools/analyze-pdf-output && npm start",
-    "dev-tools:pdf-optimizer": "cd mcp-tools/pdf-formatting-optimizer && npm start",
-    "dev-tools:propose-fix": "cd mcp-tools/propose-fix-snippet && npm start",
-    "dev-tools:write-fix": "cd mcp-tools/write-fix-module && npm start",
-    "dev-tools:regenerate": "cd mcp-tools/trigger-regeneration && npm start"
+    "scrape:approvals": "tsx scrapers/automated-approvals-service.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -42,24 +25,7 @@
     "pdfkit": "^0.13.0",
     "@supabase/supabase-js": "^2.39.3",
     "puppeteer": "^22.15.0",
-    "cheerio": "^1.0.0-rc.12",
-    "sharp": "^0.33.2",
-    "exifreader": "^4.21.0",
-    "uuid": "^9.0.1",
-    "mime-types": "^2.1.35",
-    "file-type": "^19.0.0",
-    "socket.io": "^4.7.5",
-    "nodemailer": "^6.9.8",
-    "@types/nodemailer": "^6.4.14",
-    "jsonwebtoken": "^9.0.2",
-    "rate-limiter-flexible": "^4.0.1",
-    "joi": "^17.11.0",
-    "pdf-parse": "^1.1.1",
-    "tesseract.js": "^5.0.4",
-    "xlsx": "^0.18.5",
-    "papaparse": "^5.4.1",
-    "canvas": "^2.11.2",
-    "dotenv": "^16.3.1"
+    "cheerio": "^1.0.0-rc.12"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
@@ -67,33 +33,13 @@
     "@types/multer": "^1.4.7",
     "@types/node": "^20.4.5",
     "@types/pdfkit": "^0.12.9",
-    "@types/uuid": "^9.0.7",
-    "@types/mime-types": "^2.1.4",
-    "@types/jsonwebtoken": "^9.0.5",
-    "@types/papaparse": "^5.3.14",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
     "tsx": "^3.12.7",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "vitest": "^2.1.8"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "architecture": {
-    "production": {
-      "server": "index-production.ts - Clean production server without self-healing",
-      "endpoints": "/api/sow/generate - Direct SOW generation",
-      "features": [
-        "Live manufacturer scraping (Carlisle, Johns Manville)",
-        "Wind pressure calculations (ASCE 7)",
-        "Jurisdiction mapping and HVHZ detection",
-        "NOA validation and compliance checking",
-        "Professional PDF generation",
-        "Takeoff file processing (PDF/CSV/Excel)"
-      ]
-    },
-    "development": {
-      "mcpTools": "mcp-tools/ - Separate developer utilities",
-      "usage": "Run MCP tools manually for template development",
-      "selfHealing": "NOT integrated in production workflow by design"
-    }
   }
 }
