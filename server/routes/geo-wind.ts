@@ -2,13 +2,14 @@
 import express from 'express';
 import { 
   geoService, 
-  windMapService, 
-  checkGeoServiceHealth, 
-  checkWindMapServiceHealth,
+  checkGeoServiceHealth,
   getJurisdictionFromAddress,
   getHVHZFromAddress
 } from '../lib/geoService.js';
-import { windMapService as windService } from '../lib/windMapService.js';
+import { 
+  windMapService, 
+  checkWindMapServiceHealth 
+} from '../lib/windMapService.js';
 
 const router = express.Router();
 
@@ -112,7 +113,7 @@ router.post('/wind-speed', async (req, res) => {
 
     console.log(`💨 Wind speed request for: ${finalLat}, ${finalLng} (ASCE ${asceVersion || 'default'})`);
     
-    const windData = await windService.getDesignWindSpeed(
+    const windData = await windMapService.getDesignWindSpeed(
       finalLat, 
       finalLng, 
       asceVersion, 
@@ -198,7 +199,7 @@ router.post('/complete-analysis', async (req, res) => {
     const hvhzStatus = await geoService.getHVHZStatus(coordinates.latitude, coordinates.longitude);
     
     // Step 4: Get wind speed
-    const windData = await windService.getDesignWindSpeed(
+    const windData = await windMapService.getDesignWindSpeed(
       coordinates.latitude,
       coordinates.longitude,
       asceVersion,
@@ -280,7 +281,7 @@ router.get('/health', async (req, res) => {
 router.post('/clear-cache', (req, res) => {
   try {
     geoService.clearCaches();
-    windService.clearCache();
+    windMapService.clearCache();
     
     res.json({
       success: true,
@@ -303,7 +304,7 @@ router.post('/clear-cache', (req, res) => {
 router.get('/cache-stats', (req, res) => {
   try {
     const geoStats = geoService.getCacheStats();
-    const windStats = windService.getCacheStats();
+    const windStats = windMapService.getCacheStats();
     
     res.json({
       success: true,
@@ -354,7 +355,7 @@ router.get('/test', async (req, res) => {
         const coordinates = await geoService.getCoordinatesFromAddress(testCase.address);
         const jurisdiction = await geoService.getJurisdiction(coordinates.latitude, coordinates.longitude);
         const hvhzStatus = await geoService.getHVHZStatus(coordinates.latitude, coordinates.longitude);
-        const windData = await windService.getDesignWindSpeed(coordinates.latitude, coordinates.longitude);
+        const windData = await windMapService.getDesignWindSpeed(coordinates.latitude, coordinates.longitude);
         
         results.push({
           testCase: testCase.name,
