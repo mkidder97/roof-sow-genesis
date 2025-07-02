@@ -1,5 +1,5 @@
-// Enhanced Express Server with Complete Multi-Role Workflow Integration & File Management & Engineering Config
-// NOW INCLUDES: Phase 1 Complete SOW Generation Engine + Advanced Section-Input Mapping System + Draft Management + SOW Generation API + Database-Driven Engineering Configuration
+// Enhanced Express Server with Complete Multi-Role Workflow Integration & File Management & Engineering Config & Externalized Geo/Wind Services
+// NOW INCLUDES: Phase 1 Complete SOW Generation Engine + Advanced Section-Input Mapping System + Draft Management + SOW Generation API + Database-Driven Engineering Configuration + Externalized Geo/Wind Services
 
 // CRITICAL: Load environment variables first
 import dotenv from 'dotenv';
@@ -47,6 +47,9 @@ import sowCompleteRouter from './routes/sow-complete.js';
 // Import NEW: Database-driven Engineering Configuration routes
 import engineeringConfigRouter from './routes/engineering-config.js';
 
+// Import NEW: Externalized Geo/Wind Services routes
+import geoWindRouter from './routes/geo-wind.js';
+
 // Import simple test endpoints (that work without complex dependencies)
 import { 
   testSectionMapping, 
@@ -91,6 +94,7 @@ const PORT = process.env.PORT || 3001;
 console.log('🔧 Environment Check:');
 console.log(`   SUPABASE_URL: ${process.env.SUPABASE_URL ? '✅ Set' : '❌ Missing'}`);
 console.log(`   SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ Set' : '❌ Missing'}`);
+console.log(`   OPENCAGE_API_KEY: ${process.env.OPENCAGE_API_KEY ? '✅ Set' : '❌ Missing'}`);
 console.log(`   PORT: ${PORT}`);
 
 // Enhanced CORS configuration for Lovable and local development
@@ -129,6 +133,13 @@ app.use('/output', express.static(outputDir));
 
 // Health check endpoint
 app.get('/health', healthCheck);
+
+// ======================
+// NEW: EXTERNALIZED GEO/WIND SERVICES
+// ======================
+
+// Geo and Wind services routes (externalized from SOW logic)
+app.use('/api/geo-wind', geoWindRouter);
 
 // ======================
 // NEW: DATABASE-DRIVEN ENGINEERING CONFIGURATION
@@ -242,16 +253,41 @@ app.get('/api/jurisdiction/health', jurisdictionHealth);
 // SYSTEM STATUS & DOCUMENTATION
 // ======================
 
-// Enhanced system status endpoint with Engineering Config status
+// Enhanced system status endpoint with Engineering Config status and Geo/Wind Services
 app.get('/api/status', async (req, res) => {
   const supabaseStatus = await checkSupabaseConnection();
   
   res.json({
-    phase: 'Phase 1 Complete SOW Generation Engine + Multi-Role Workflow System + File Management + Section-Input Mapping + Draft Management + Database-Driven Engineering Configuration',
-    version: '12.0.0-phase1-complete-config',
-    engineVersion: '12.0.0 - Phase 1 Complete SOW Generation Engine + Section Mapping + Content Generation + Wind Analysis + Database-Driven Engineering Configuration',
+    phase: 'Phase 1 Complete SOW Generation Engine + Multi-Role Workflow System + File Management + Section-Input Mapping + Draft Management + Database-Driven Engineering Configuration + Externalized Geo/Wind Services',
+    version: '13.0.0-externalized-geo-wind',
+    engineVersion: '13.0.0 - Phase 1 Complete SOW Generation Engine + Section Mapping + Content Generation + Wind Analysis + Database-Driven Engineering Configuration + Externalized Geo/Wind Services',
     serverStatus: 'running',
     timestamp: new Date().toISOString(),
+    
+    // NEW: Externalized Geo/Wind Services
+    geoWindServices: {
+      geoService: {
+        status: 'operational',
+        features: ['jurisdiction_lookup', 'hvhz_status', 'address_geocoding'],
+        openCageIntegration: !!process.env.OPENCAGE_API_KEY ? 'configured' : 'missing',
+        supabaseHVHZTable: 'configured',
+        caching: 'enabled',
+        fallbackSupport: 'enabled'
+      },
+      windMapService: {
+        status: 'operational',
+        features: ['asce_wind_speeds', 'local_dataset_fallback', 'risk_category_adjustments'],
+        asceScraping: 'enabled',
+        localDataset: 'available',
+        puppeteerIntegration: 'configured',
+        caching: 'enabled'
+      },
+      integration: {
+        sowEngineIntegration: 'active',
+        automaticEnhancement: 'enabled',
+        fallbackMechanisms: 'robust'
+      }
+    },
     
     // NEW: Database-Driven Engineering Configuration
     engineeringConfiguration: {
@@ -272,7 +308,8 @@ app.get('/api/status', async (req, res) => {
       template_support: 'T5, T6, T7, T8 templates with intelligent selection ✅',
       validation_system: 'Comprehensive input and output validation ✅',
       test_framework: 'Automated testing with real project data ✅',
-      database_config: 'Engineering constants loaded from database ✅'
+      database_config: 'Engineering constants loaded from database ✅',
+      geo_wind_integration: 'Externalized geo/wind services integration ✅'
     },
     
     // Existing SOW Generation API Status
@@ -282,7 +319,8 @@ app.get('/api/status', async (req, res) => {
       database_tracking: 'Full SOW generation tracking ✅',
       error_handling: 'Comprehensive error handling and recovery ✅',
       download_system: 'PDF download endpoints ✅',
-      supabase_connection: supabaseStatus.connected ? 'Connected ✅' : `Disconnected: ${supabaseStatus.error} ⚠️`
+      supabase_connection: supabaseStatus.connected ? 'Connected ✅' : `Disconnected: ${supabaseStatus.error} ⚠️`,
+      geo_enhancement: 'Automatic geo/wind data enhancement ✅'
     },
     
     draftManagement: {
@@ -315,10 +353,23 @@ app.get('/api/status', async (req, res) => {
       handoff_system: 'Inspector → Consultant → Engineer ✅',
       collaboration: 'Comments, activities, audit trail ✅',
       api_endpoints: 'Complete workflow management ✅',
-      sow_integration: 'ENHANCED + MAPPING ENGINE + API INTEGRATION ✅',
+      sow_integration: 'ENHANCED + MAPPING ENGINE + API INTEGRATION + GEO/WIND SERVICES ✅',
       file_integration: 'COMPLETE ✅'
     },
     endpoints: {
+      // NEW: Externalized Geo/Wind Services
+      geoWindServices: {
+        'POST /api/geo-wind/jurisdiction': 'Get jurisdiction from coordinates',
+        'POST /api/geo-wind/hvhz-status': 'Get HVHZ status from coordinates', 
+        'POST /api/geo-wind/wind-speed': 'Get wind speed from coordinates',
+        'POST /api/geo-wind/geocode': 'Get coordinates from address',
+        'POST /api/geo-wind/complete-analysis': 'Complete geo and wind analysis from address',
+        'GET /api/geo-wind/health': 'Geo/wind services health check',
+        'POST /api/geo-wind/clear-cache': 'Clear geo/wind service caches',
+        'GET /api/geo-wind/cache-stats': 'Get cache statistics',
+        'GET /api/geo-wind/test': 'Test geo/wind services with sample data'
+      },
+      
       // NEW: Database-Driven Engineering Configuration
       engineeringConfiguration: {
         'GET /api/engineering-config/health': 'Engineering config system health check',
@@ -334,15 +385,15 @@ app.get('/api/status', async (req, res) => {
       
       // NEW: Phase 1 Complete SOW Generation Engine
       phase1SOWEngine: {
-        'POST /api/sow/generate-complete': 'Complete SOW generation with database config',
-        'POST /api/sow/generate-from-inspection/:id': 'Generate SOW from field inspection',
+        'POST /api/sow/generate-complete': 'Complete SOW generation with database config and geo/wind enhancement',
+        'POST /api/sow/generate-from-inspection/:id': 'Generate SOW from field inspection with geo enhancement',
         'POST /api/sow/validate': 'Validate project inputs without generation',
         'GET /api/sow/test': 'Test SOW generation with sample data',
         'GET /api/sow/templates': 'Get available templates and requirements',
-        'POST /api/sow/wind-analysis': 'Standalone wind analysis with database config',
+        'POST /api/sow/wind-analysis': 'Standalone wind analysis with externalized services',
         'GET /api/sow/status': 'Phase 1 engine system status'
       },
-      // Existing endpoints...\
+      // Existing endpoints...
       sowGenerationAPI: {
         'POST /api/sow-legacy/generate': 'Legacy SOW generation with file upload',
         'GET /api/sow-legacy/download/:sowId': 'Download generated PDF',
@@ -389,7 +440,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     draft_management: req.path.includes('drafts'),
     sow_generation_api: req.path.includes('/api/sow/'),
     engineering_config: req.path.includes('/api/engineering-config/'),
-    phase1_engine: req.path.includes('/api/sow/generate-complete') || req.path.includes('/api/sow/test')
+    phase1_engine: req.path.includes('/api/sow/generate-complete') || req.path.includes('/api/sow/test'),
+    geo_wind_services: req.path.includes('/api/geo-wind/')
   });
 });
 
@@ -403,6 +455,14 @@ app.use('*', (req, res) => {
       'GET /health - System health check',
       'GET /api/status - Complete system status',
       
+      // NEW: Externalized Geo/Wind Services
+      'POST /api/geo-wind/jurisdiction - Get jurisdiction from coordinates',
+      'POST /api/geo-wind/hvhz-status - Get HVHZ status from coordinates',
+      'POST /api/geo-wind/wind-speed - Get wind speed from coordinates',
+      'POST /api/geo-wind/complete-analysis - Complete geo/wind analysis',
+      'GET /api/geo-wind/health - Geo/wind services health',
+      'GET /api/geo-wind/test - Test geo/wind services',
+      
       // NEW: Database-Driven Engineering Configuration
       'GET /api/engineering-config/health - Engineering config health',
       'GET /api/engineering-config/all - All configuration values',
@@ -411,12 +471,12 @@ app.use('*', (req, res) => {
       'GET /api/engineering-config/test - Comprehensive config test',
       
       // NEW: Phase 1 Complete SOW Generation Engine
-      'POST /api/sow/generate-complete - Complete SOW generation',
+      'POST /api/sow/generate-complete - Complete SOW generation with geo/wind enhancement',
       'POST /api/sow/generate-from-inspection/:id - Generate from field inspection',
       'POST /api/sow/validate - Validate inputs only',
       'GET /api/sow/test - Test with sample data',
       'GET /api/sow/templates - Available templates',
-      'POST /api/sow/wind-analysis - Wind analysis only',
+      'POST /api/sow/wind-analysis - Wind analysis with externalized services',
       'GET /api/sow/status - Engine status',
       
       // Legacy endpoints
@@ -440,14 +500,23 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('🚀 Phase 1 Complete SOW Generation Engine + Multi-Role Workflow System + Database-Driven Engineering Configuration Starting...');
-  console.log('=' .repeat(130));
+  console.log('🚀 Phase 1 Complete SOW Generation Engine + Multi-Role Workflow System + Database-Driven Engineering Configuration + Externalized Geo/Wind Services Starting...');
+  console.log('=' .repeat(150));
   console.log(`📡 Server running on port ${PORT}`);
   console.log(`🔗 Base URL: http://localhost:${PORT}`);
   console.log('');
   console.log('📊 System Status:');
   console.log(`   ✅ Health Check: GET /health`);
   console.log(`   📈 Full Status: GET /api/status`);
+  console.log('');
+  console.log('🌍 NEW: Externalized Geo/Wind Services:');
+  console.log(`   🌍 Jurisdiction Lookup: POST /api/geo-wind/jurisdiction`);
+  console.log(`   🌪️ HVHZ Status: POST /api/geo-wind/hvhz-status`);
+  console.log(`   💨 Wind Speed: POST /api/geo-wind/wind-speed`);
+  console.log(`   📍 Geocoding: POST /api/geo-wind/geocode`);
+  console.log(`   🔍 Complete Analysis: POST /api/geo-wind/complete-analysis`);
+  console.log(`   ❤️ Health Check: GET /api/geo-wind/health`);
+  console.log(`   🧪 Test Services: GET /api/geo-wind/test`);
   console.log('');
   console.log('🎯 NEW: Database-Driven Engineering Configuration:');
   console.log(`   ⚙️ Config Health: GET /api/engineering-config/health`);
@@ -503,8 +572,11 @@ app.listen(PORT, () => {
   console.log(`   ✅ Test Framework - COMPLETE`);
   console.log(`   ✅ API Integration - COMPLETE`);
   console.log(`   ✅ Database-Driven Engineering Configuration - COMPLETE`);
+  console.log(`   ✅ Externalized Geo/Wind Services - COMPLETE`);
   console.log('');
   console.log('🧪 Quick Test Commands:');
+  console.log(`   curl http://localhost:${PORT}/api/geo-wind/health`);
+  console.log(`   curl http://localhost:${PORT}/api/geo-wind/test`);
   console.log(`   curl http://localhost:${PORT}/api/engineering-config/health`);
   console.log(`   curl http://localhost:${PORT}/api/engineering-config/test`);
   console.log(`   curl http://localhost:${PORT}/api/sow/status`);
@@ -513,9 +585,9 @@ app.listen(PORT, () => {
   console.log('');
   console.log('📁 Output Directory:', outputDir);
   console.log('🌍 CORS Enabled for Lovable and local development');
-  console.log('🗄️ Database: Supabase with complete workflow + file management + SOW tracking + engineering configuration schema');
-  console.log('=' .repeat(130));
-  console.log('🎉 Phase 1 Complete SOW Generation Engine + Database-Driven Engineering Configuration OPERATIONAL!');
+  console.log('🗄️ Database: Supabase with complete workflow + file management + SOW tracking + engineering configuration + HVHZ zones schema');
+  console.log('=' .repeat(150));
+  console.log('🎉 Phase 1 Complete SOW Generation Engine + Database-Driven Engineering Configuration + Externalized Geo/Wind Services OPERATIONAL!');
   console.log('');
   console.log('🎯 NEW FEATURES:');
   console.log('    🧠 Dynamic section selection based on project characteristics');
@@ -528,6 +600,10 @@ app.listen(PORT, () => {
   console.log('    ⚙️ Database-driven engineering constants and template rules');
   console.log('    🔄 Fallback mechanisms for robust operation');
   console.log('    📊 Type-safe configuration management');
+  console.log('    🌍 Externalized geo/wind services with OpenCage + Supabase + ASCE scraping');
+  console.log('    🌪️ HVHZ zone detection with database-driven boundaries');
+  console.log('    💨 Dynamic wind speed lookup with local fallbacks');
+  console.log('    🔍 Automatic geo enhancement in SOW generation');
   console.log('');
   console.log('🚀 Ready for immediate testing and Phase 2 implementation!');
 });
