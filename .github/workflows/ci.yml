@@ -36,14 +36,11 @@ jobs:
           echo "=== Server Directory ==="
           ls -la server/ || echo "No server directory"
           echo ""
+          echo "=== Packages Directory ==="
+          ls -la packages/ || echo "No packages directory"
+          echo ""
           echo "=== Package.json Files ==="
           find . -name "package.json" -type f
-        continue-on-error: true
-
-      - name: 📦 Install Root Dependencies
-        run: |
-          echo "Installing root dependencies..."
-          npm ci || npm install
         continue-on-error: true
 
       - name: 🔍 Check for changes
@@ -66,7 +63,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: 📦 Install Dependencies
+      - name: 📦 Install Root Dependencies
         run: npm ci
 
       - name: 🧹 Lint Frontend
@@ -101,15 +98,20 @@ jobs:
       - name: 🖥️ Setup Chrome for Puppeteer
         uses: browser-actions/setup-chrome@v1
 
-      - name: 📦 Install Root Dependencies
-        run: npm ci
-
       - name: 📦 Install Server Dependencies
         working-directory: ./server
         run: npm install
 
-      - name: 🔧 Build Backend
+      - name: 📦 Install API Server Package Dependencies
+        working-directory: ./packages/api-server
+        run: npm ci
+
+      - name: 🔧 Build Backend (Legacy Server)
         working-directory: ./server
+        run: npm run build
+
+      - name: 🔧 Build Backend (API Server Package)
+        working-directory: ./packages/api-server
         run: npm run build
 
       - name: 📊 Upload Backend Build
@@ -134,17 +136,35 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: 📦 Install Dependencies
+      - name: 📦 Install Root Dependencies
         run: npm ci
 
-      - name: 🧪 Run Unit Tests
+      - name: 🧪 Run Root Unit Tests
         run: npm run test:unit
 
-      - name: 🧪 Run Server Tests
+      - name: 📦 Install Server Dependencies
         working-directory: ./server
-        run: |
-          npm install
-          npm run test
+        run: npm install
+
+      - name: 🧪 Run Server Unit Tests
+        working-directory: ./server
+        run: npm run test
+
+      - name: 📦 Install API Server Package Dependencies
+        working-directory: ./packages/api-server
+        run: npm ci
+
+      - name: 🧪 Run API Server Package Tests
+        working-directory: ./packages/api-server
+        run: npm run test:unit
+
+      - name: 📦 Install Web Client Package Dependencies
+        working-directory: ./packages/web-client
+        run: npm ci
+
+      - name: 🧪 Run Web Client Package Tests
+        working-directory: ./packages/web-client
+        run: npm run test:unit
 
   # Smoke Test (MUST PASS)
   smoke-test:
@@ -163,7 +183,7 @@ jobs:
       - name: 🖥️ Setup Chrome for Puppeteer
         uses: browser-actions/setup-chrome@v1
 
-      - name: 📦 Install Dependencies
+      - name: 📦 Install Root Dependencies
         run: npm ci
 
       - name: 📦 Install Server Dependencies
