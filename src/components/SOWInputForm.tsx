@@ -59,12 +59,10 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
       });
     },
     onValidationChange: (validation) => {
-      if (validation && !validation.isValid) {
-        toast({
-          title: "Assembly Validation",
-          description: `${validation.errors.length} errors found in assembly`,
-          variant: "destructive"
-        });
+      // Only show validation errors if user has interacted with assembly
+      if (validation && !validation.isValid && assemblyLayers.length > 2) {
+        console.log('Assembly validation issues:', validation.errors);
+        // Don't show toast immediately - only log for debugging
       }
     },
     autoSyncDelay: 750 // Slightly longer delay for better UX
@@ -247,11 +245,12 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     e.preventDefault();
     if (disabled) return;
 
-    if (!validateForm()) {
+    // Simple validation - only check required fields
+    if (!formData.projectName?.trim() || !formData.projectAddress?.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Please fix the errors in the form before submitting.",
-        variant: "destructive"
+        title: "Missing Required Fields",
+        description: "Please fill in project name and address before submitting.",
+        variant: "destructive",
       });
       return;
     }
