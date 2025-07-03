@@ -1,6 +1,7 @@
 // SOW Generation Utility Functions - Shared between frontend and backend
-import { SOWGenerationRequest, SOWGenerationError, FieldInspection } from '../types';
-import { ASCERequirements, validateASCERequirements } from '../types/engineering';
+import { SOWGenerationRequest, SOWGenerationError, FieldInspection } from '../types/sow';
+import { ASCERequirements } from '../types/engineering';
+import { validateASCERequirements } from '../utils/validation';
 
 /**
  * Transforms field inspection data to SOW generation request
@@ -136,7 +137,7 @@ export function estimateGenerationTime(request: SOWGenerationRequest): number {
   // Add time for complex features
   if (request.takeoffFile) baseTime += 15;
   if (request.drainageConfiguration?.specifications) baseTime += 10;
-  if (request.equipmentSpecs?.hvacUnits.count > 5) baseTime += 5;
+  if (request.equipmentSpecs?.hvacUnits.count && request.equipmentSpecs.hvacUnits.count > 5) baseTime += 5;
   if (request.sectionInclusions && Object.keys(request.sectionInclusions).length > 10) baseTime += 10;
   
   // Square footage complexity
