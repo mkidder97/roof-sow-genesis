@@ -45,7 +45,8 @@
     "xlsx": "^0.18.5",
     "papaparse": "^5.4.1",
     "canvas": "^2.11.2",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "@roof-sow-genesis/shared": "*"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
