@@ -44,7 +44,7 @@ const Auth = () => {
             navigate('/workflow');
             break;
           case 'engineer':
-            navigate('/workflow');
+            navigate('/dashboard');
             break;
           default:
             navigate('/dashboard');
