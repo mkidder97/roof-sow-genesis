@@ -52,15 +52,24 @@ const UnifiedDashboard = memo(() => {
   }, [user]);
 
   const renderDashboard = () => {
+    console.log('UnifiedDashboard renderDashboard:', {
+      isLoadingRole,
+      userRole,
+      actualUserRole: user?.user_metadata?.role,
+      databaseRole: userRole
+    });
+    
     if (isLoadingRole) {
       return <DashboardSkeleton />;
     }
 
     switch (userRole) {
       case 'engineer':
+        console.log('Rendering OptimizedEngineerDashboard');
         return <OptimizedEngineerDashboard />;
       case 'inspector':
       default:
+        console.log('Rendering OptimizedInspectorDashboard');
         return <OptimizedInspectorDashboard />;
     }
   };
