@@ -3,14 +3,28 @@ import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export type UserRole = 'inspector' | 'engineer' | 'consultant';
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
+  role: UserRole;
+  permissions?: string[];
+  company_id?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: AuthError }>;
   signUp: (email: string, password: string, metadata?: { full_name?: string; role?: string }) => Promise<{ error?: AuthError }>;
   signOut: () => Promise<{ error?: AuthError }>;
   resetPassword: (email: string) => Promise<{ error?: AuthError }>;
+  hasRole: (role: UserRole) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,8 +44,30 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  // Fetch user profile from database
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+
+      return data as UserProfile;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     // Get initial session
@@ -48,6 +84,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Fetch user profile if session exists
+        if (session?.user) {
+          const userProfile = await fetchUserProfile(session.user.id);
+          setProfile(userProfile);
+        }
       }
       
       setLoading(false);
@@ -62,6 +104,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Defer profile fetch to avoid blocking auth state change
+          setTimeout(async () => {
+            const userProfile = await fetchUserProfile(session.user.id);
+            setProfile(userProfile);
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+        
         setLoading(false);
 
         // Handle different auth events
@@ -234,14 +287,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const hasRole = (role: UserRole): boolean => {
+    return profile?.role === role;
+  };
+
+  const hasPermission = (permission: string): boolean => {
+    return profile?.permissions?.includes(permission) ?? false;
+  };
+
   const value: AuthContextType = {
     user,
     session,
+    profile,
     loading,
     signIn,
     signUp,
     signOut,
     resetPassword,
+    hasRole,
+    hasPermission,
   };
 
   return (

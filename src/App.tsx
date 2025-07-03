@@ -32,8 +32,8 @@ import InspectorDashboard from "./components/field-inspector/InspectorDashboard"
 import { FieldInspectionForm } from "./components/field-inspector/FieldInspectionForm";
 import InspectionDetailsPage from "./pages/InspectionDetailsPage";
 import SOWGeneration from "./pages/SOWGeneration";
-import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const queryClient = new QueryClient();
 
@@ -41,9 +41,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <AuthProvider>
-          <Toaster />
-          <Routes>
+        <Toaster />
+        <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
@@ -65,19 +64,50 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            {/* Protected Engineer Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute requiredPermission="engineer">
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/sow-generation" element={
+              <ProtectedRoute requiredPermission="engineer">
+                <SOWGeneration />
+              </ProtectedRoute>
+            } />
 
-            {/* Field Inspector Routes */}
-            <Route path="/field-inspector" element={<FieldInspector />} />
-            <Route path="/field-inspector/dashboard" element={<InspectorDashboard />} />
-            <Route path="/field-inspection/new" element={<FieldInspectionForm />} />
-            <Route path="/field-inspection/:id" element={<InspectionDetailsPage />} />
-            <Route path="/field-inspection/:id/edit" element={<FieldInspectionForm />} />
-
-            {/* SOW Generation Route - Engineer Only */}
-            <Route path="/sow-generation" element={<SOWGeneration />} />
+            {/* Protected Inspector Routes */}
+            <Route path="/field-inspector" element={
+              <ProtectedRoute requiredPermission="inspector">
+                <FieldInspector />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/field-inspector/dashboard" element={
+              <ProtectedRoute requiredPermission="inspector">
+                <InspectorDashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/field-inspection/new" element={
+              <ProtectedRoute requiredPermission="inspector">
+                <FieldInspectionForm />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/field-inspection/:id" element={
+              <ProtectedRoute requiredPermission="inspector">
+                <InspectionDetailsPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/field-inspection/:id/edit" element={
+              <ProtectedRoute requiredPermission="inspector">
+                <FieldInspectionForm />
+              </ProtectedRoute>
+            } />
           </Routes>
-        </AuthProvider>
       </Router>
     </QueryClientProvider>
   );
