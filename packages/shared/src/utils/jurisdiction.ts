@@ -45,18 +45,18 @@ export function parseAddress(address: string): {
     
     if (stateZipMatch) {
       return {
-        street: parts[0],
-        city: parts[parts.length - 2],
-        state: stateZipMatch[1],
-        zipCode: stateZipMatch[2]
+        street: parts[0] || "",
+        city: parts[parts.length - 2] || "",
+        state: stateZipMatch[1] || "",
+        zipCode: stateZipMatch[2] || ""
       };
     }
   }
   
   return {
-    street: parts[0],
-    city: parts[1],
-    state: parts[2]
+    street: parts[0] || "",
+    city: parts[1] || "",
+    state: parts[2] || ""
   };
 }
 
