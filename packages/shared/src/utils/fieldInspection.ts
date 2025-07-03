@@ -26,29 +26,32 @@ export const convertRowToInspection = (row: any): FieldInspection => {
 };
 
 export const generateDrainageSOWConfig = (inspection: FieldInspection): DrainageSOWConfig => {
-  return {
-    primary_type: inspection.drainage_primary_type || undefined,
-    overflow_type: inspection.drainage_overflow_type || undefined,
-    deck_drains_count: inspection.drainage_deck_drains_count || undefined,
-    deck_drains_diameter: inspection.drainage_deck_drains_diameter || undefined,
-    scuppers_count: inspection.drainage_scuppers_count || undefined,
-    scuppers_length: inspection.drainage_scuppers_length || undefined,
-    scuppers_width: inspection.drainage_scuppers_width || undefined,
-    scuppers_height: inspection.drainage_scuppers_height || undefined,
-    gutters_linear_feet: inspection.drainage_gutters_linear_feet || undefined,
-    gutters_height: inspection.drainage_gutters_height || undefined,
-    gutters_width: inspection.drainage_gutters_width || undefined,
-    gutters_depth: inspection.drainage_gutters_depth || undefined,
-    additional_count: inspection.drainage_additional_count || undefined,
-    additional_size: inspection.drainage_additional_size || undefined,
-    additional_notes: inspection.drainage_additional_notes || undefined,
-    // Add compatibility for new interface properties
-    includeInternalGutters: inspection.drainage_options?.some((d: any) => d.type === 'internal_gutter') || false,
-    includeExternalGutters: inspection.drainage_options?.some((d: any) => d.type === 'external_gutter') || false,
-    includeDeckDrains: inspection.drainage_options?.some((d: any) => d.type === 'deck_drain') || false,
-    includeOverflowDrains: inspection.drainage_options?.some((d: any) => d.type === 'overflow_drain') || false,
-    includeScuppers: inspection.drainage_options?.some((d: any) => d.type === 'overflow_scuppers') || false,
-  };
+  const config: DrainageSOWConfig = {};
+  
+  if (inspection.drainage_primary_type) config.primary_type = inspection.drainage_primary_type;
+  if (inspection.drainage_overflow_type) config.overflow_type = inspection.drainage_overflow_type;
+  if (inspection.drainage_deck_drains_count !== undefined) config.deck_drains_count = inspection.drainage_deck_drains_count;
+  if (inspection.drainage_deck_drains_diameter !== undefined) config.deck_drains_diameter = inspection.drainage_deck_drains_diameter;
+  if (inspection.drainage_scuppers_count !== undefined) config.scuppers_count = inspection.drainage_scuppers_count;
+  if (inspection.drainage_scuppers_length !== undefined) config.scuppers_length = inspection.drainage_scuppers_length;
+  if (inspection.drainage_scuppers_width !== undefined) config.scuppers_width = inspection.drainage_scuppers_width;
+  if (inspection.drainage_scuppers_height !== undefined) config.scuppers_height = inspection.drainage_scuppers_height;
+  if (inspection.drainage_gutters_linear_feet !== undefined) config.gutters_linear_feet = inspection.drainage_gutters_linear_feet;
+  if (inspection.drainage_gutters_height !== undefined) config.gutters_height = inspection.drainage_gutters_height;
+  if (inspection.drainage_gutters_width !== undefined) config.gutters_width = inspection.drainage_gutters_width;
+  if (inspection.drainage_gutters_depth !== undefined) config.gutters_depth = inspection.drainage_gutters_depth;
+  if (inspection.drainage_additional_count !== undefined) config.additional_count = inspection.drainage_additional_count;
+  if (inspection.drainage_additional_size) config.additional_size = inspection.drainage_additional_size;
+  if (inspection.drainage_additional_notes) config.additional_notes = inspection.drainage_additional_notes;
+  
+  // Add compatibility for new interface properties
+  config.includeInternalGutters = inspection.drainage_options?.some((d: any) => d.type === 'internal_gutter') || false;
+  config.includeExternalGutters = inspection.drainage_options?.some((d: any) => d.type === 'external_gutter') || false;
+  config.includeDeckDrains = inspection.drainage_options?.some((d: any) => d.type === 'deck_drain') || false;
+  config.includeOverflowDrains = inspection.drainage_options?.some((d: any) => d.type === 'overflow_drain') || false;
+  config.includeScuppers = inspection.drainage_options?.some((d: any) => d.type === 'overflow_scuppers') || false;
+  
+  return config;
 };
 
 export const selectSOWTemplate = (inspectionData: FieldInspection): string => {
