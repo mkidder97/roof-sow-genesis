@@ -1,39 +1,29 @@
 name: CI Monorepo
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   validate:
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v4
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
       - name: Install Dependencies
         run: npm ci --workspaces
-        
       - name: Build API Server
         run: npm run build --workspace=packages/api-server
-        
       - name: Build Web Client
         run: npm run build --workspace=packages/web-client
-        
       - name: Lint All
         run: npm run lint
-        
       - name: Unit Tests
         run: npm run test:unit
-        
       - name: Smoke Test API
         run: |
           npm run dev --workspace=packages/api-server &
