@@ -67,16 +67,6 @@ export function createSOWError(message: string, type: SOWGenerationError['type']
 }
 
 /**
- * Checks if an error is a network-related error
- */
-export function isNetworkError(error: any): boolean {
-  return error?.type === 'network' || 
-         error?.message?.includes('fetch') || 
-         error?.message?.includes('Load failed') ||
-         error?.name === 'TypeError';
-}
-
-/**
  * Validates SOW generation request data
  */
 export function validateSOWRequest(request: SOWGenerationRequest): { valid: boolean; errors: string[] } {
