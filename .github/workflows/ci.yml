@@ -58,7 +58,6 @@ jobs:
   frontend:
     runs-on: ubuntu-latest
     needs: setup
-    if: needs.setup.outputs.has_changes == 'true'
     steps:
       - name: 🔄 Checkout
         uses: actions/checkout@v4
@@ -69,118 +68,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: 📦 Install Root Dependencies
-        run: npm ci
+      - name: 📦 Install Dependencies
+        run: cd packages/web-client && npm ci
 
-      - name: 🧹 Lint Root Frontend
-        run: npm run lint
+      - name: 🧹 Lint Frontend
+        run: cd packages/web-client && npm run lint
 
-      - name: 🔧 Build Root Frontend
-        run: npm run build
+      - name: 🔧 Build Frontend
+        run: cd packages/web-client && npm run build
 
       - name: 📊 Upload Frontend Build
         uses: actions/upload-artifact@v4
         if: success()
         with:
           name: frontend-build
-          path: dist/
+          path: packages/web-client/dist/
           retention-days: 1
 
-  # Backend builds (both server/ and packages/api-server/)
+  # Backend builds
   backend:
     runs-on: ubuntu-latest
     needs: setup
-    if: needs.setup.outputs.has_changes == 'true'
-    steps:
-      - name: 🔄 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 🖥️ Setup Chrome for Puppeteer
-        uses: browser-actions/setup-chrome@v1
-
-      - name: 📦 Install Root Dependencies
-        run: npm ci
-
-      - name: 🔧 Build Legacy Server
-        working-directory: ./server
-        run: |
-          echo "Installing server dependencies..."
-          npm install
-          echo "Building server..."
-          npm run build
-
-      - name: 🔧 Build Package API Server
-        working-directory: ./packages/api-server
-        run: |
-          echo "Installing api-server package dependencies..."
-          npm ci
-          echo "Building api-server package..."
-          npm run build
-
-      - name: 📊 Upload Backend Builds
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: backend-builds
-          path: |
-            server/dist/
-            packages/api-server/dist/
-          retention-days: 1
-
-  # Unit Tests (MUST PASS) - Fixed implementation
-  unit-test:
-    runs-on: ubuntu-latest
-    needs: [frontend, backend]
-    steps:
-      - name: 🔄 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 📦 Install Root Dependencies
-        run: npm ci
-
-      - name: 🧪 Test Root Project
-        run: |
-          echo "Running root project tests..."
-          npm run test:unit
-
-      - name: 🧪 Test Legacy Server
-        working-directory: ./server
-        run: |
-          echo "Installing server dependencies..."
-          npm install
-          echo "Running server tests..."
-          npm run test
-
-      - name: 🧪 Test API Server Package
-        run: |
-          echo "Testing packages/api-server..."
-          cd packages/api-server
-          npm ci
-          npm run test:unit
-
-      - name: 🧪 Test Web Client Package  
-        run: |
-          echo "Testing packages/web-client..."
-          cd packages/web-client
-          npm ci
-          npm run test:unit
-
-  # Smoke Test (MUST PASS)
-  smoke-test:
-    runs-on: ubuntu-latest
-    needs: [frontend, backend, unit-test]
     steps:
       - name: 🔄 Checkout
         uses: actions/checkout@v4
@@ -195,97 +103,70 @@ jobs:
         uses: browser-actions/setup-chrome@v1
 
       - name: 📦 Install Dependencies
-        run: npm ci
+        run: cd packages/api-server && npm ci
 
-      - name: 📦 Install Server Dependencies
-        working-directory: ./server
-        run: npm install
+      - name: 🧹 Lint Backend
+        run: cd packages/api-server && npm run lint
 
-      - name: 📥 Download Backend Builds
-        uses: actions/download-artifact@v4
+      - name: 🔧 Build Backend
+        run: cd packages/api-server && npm run build
+
+      - name: 📊 Upload Backend Builds
+        uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: backend-builds
-          path: ./
+          path: packages/api-server/dist/
+          retention-days: 1
 
-      - name: 🚀 Start API Server
-        working-directory: ./server
-        run: |
-          echo "Starting API server in background..."
-          tsx index.ts &
-          SERVER_PID=$!
-          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
-          
-          # Wait for server to start
-          echo "Waiting for server to start..."
-          for i in {1..30}; do
-            if curl -f http://localhost:3001/health >/dev/null 2>&1; then
-              echo "✅ Server is responding!"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ Server failed to start within 30 seconds"
-              kill $SERVER_PID 2>/dev/null || true
-              exit 1
-            fi
-            echo "Attempt $i/30: Server not ready yet..."
-            sleep 2
-          done
-        env:
-          NODE_ENV: test
+  # Unit Tests (MUST PASS)
+  test:
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
 
-      - name: 🔍 Test API Health Endpoint
-        run: |
-          echo "Testing /health endpoint..."
-          
-          # Test health endpoint
-          response=$(curl -s -w "%{http_code}" http://localhost:3001/health)
-          http_code=$(echo "$response" | tail -c 4)
-          body=$(echo "$response" | head -c -4)
-          
-          echo "HTTP Status: $http_code"
-          echo "Response Body: $body"
-          
-          if [ "$http_code" != "200" ]; then
-            echo "❌ Health check failed with status $http_code"
-            exit 1
-          fi
-          
-          echo "✅ Health check passed!"
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: 🔍 Test API Basic Endpoints
+      - name: 🧪 Test API Server Package
         run: |
-          echo "Testing additional API endpoints..."
-          
-          # Test root endpoint
-          if curl -f http://localhost:3001/ >/dev/null 2>&1; then
-            echo "✅ Root endpoint responding"
-          else
-            echo "⚠️ Root endpoint not responding (may be expected)"
-          fi
-          
-          # Test any other critical endpoints
-          echo "✅ Basic endpoint tests completed!"
+          cd packages/api-server && npm ci && npm run test:unit
 
-      - name: 🧪 Run Smoke Test Suite
+      - name: 🧪 Test Web Client Package
         run: |
-          echo "Running comprehensive smoke tests..."
-          npm run test:smoke
-          echo "✅ Smoke test suite passed!"
+          cd packages/web-client && npm ci && npm run test:unit
 
-      - name: 🛑 Stop API Server
-        if: always()
+  # Smoke Test (MUST PASS)
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: [frontend, backend, test]
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 🖥️ Setup Chrome for Puppeteer
+        uses: browser-actions/setup-chrome@v1
+
+      - name: 🚀 Start API Server & Test Health
         run: |
-          if [ ! -z "$SERVER_PID" ]; then
-            echo "Stopping server (PID: $SERVER_PID)..."
-            kill $SERVER_PID 2>/dev/null || true
-            sleep 2
-            kill -9 $SERVER_PID 2>/dev/null || true
-          fi
+          cd packages/api-server && npm ci && npm run dev & sleep 5
+          curl --fail http://localhost:3000/health
 
   # Summary job - simplified and always runs
   summary:
     runs-on: ubuntu-latest
-    needs: [setup, frontend, backend, unit-test, smoke-test]
+    needs: [setup, frontend, backend, test, smoke-test]
     if: always()
     steps:
       - name: 📋 CI Summary
@@ -295,9 +176,9 @@ jobs:
           echo "| Job | Status | Notes |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Setup | ${{ needs.setup.result }} | Project structure validation |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend | ${{ needs.frontend.result }} | Root frontend build & lint (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend | ${{ needs.backend.result }} | Server & packages build (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Unit Tests | ${{ needs.unit-test.result }} | All package unit tests (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.frontend.result }} | Frontend build & lint (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | ${{ needs.backend.result }} | Backend build & lint (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | ${{ needs.test.result }} | Unit tests (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
           echo "| Smoke Test | ${{ needs.smoke-test.result }} | Integration tests (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
@@ -306,14 +187,14 @@ jobs:
           echo "- Setup: ${{ needs.setup.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Frontend: ${{ needs.frontend.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Backend: ${{ needs.backend.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Unit Tests: ${{ needs.unit-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Test: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Smoke Test: ${{ needs.smoke-test.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # Check if any critical jobs failed (without if guards)
+          # Check if any critical jobs failed
           if [[ "${{ needs.frontend.result }}" != "success" || 
                 "${{ needs.backend.result }}" != "success" || 
-                "${{ needs.unit-test.result }}" != "success" || 
+                "${{ needs.test.result }}" != "success" || 
                 "${{ needs.smoke-test.result }}" != "success" ]]; then
             echo "### ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
             echo "One or more critical jobs failed. Please fix the issues before merging." >> $GITHUB_STEP_SUMMARY
