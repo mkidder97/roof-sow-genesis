@@ -107,7 +107,7 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
         setProjectType(initialData.project_type as 'recover' | 'tearoff' | 'new');
       }
     }
-  }, [initialData, syncActions]);
+  }, [initialData]);
 
   // ✅ PHASE 2: Debounced auto-sync for template changes
   useDebounceSync(
