@@ -4,10 +4,17 @@
   "version": "1.0.0",
   "description": "Self-healing PDF generation system for SOW documents with intelligent fix application and testing",
   "type": "module",
+  "workspaces": [
+    "packages/web-client",
+    "packages/api-server",
+    "packages/shared"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:web-client": "npm run build --workspace=packages/web-client",
+    "build:api-server": "npm run build --workspace=packages/api-server",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "npm run test:unit",
