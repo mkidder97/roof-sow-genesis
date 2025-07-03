@@ -128,7 +128,7 @@ export function estimateGenerationTime(request: SOWGenerationRequest): number {
   // Add time for complex features
   if (request.takeoffFile) baseTime += 15;
   if (request.drainageConfiguration?.specifications) baseTime += 10;
-  if (request.equipmentSpecs?.hvacUnits.count && request.equipmentSpecs.hvacUnits.count > 5) baseTime += 5;
+  if (request.equipmentSpecs?.hvacUnits?.count && request.equipmentSpecs.hvacUnits.count > 5) baseTime += 5;
   if (request.sectionInclusions && Object.keys(request.sectionInclusions).length > 10) baseTime += 10;
   
   // Square footage complexity
