@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "description": "Self-healing PDF generation system for SOW documents with intelligent fix application and testing",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
