@@ -14,19 +14,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: 🏗️ Build Shared Package
+        run: |
+          cd packages/shared
+          npm install
+          npm run build
       - name: 🛠️ Build API Server
         run: |
           cd packages/api-server
-          npm install
+          npm install --no-package-lock
           npm run build
       - name: 🛠️ Build Web Client
         run: |
           cd packages/web-client
-          npm install
+          npm install --no-package-lock
           npm run build
       - name: 🚀 Smoke Test API
         run: |
           cd packages/api-server
-          npm install
-          npm run dev & sleep 5
+          npm run dev & sleep 10
           curl --fail http://localhost:3001/health
