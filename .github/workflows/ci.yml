@@ -14,18 +14,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Build API Server
+      - name: Install all dependencies
         run: |
-          cd packages/api-server
-          npm ci
-          npm run build
-      - name: Build Web Client
+          npm ci --workspaces --ignore-scripts
+      - name: Build all packages
         run: |
-          cd packages/web-client
-          npm ci
-          npm run build
+          npm run build:web-client
+          npm run build:api-server
       - name: Smoke Test API
         run: |
-          cd packages/api-server
-          npm run dev & sleep 5
+          npm run dev --workspace=packages/api-server &
+          sleep 5
           curl --fail http://localhost:3000/health
