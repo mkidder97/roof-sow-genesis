@@ -135,10 +135,10 @@ export function calculateZonePressures(
   const GCpi = internalPressureCoeff;
   
   return {
-    zone1Field: qh * (GCp.zone1Field - GCpi),
-    zone1Perimeter: qh * (GCp.zone1Perimeter - GCpi),
-    zone2Perimeter: qh * (GCp.zone2Perimeter - GCpi),
-    zone3Corner: qh * (GCp.zone3Corner - GCpi)
+    zone1Field: qh * ((GCp.zone1Field ?? -0.9) - GCpi),
+    zone1Perimeter: qh * ((GCp.zone1Perimeter ?? -1.4) - GCpi),
+    zone2Perimeter: qh * ((GCp.zone2Perimeter ?? -1.8) - GCpi),
+    zone3Corner: qh * ((GCp.zone3Corner ?? -2.8) - GCpi)
   };
 }
 
