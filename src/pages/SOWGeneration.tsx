@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, FileText, ClipboardCheck, Info, Sparkles, Wifi, WifiOff } from 'lucide-react';
-import { SOWInputForm } from '@/components/SOWInputForm';
+import { SimplifiedSOWGenerator } from '@/components/SimplifiedSOWGenerator';
 import SOWGenerationStatus from '@/components/SOWGenerationStatus';
 import { SOWErrorBoundary } from '@/components/SOWErrorBoundary';
 import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
@@ -387,12 +387,8 @@ const SOWGeneration = () => {
             </CardContent>
           </Card>
 
-          {/* Main SOW Form */}
-          <SOWInputForm 
-            initialData={inspectionData} 
-            onSubmit={handleSOWSubmit}
-            disabled={false}
-          />
+          {/* Simplified SOW Generator */}
+          <SimplifiedSOWGenerator />
 
           <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 mt-6">
             <CardContent className="p-6">
