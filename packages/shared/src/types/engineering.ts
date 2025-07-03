@@ -87,7 +87,7 @@ export function validateASCERequirements(requirements: PartialASCERequirements):
     exposureCategory: requirements.exposureCategory || 'C',
     buildingClassification: requirements.buildingClassification || 'II',
     importance_factor: requirements.importance_factor || 1.0,
-    engineer_approved: requirements.engineer_approved || false,
+    engineer_approved: requirements.engineer_approved ?? false,
     riskCategory: requirements.riskCategory || 'II',
     topographicFactor: requirements.topographicFactor || 1.0,
     directionalityFactor: requirements.directionalityFactor || 0.85,
@@ -104,7 +104,7 @@ export function validateASCERequirements(requirements: PartialASCERequirements):
 }
 
 export function isASCECompliant(requirements: ASCERequirements): boolean {
-  return requirements.engineer_approved && 
-         requirements.windSpeed > 0 && 
+  return (requirements.engineer_approved ?? false) && 
+         (requirements.windSpeed ?? 0) > 0 && 
          requirements.version.length > 0;
 }
