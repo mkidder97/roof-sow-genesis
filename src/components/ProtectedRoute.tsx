@@ -44,8 +44,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (requiredPermission && !profile?.permissions?.includes(requiredPermission)) {
+    // Only redirect if the user doesn't have the permission
+    // Don't redirect if they're already on the correct path for their role
     const redirectPath = profile?.role === 'engineer' ? '/dashboard' : '/field-inspector/dashboard';
-    return <Navigate to={redirectPath} replace />;
+    if (location.pathname !== redirectPath) {
+      return <Navigate to={redirectPath} replace />;
+    }
   }
 
   return <>{children}</>;
