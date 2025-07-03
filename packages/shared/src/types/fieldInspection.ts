@@ -61,7 +61,7 @@ export interface HVACEquipment {
   type: string;
 }
 
-interface RoofLayer {
+export interface RoofLayer {
   id: string;
   type: 'membrane' | 'insulation' | 'deck' | 'barrier' | 'coverboard';
   description: string;
