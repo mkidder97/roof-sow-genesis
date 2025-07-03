@@ -48,6 +48,7 @@ export function parseAddress(address: string): {
       
       if (parts[0]) result.street = parts[0];
       if (parts[parts.length - 2]) result.city = parts[parts.length - 2];
+      // Fix: Use non-null assertion or provide fallback
       if (stateZipMatch[1]) result.state = stateZipMatch[1];
       if (stateZipMatch[2]) result.zipCode = stateZipMatch[2];
       
