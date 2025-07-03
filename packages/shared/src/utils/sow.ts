@@ -1,5 +1,6 @@
 // SOW Generation Utility Functions - Shared between frontend and backend
-import { SOWGenerationRequest, SOWGenerationError, FieldInspection } from '../types/sow';
+import { SOWGenerationRequest, SOWGenerationError } from '../types/sow';
+import { FieldInspection } from '../types/fieldInspection';
 import { ASCERequirements } from '../types/engineering';
 import { validateASCERequirements } from '../utils/validation';
 
