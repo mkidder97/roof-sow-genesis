@@ -391,7 +391,7 @@ const SOWGeneration = () => {
           <SOWInputForm 
             initialData={inspectionData} 
             onSubmit={handleSOWSubmit}
-            disabled={!isBackendOnline}
+            disabled={false}
           />
 
           <Card className="bg-white/10 backdrop-blur-md border-blue-400/30 mt-6">
