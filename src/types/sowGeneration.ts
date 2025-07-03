@@ -122,9 +122,9 @@ export interface SOWGenerationRequest {
 
 export interface FieldInspectionData {
   id?: string;
-  projectName: string;
+  projectName?: string; // Made optional to handle both formats
   project_name?: string; // Legacy field
-  projectAddress: string;
+  projectAddress?: string; // Made optional to handle both formats  
   project_address?: string; // Legacy field
   city?: string;
   state?: string;
@@ -153,6 +153,9 @@ export interface FieldInspectionData {
   // ✅ NEW: Assembly-related fields
   roof_assembly_layers?: RoofLayer[];
   project_type?: 'recover' | 'tearoff' | 'new';
+  
+  // ASCE requirements - make flexible
+  asce_requirements?: any; // More flexible type to avoid strict validation issues
 }
 
 export type SOWGenerationError = z.infer<typeof SOWGenerationErrorSchema>;

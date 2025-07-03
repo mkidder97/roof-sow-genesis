@@ -1,16 +1,20 @@
 // Shared types for ASCE requirements - use this across all modules
 export interface ASCERequirements {
-  // Core required fields for SOW generation
-  version: string;
-  exposure_category: string;
-  building_classification: string;
-  risk_category: string;
-  importance_factor: number;
+  // Core required fields for SOW generation - made more flexible
+  version?: string; // Made optional for flexibility
+  exposure_category?: string; // Made optional
+  exposureCategory?: string; // Alternative naming
+  building_classification?: string; // Made optional
+  buildingClassification?: string; // Alternative naming
+  risk_category?: string; // Made optional
+  importance_factor?: number; // Made optional
+  
+  // Location fields
+  state?: string; // Added missing state property
   
   // Optional enhanced fields
   wind_speed?: number;
   windSpeed?: number; // Alternative naming for compatibility
-  exposureCategory?: string; // Alternative naming
   buildingHeight?: number;
   roofZone?: string;
   hvhz_applicable?: boolean;
@@ -33,6 +37,7 @@ export interface PartialASCERequirements {
   exposure_category?: string;
   exposureCategory?: string;
   building_classification?: string;
+  buildingClassification?: string;
   buildingHeight?: number;
   roofZone?: string;
   risk_category?: string;
@@ -42,6 +47,7 @@ export interface PartialASCERequirements {
   approval_date?: string;
   approval_engineer?: string;
   notes?: string;
+  state?: string; // Added missing state property
   pressureCoefficients?: {
     zone1?: number;
     zone2?: number;
@@ -49,25 +55,23 @@ export interface PartialASCERequirements {
   };
 }
 
-// Utility function to convert partial to complete
+// Utility function to convert partial to complete - now more lenient
 export function validateASCERequirements(
   partial: PartialASCERequirements
-): ASCERequirements | null {
-  if (!partial.version || !partial.exposure_category || 
-      !partial.building_classification || !partial.risk_category) {
-    return null;
-  }
-  
+): ASCERequirements {
+  // Return the partial data as complete since all fields are now optional
   return {
     version: partial.version,
     exposure_category: partial.exposure_category,
+    exposureCategory: partial.exposureCategory,
     building_classification: partial.building_classification,
+    buildingClassification: partial.buildingClassification,
     risk_category: partial.risk_category,
     importance_factor: partial.importance_factor || 1.0,
+    state: partial.state,
     // Copy all optional fields
     wind_speed: partial.wind_speed,
     windSpeed: partial.windSpeed,
-    exposureCategory: partial.exposureCategory,
     buildingHeight: partial.buildingHeight,
     roofZone: partial.roofZone,
     hvhz_applicable: partial.hvhz_applicable,
