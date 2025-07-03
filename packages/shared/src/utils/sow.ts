@@ -9,8 +9,8 @@ import { validateASCERequirements } from '../utils/validation';
  */
 export function transformInspectionToSOWRequest(inspection: FieldInspection): SOWGenerationRequest {
   return {
-    projectName: inspection.project_name,
-    projectAddress: inspection.project_address,
+    projectName: inspection.project_name ?? "",
+    projectAddress: inspection.project_address ?? "",
     customerName: inspection.customer_name,
     customerPhone: inspection.customer_phone,
     squareFootage: inspection.square_footage,
