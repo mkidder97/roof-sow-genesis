@@ -192,11 +192,16 @@ export function validateMultipleFields(fields: Record<string, any>): ValidationR
     }
   });
   
-  return {
+  const result: ValidationResult = {
     valid: errors.length === 0,
-    errors,
-    warnings: warnings.length > 0 ? warnings : undefined
+    errors
   };
+  
+  if (warnings.length > 0) {
+    result.warnings = warnings;
+  }
+  
+  return result;
 }
 
 /**
@@ -228,3 +233,6 @@ export function validateFileUpload(file: File, maxSize: number, allowedTypes: st
     errors
   };
 }
+
+// Re-export ASCE validation function for backward compatibility
+export { validateASCERequirements } from '../types/engineering';
