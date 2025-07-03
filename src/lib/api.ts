@@ -141,66 +141,43 @@ export interface DraftData {
  */
 export async function generateSOWAPI(request: SOWGenerationRequest): Promise<SOWGenerationResponse> {
   try {
-    const formData = new FormData();
+    console.log('🚀 Calling Supabase SOW generation function:', request);
     
-    // Clean project data mapping
-    const projectData = {
-      projectName: request.projectData.projectName,
-      projectAddress: request.projectData.projectAddress,
-      customerName: request.projectData.customerName,
-      customerPhone: request.projectData.customerPhone,
-      buildingHeight: request.projectData.buildingHeight,
-      squareFootage: request.projectData.squareFootage,
-      numberOfDrains: request.projectData.numberOfDrains,
-      numberOfPenetrations: request.projectData.numberOfPenetrations,
-      membraneType: request.projectData.membraneType,
-      windSpeed: request.projectData.windSpeed,
-      exposureCategory: request.projectData.exposureCategory,
-      projectType: request.projectData.projectType,
-      city: request.projectData.city,
-      state: request.projectData.state,
-      zipCode: request.projectData.zipCode,
-      deckType: request.projectData.deckType,
-      insulationType: request.projectData.insulationType,
-      buildingClassification: request.projectData.buildingClassification,
-      notes: request.projectData.notes
+    // Import Supabase client
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Flatten the request structure for the edge function
+    const flatRequest = {
+      ...request.projectData,
+      inspectionId: request.inspectionId
     };
-    
-    // Add project data
-    formData.append('projectData', JSON.stringify(projectData));
-    
-    // Add inspection ID if provided
-    if (request.inspectionId) {
-      formData.append('inspectionId', request.inspectionId);
-    }
-    
-    // Add file if provided
-    if (request.file) {
-      formData.append('file', request.file);
-    }
 
-    console.log('🚀 Clean production SOW generation request:', {
-      projectName: projectData.projectName,
-      projectAddress: projectData.projectAddress,
-      hasFile: !!request.file,
-      productionMode: true
+    // Call Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('generate-sow', {
+      body: flatRequest
     });
 
-    const response = await fetch(API_ENDPOINTS.generateSOW, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (error) {
+      console.error('❌ Supabase function error:', error);
+      throw new Error(error.message || 'SOW generation failed');
     }
 
-    const result = await response.json();
-    console.log('✅ Production SOW generated successfully');
+    if (!data || !data.success) {
+      throw new Error(data?.error || 'SOW generation failed');
+    }
+
+    console.log('✅ SOW generation successful:', data);
     
-    return result;
+    // Transform response to match expected interface
+    return {
+      success: true,
+      data: data.data,
+      metadata: data.metadata,
+      filename: data.data?.engineeringSummary?.filename,
+      outputPath: data.downloadUrl
+    };
   } catch (error) {
-    console.error('❌ Production SOW generation failed:', error);
+    console.error('❌ SOW generation failed:', error);
     throw error;
   }
 }

@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      asce_params: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          param_name: string
+          param_value: number
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          param_name: string
+          param_value: number
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          param_name?: string
+          param_value?: number
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null
@@ -167,6 +197,66 @@ export type Database = {
           metric_name?: string
           metric_value?: number
           recorded_at?: string | null
+        }
+        Relationships: []
+      }
+      engineering_config: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      fastening_patterns: {
+        Row: {
+          created_at: string | null
+          deck_type: string
+          description: string | null
+          id: number
+          insulation_type: string
+          pattern_data: Json
+          product_id: string
+          updated_at: string | null
+          zone: string
+        }
+        Insert: {
+          created_at?: string | null
+          deck_type: string
+          description?: string | null
+          id?: number
+          insulation_type: string
+          pattern_data: Json
+          product_id: string
+          updated_at?: string | null
+          zone: string
+        }
+        Update: {
+          created_at?: string | null
+          deck_type?: string
+          description?: string | null
+          id?: number
+          insulation_type?: string
+          pattern_data?: Json
+          product_id?: string
+          updated_at?: string | null
+          zone?: string
         }
         Relationships: []
       }
@@ -393,6 +483,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      gcp_config: {
+        Row: {
+          created_at: string
+          gc_p_value: number
+          id: string
+          roof_type: string
+          updated_at: string
+          zone: string
+        }
+        Insert: {
+          created_at?: string
+          gc_p_value: number
+          id?: string
+          roof_type: string
+          updated_at?: string
+          zone: string
+        }
+        Update: {
+          created_at?: string
+          gc_p_value?: number
+          id?: string
+          roof_type?: string
+          updated_at?: string
+          zone?: string
+        }
+        Relationships: []
       }
       project_comments: {
         Row: {
@@ -1007,6 +1124,27 @@ export type Database = {
       }
     }
     Views: {
+      active_engineering_config: {
+        Row: {
+          description: string | null
+          key: string | null
+          updated_at: string | null
+          value: Json | null
+        }
+        Insert: {
+          description?: string | null
+          key?: string | null
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Update: {
+          description?: string | null
+          key?: string | null
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Relationships: []
+      }
       dashboard_metrics_cache: {
         Row: {
           avg_generation_time: number | null

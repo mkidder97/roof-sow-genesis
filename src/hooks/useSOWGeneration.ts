@@ -93,47 +93,53 @@ function selectSOWTemplate(inspectionData: any): string {
   return 'T6-Tearoff-TPO(MA)-insul-steel'; // Default
 }
 
-// Use existing API from lib/api.ts to avoid compatibility issues
-async function callExistingSOWAPI(request: SOWGenerationRequest): Promise<SOWGenerationResponse> {
+// Clean SOW API integration using Supabase Edge Functions
+async function callSupabaseSOWAPI(request: SOWGenerationRequest): Promise<SOWGenerationResponse> {
   try {
-    // Import the existing API function
+    console.log('🚀 Calling Supabase SOW generation API:', request);
+    
     const { generateSOWAPI } = await import('@/lib/api');
     
-    // Transform our request to match the existing API structure with proper type handling
+    // Transform request to match API structure
     const apiRequest = {
-      projectName: request.projectName,
-      projectAddress: request.projectAddress,
-      customerName: request.customerName,
-      customerPhone: request.customerPhone,
-      buildingHeight: request.buildingHeight,
-      squareFootage: request.squareFootage,
-      city: request.city,
-      state: request.state,
-      zipCode: request.zipCode,
-      deckType: request.deckType || 'steel', // Provide default to satisfy type constraints
-      membraneType: request.membraneType,
-      windSpeed: request.windSpeed,
-      exposureCategory: request.exposureCategory,
-      buildingClassification: request.buildingClassification,
-      projectType: request.projectType,
-      numberOfDrains: request.numberOfDrains,
-      numberOfPenetrations: request.numberOfPenetrations,
-      notes: request.notes,
+      projectData: {
+        projectName: request.projectName,
+        projectAddress: request.projectAddress,
+        customerName: request.customerName,
+        customerPhone: request.customerPhone,
+        buildingHeight: request.buildingHeight,
+        squareFootage: request.squareFootage,
+        city: request.city,
+        state: request.state,
+        zipCode: request.zipCode,
+        deckType: request.deckType,
+        membraneType: request.membraneType,
+        insulationType: request.insulationType,
+        windSpeed: request.windSpeed,
+        exposureCategory: request.exposureCategory,
+        buildingClassification: request.buildingClassification,
+        projectType: request.projectType,
+        notes: request.notes,
+        numberOfDrains: request.numberOfDrains,
+        numberOfPenetrations: request.numberOfPenetrations
+      },
       inspectionId: request.inspectionId
     };
 
     const result = await generateSOWAPI(apiRequest);
     
+    console.log('✅ SOW generation response:', result);
+    
     return {
       success: result.success,
-      sowId: result.sowId,
-      downloadUrl: result.downloadUrl,
-      message: result.message,
+      sowId: result.outputPath, // Use outputPath as sowId
+      downloadUrl: result.outputPath,
+      message: 'SOW generated successfully',
       error: result.error,
       data: result.data
     };
   } catch (error) {
-    console.error('SOW API call failed:', error);
+    console.error('❌ SOW API call failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'SOW generation failed'
@@ -190,7 +196,7 @@ export function useSOWGeneration(options?: { onSuccess?: (data: SOWGenerationRes
       setGenerationProgress(25);
       setGenerationStatus('Processing project data...');
 
-      const response = await callExistingSOWAPI(request);
+      const response = await callSupabaseSOWAPI(request);
 
       if (!response.success) {
         throw new Error(response.error || 'SOW generation failed');

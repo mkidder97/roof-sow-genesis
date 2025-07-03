@@ -271,7 +271,56 @@ const SOWGeneration = () => {
             </div>
           </div>
 
-          {/* Backend Status Alert */}
+          {/* Supabase Status Alert */}
+          <Alert className="mb-6 bg-blue-900/50 border-blue-400/30">
+            <Wifi className="h-4 w-4 text-blue-400" />
+            <AlertDescription className="text-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <strong>Supabase Integration:</strong> Active (Edge Functions)
+                  <span className="ml-2 text-sm opacity-75">
+                    Using simplified SOW generation via Supabase
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Badge className="bg-blue-600 text-white">
+                    Ready
+                  </Badge>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={async () => {
+                      try {
+                        const { supabase } = await import('@/integrations/supabase/client');
+                        const { data, error } = await supabase.functions.invoke('generate-sow', {
+                          body: { 
+                            projectName: "Test Project",
+                            projectAddress: "123 Test St"
+                          }
+                        });
+                        toast({
+                          title: error ? "Connection Failed" : "Connection Success",
+                          description: error ? error.message : "Supabase edge function is working",
+                          variant: error ? "destructive" : "default"
+                        });
+                      } catch (err) {
+                        toast({
+                          title: "Connection Test Failed", 
+                          description: err instanceof Error ? err.message : "Unknown error",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                    className="text-blue-200 border-blue-400/30"
+                  >
+                    Test Connection
+                  </Button>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+
+          {/* Backward compatibility status */}
           {!isHealthLoading && (
             <Alert className={`mb-6 ${isBackendOnline ? 'bg-green-900/50 border-green-400/30' : 'bg-red-900/50 border-red-400/30'}`}>
               {isBackendOnline ? (
