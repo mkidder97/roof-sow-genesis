@@ -41,23 +41,27 @@ export function parseAddress(address: string): {
   
   if (parts.length >= 3) {
     const lastPart = parts[parts.length - 1];
-    const stateZipMatch = lastPart.match(/([A-Z]{2})\s+(\d{5}(-\d{4})?)/);
+    const stateZipMatch = lastPart?.match(/([A-Z]{2})\s+(\d{5}(-\d{4})?)/);
     
     if (stateZipMatch) {
-      return {
-        street: parts[0],
-        city: parts[parts.length - 2],
-        state: stateZipMatch[1],
-        zipCode: stateZipMatch[2]
-      };
+      const result: { street?: string; city?: string; state?: string; zipCode?: string; } = {};
+      
+      if (parts[0]) result.street = parts[0];
+      if (parts[parts.length - 2]) result.city = parts[parts.length - 2];
+      if (stateZipMatch[1]) result.state = stateZipMatch[1];
+      if (stateZipMatch[2]) result.zipCode = stateZipMatch[2];
+      
+      return result;
     }
   }
   
-  return {
-    street: parts[0],
-    city: parts[1],
-    state: parts[2]
-  };
+  const result: { street?: string; city?: string; state?: string; zipCode?: string; } = {};
+  
+  if (parts[0]) result.street = parts[0];
+  if (parts[1]) result.city = parts[1];
+  if (parts[2]) result.state = parts[2];
+  
+  return result;
 }
 
 /**
