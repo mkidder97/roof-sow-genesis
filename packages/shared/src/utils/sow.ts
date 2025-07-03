@@ -7,29 +7,29 @@ import { ASCERequirements, validateASCERequirements } from '../types/engineering
  */
 export function transformInspectionToSOWRequest(inspection: FieldInspection): SOWGenerationRequest {
   return {
-    projectName: inspection.project_name,
-    projectAddress: inspection.project_address,
-    customerName: inspection.customer_name,
-    customerPhone: inspection.customer_phone,
-    squareFootage: inspection.square_footage,
-    buildingHeight: inspection.building_height,
+    projectName: inspection.project_name ?? "",
+    projectAddress: inspection.project_address ?? "",
+    customerName: inspection.customer_name ?? "",
+    customerPhone: inspection.customer_phone ?? "",
+    squareFootage: inspection.square_footage ?? 0,
+    buildingHeight: inspection.building_height ?? 0,
     buildingDimensions: {
-      length: inspection.building_length,
-      width: inspection.building_width
+      length: inspection.building_length ?? 0,
+      width: inspection.building_width ?? 0
     },
     deckType: inspection.deck_type as any,
-    roofSlope: typeof inspection.roof_slope === 'string' ? parseFloat(inspection.roof_slope) : inspection.roof_slope,
+    roofSlope: typeof inspection.roof_slope === 'string' ? parseFloat(inspection.roof_slope) : (inspection.roof_slope ?? 0),
     
     // Location data
-    city: inspection.city,
-    state: inspection.state,
-    county: inspection.county,
-    zipCode: inspection.zip_code,
+    city: inspection.city ?? "",
+    state: inspection.state ?? "",
+    county: inspection.county ?? "",
+    zipCode: inspection.zip_code ?? "",
     
     // ASCE requirements (enhanced) - validate before use
     asceRequirements: inspection.asce_requirements ? validateASCERequirements(inspection.asce_requirements) || undefined : undefined,
     asceVersion: inspection.asce_version,
-    windSpeed: inspection.wind_speed_design,
+    windSpeed: inspection.wind_speed_design ?? 0,
     exposureCategory: inspection.exposure_category,
     buildingClassification: inspection.building_classification,
     
@@ -38,8 +38,8 @@ export function transformInspectionToSOWRequest(inspection: FieldInspection): SO
     insulationType: inspection.insulation_type as any,
     
     // Inspector information
-    inspectorName: inspection.inspector_name,
-    inspectionDate: inspection.inspection_date,
+    inspectorName: inspection.inspector_name ?? "",
+    inspectionDate: inspection.inspection_date ?? "",
     
     // Additional notes
     customNotes: [
@@ -49,7 +49,7 @@ export function transformInspectionToSOWRequest(inspection: FieldInspection): SO
     ].filter(Boolean) as string[],
     
     // Inspection ID
-    inspectionId: inspection.id
+    inspectionId: inspection.id ?? ""
   };
 }
 
@@ -136,7 +136,7 @@ export function estimateGenerationTime(request: SOWGenerationRequest): number {
   // Add time for complex features
   if (request.takeoffFile) baseTime += 15;
   if (request.drainageConfiguration?.specifications) baseTime += 10;
-  if (request.equipmentSpecs?.hvacUnits.count > 5) baseTime += 5;
+  if (request.equipmentSpecs?.hvacUnits?.count && request.equipmentSpecs.hvacUnits.count > 5) baseTime += 5;
   if (request.sectionInclusions && Object.keys(request.sectionInclusions).length > 10) baseTime += 10;
   
   // Square footage complexity
