@@ -7,11 +7,10 @@ export * from './types/sow';
 export * from './types/engineering';
 export * from './types/roofing';
 
-// Export utilities
+// Export utilities (avoid duplicate exports)
 export * from './utils';
 export * from './utils/fieldInspection';
 export * from './utils/sow';
-export * from './utils/validation';
 export * from './utils/windAnalysis';
 export * from './utils/jurisdiction';
 
