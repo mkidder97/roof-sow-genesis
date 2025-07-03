@@ -824,3 +824,5 @@ export const SOWInputForm: React.FC<SOWInputFormProps> = ({
     </Card>
   );
 };
+
+export default SOWInputForm;
