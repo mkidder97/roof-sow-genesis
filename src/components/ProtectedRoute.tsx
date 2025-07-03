@@ -23,7 +23,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     role: profile?.role,
     permissions: profile?.permissions,
     requiredRole,
-    requiredPermission
+    requiredPermission,
+    hasPermissionResult: requiredPermission ? profile?.permissions?.includes(requiredPermission) : 'n/a'
   });
 
   if (loading) {
