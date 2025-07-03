@@ -16,8 +16,8 @@ export function transformInspectionToSOWRequest(inspection: FieldInspection): SO
     squareFootage: inspection.square_footage,
     buildingHeight: inspection.building_height,
     buildingDimensions: {
-      length: inspection.building_length,
-      width: inspection.building_width
+      ...(inspection.building_length !== undefined ? { length: inspection.building_length } : {}),
+      ...(inspection.building_width !== undefined ? { width: inspection.building_width } : {})
     },
     deckType: inspection.deck_type as any,
     roofSlope: typeof inspection.roof_slope === 'string' ? parseFloat(inspection.roof_slope) : inspection.roof_slope,
