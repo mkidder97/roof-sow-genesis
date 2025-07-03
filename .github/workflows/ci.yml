@@ -1,289 +1,41 @@
-name: 🤖 CI Pipeline with Smoke Tests
+name: CI Monorepo
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
-
-env:
-  NODE_VERSION: '20'
-  CI: true
+    branches: [ main ]
 
 jobs:
-  # Basic health check and setup validation
-  setup:
+  validate:
     runs-on: ubuntu-latest
-    outputs:
-      has_changes: ${{ steps.changes.outputs.any }}
+    
     steps:
-      - name: 🔄 Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 🟢 Setup Node.js
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
           cache: 'npm'
-
-      - name: 📋 Project Structure Check
-        run: |
-          echo "=== Root Directory ==="
-          ls -la
-          echo ""
-          echo "=== Server Directory ==="
-          ls -la server/ || echo "No server directory"
-          echo ""
-          echo "=== Package.json Files ==="
-          find . -name "package.json" -type f
-        continue-on-error: true
-
-      - name: 📦 Install Root Dependencies
-        run: |
-          echo "Installing root dependencies..."
-          npm ci || npm install
-        continue-on-error: true
-
-      - name: 🔍 Check for changes
-        id: changes
-        run: |
-          echo "any=true" >> $GITHUB_OUTPUT
-
-  # Frontend build and lint (MUST PASS)
-  frontend:
-    runs-on: ubuntu-latest
-    needs: setup
-    if: needs.setup.outputs.has_changes == 'true'
-    steps:
-      - name: 🔄 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 📦 Install Dependencies
-        run: npm ci
-
-      - name: 🧹 Lint Frontend
+          
+      - name: Install Dependencies
+        run: npm ci --workspaces
+        
+      - name: Build API Server
+        run: npm run build --workspace=packages/api-server
+        
+      - name: Build Web Client
+        run: npm run build --workspace=packages/web-client
+        
+      - name: Lint All
         run: npm run lint
-
-      - name: 🔧 Build Frontend
-        run: npm run build
-
-      - name: 📊 Upload Frontend Build
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: frontend-build
-          path: dist/
-          retention-days: 1
-
-  # Backend build and lint (MUST PASS)
-  backend:
-    runs-on: ubuntu-latest
-    needs: setup
-    if: needs.setup.outputs.has_changes == 'true'
-    steps:
-      - name: 🔄 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 🖥️ Setup Chrome for Puppeteer
-        uses: browser-actions/setup-chrome@v1
-
-      - name: 📦 Install Root Dependencies
-        run: npm ci
-
-      - name: 📦 Install Server Dependencies
-        working-directory: ./server
-        run: npm install
-
-      - name: 🔧 Build Backend
-        working-directory: ./server
-        run: npm run build
-
-      - name: 📊 Upload Backend Build
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: backend-build
-          path: server/dist/
-          retention-days: 1
-
-  # Unit Tests (MUST PASS)
-  test:
-    runs-on: ubuntu-latest
-    needs: [frontend, backend]
-    steps:
-      - name: 🔄 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 📦 Install Dependencies
-        run: npm ci
-
-      - name: 🧪 Run Unit Tests
+        
+      - name: Unit Tests
         run: npm run test:unit
-
-      - name: 🧪 Run Server Tests
-        working-directory: ./server
+        
+      - name: Smoke Test API
         run: |
-          npm install
-          npm run test
-
-  # Smoke Test (MUST PASS)
-  smoke-test:
-    runs-on: ubuntu-latest
-    needs: [frontend, backend, test]
-    steps:
-      - name: 🔄 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 🖥️ Setup Chrome for Puppeteer
-        uses: browser-actions/setup-chrome@v1
-
-      - name: 📦 Install Dependencies
-        run: npm ci
-
-      - name: 📦 Install Server Dependencies
-        working-directory: ./server
-        run: npm install
-
-      - name: 📥 Download Backend Build
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-build
-          path: server/dist/
-
-      - name: 🚀 Start API Server
-        working-directory: ./server
-        run: |
-          echo "Starting API server in background..."
-          tsx index.ts &
-          SERVER_PID=$!
-          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
-          
-          # Wait for server to start
-          echo "Waiting for server to start..."
-          for i in {1..30}; do
-            if curl -f http://localhost:3001/health >/dev/null 2>&1; then
-              echo "✅ Server is responding!"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ Server failed to start within 30 seconds"
-              kill $SERVER_PID 2>/dev/null || true
-              exit 1
-            fi
-            echo "Attempt $i/30: Server not ready yet..."
-            sleep 2
-          done
-        env:
-          NODE_ENV: test
-
-      - name: 🔍 Test API Health Endpoint
-        run: |
-          echo "Testing /health endpoint..."
-          
-          # Test health endpoint
-          response=$(curl -s -w "%{http_code}" http://localhost:3001/health)
-          http_code=$(echo "$response" | tail -c 4)
-          body=$(echo "$response" | head -c -4)
-          
-          echo "HTTP Status: $http_code"
-          echo "Response Body: $body"
-          
-          if [ "$http_code" != "200" ]; then
-            echo "❌ Health check failed with status $http_code"
-            exit 1
-          fi
-          
-          echo "✅ Health check passed!"
-
-      - name: 🔍 Test API Basic Endpoints
-        run: |
-          echo "Testing additional API endpoints..."
-          
-          # Test root endpoint
-          if curl -f http://localhost:3001/ >/dev/null 2>&1; then
-            echo "✅ Root endpoint responding"
-          else
-            echo "⚠️ Root endpoint not responding (may be expected)"
-          fi
-          
-          # Test any other critical endpoints
-          echo "✅ Basic endpoint tests completed!"
-
-      - name: 🧪 Run Smoke Test Suite
-        run: |
-          echo "Running comprehensive smoke tests..."
-          npm run test:smoke
-          echo "✅ Smoke test suite passed!"
-
-      - name: 🛑 Stop API Server
-        if: always()
-        run: |
-          if [ ! -z "$SERVER_PID" ]; then
-            echo "Stopping server (PID: $SERVER_PID)..."
-            kill $SERVER_PID 2>/dev/null || true
-            sleep 2
-            kill -9 $SERVER_PID 2>/dev/null || true
-          fi
-
-  # Summary job
-  summary:
-    runs-on: ubuntu-latest
-    needs: [setup, frontend, backend, test, smoke-test]
-    if: always()
-    steps:
-      - name: 📋 CI Summary
-        run: |
-          echo "## 🤖 CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status | Notes |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Setup | ${{ needs.setup.result }} | Project structure validation |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend | ${{ needs.frontend.result }} | Build and lint (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend | ${{ needs.backend.result }} | Build and lint (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tests | ${{ needs.test.result }} | Unit tests (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Smoke Test | ${{ needs.smoke-test.result }} | Integration tests (ENFORCED) |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Check if any critical jobs failed
-          if [[ "${{ needs.frontend.result }}" != "success" || 
-                "${{ needs.backend.result }}" != "success" || 
-                "${{ needs.test.result }}" != "success" || 
-                "${{ needs.smoke-test.result }}" != "success" ]]; then
-            echo "### ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
-            echo "One or more critical jobs failed. Please fix the issues before merging." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          else
-            echo "### ✅ Build Successful" >> $GITHUB_STEP_SUMMARY
-            echo "All jobs passed successfully! 🎉" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: ✅ Pipeline Complete
-        run: echo "🎉 CI pipeline completed with enforced quality gates!"
+          npm run dev --workspace=packages/api-server &
+          sleep 5
+          curl --fail http://localhost:3001/health
