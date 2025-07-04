@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ClearCacheButton } from '@/components/auth/ClearCacheButton';
 import '@/styles/tesla-ui.css';
 
 const Auth = () => {
@@ -139,10 +139,15 @@ const Auth = () => {
 
           <Card className="tesla-glass-card border-tesla-surface">
             <CardHeader>
-              <CardTitle className="tesla-h3">Authentication</CardTitle>
-              <CardDescription className="tesla-small text-tesla-text-muted">
-                Access your multi-role roofing projects
-              </CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="tesla-h3">Authentication</CardTitle>
+                  <CardDescription className="tesla-small text-tesla-text-muted">
+                    Access your multi-role roofing projects
+                  </CardDescription>
+                </div>
+                <ClearCacheButton />
+              </div>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="signin" className="w-full">
